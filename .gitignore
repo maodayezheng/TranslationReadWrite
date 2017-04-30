@@ -1,0 +1,10 @@
+.DS_Store
+.idea
+_paper/.texpadtmp/
+code_outputs
+BookCorpus
+pics
+sentenceData
+DataUtils
+*.pdf
+*.pyc

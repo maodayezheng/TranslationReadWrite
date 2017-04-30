@@ -1,0 +1,22 @@
+What is working:
+    1. From RNN T=L the RNN seems works the best
+    2. The Vanilla Model works quite good
+    3. We have switch to the char-sentence generation
+
+What is not working:
+    1. The attention seems completely not work
+    2. From previous experiments LTSM and GRU not work need to check again
+
+Plan:
+    1. Try a simple update rule of canvas, simply sum each terms (Finished)
+        * This approach does not work well
+    2. Try LSTM&GRU for update of h
+    3. Try with an embedding version instead of one-hot
+    4. Try to feed C_t back to model with&without attention
+
+
+Other thoughts:
+    1. Based on the result of Vanilla, for RNN if we could design a model such that fix the good result, and only change
+       those bad one, then the performance of RNN should improve a lot.
+
+bsub -q emerald-k80 -o $HOME/jobs/%J.log -e $HOME/jobs/%J.err -W 24:00 < run_vb_emerald.sh
