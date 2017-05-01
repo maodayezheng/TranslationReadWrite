@@ -103,11 +103,11 @@ class DeepReluTransReadWrite(object):
         n = source.shape[0]
         l = source.shape[1]
         # Get input embedding
-        source_embedding = get_output(self.input_embedding, source)
+        source_embedding = get_output(self.input_embedding, source[:, 1:])
         # Generate Index Vectors
 
         # Create Input Mask
-        encode_mask = T.cast(T.gt(source, 1), "float32")
+        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
         decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
         # Init Decoding States
         canvas_init = T.zeros((n, self.seq_len, self.embedding_dim), dtype="float32")
@@ -151,7 +151,7 @@ class DeepReluTransReadWrite(object):
         prob = score / sample_score
 
         # Loss per sentence
-        loss = decode_mask * T.log(T.clip(prob, 1.0 / self.target_vocab_size, 1.0))
+        loss = decode_mask * T.log(prob + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
 
         return loss, attention
@@ -309,13 +309,13 @@ def run(out_dir):
     with open("SentenceData/WMT/Data/data_idx.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
     candidates = None
-    with open("SentenceData/WMT/Data/de_candidate_sample.txt", "r") as sample:
+    with open("SentenceData/WMT/Data/approximate_samples.txt", "r") as sample:
         candidates = json.loads(sample.read())
-    model = DeepReluTransReadWrite(sample_candi=np.array(candidates))
+    model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1])
 
     optimiser, updates = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
 
-    for i in range(300000):
+    for i in range(100000):
         start = time.clock()
         batch_indices = np.random.choice(len(train_data), 25, replace=False)
         batch = np.array([train_data[ind] for ind in batch_indices])
