@@ -121,7 +121,7 @@ class ReluTransReadWrite(object):
         # Complementary Sum for softmax approximation http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
         final_canvas = canvases[-1]
         output_embedding = get_output(self.target_input_embedding, target)
-        output_embedding = output_embedding[:, 1:, :]
+        output_embedding = output_embedding[:, :-1, :]
         start = T.zeros((n, 1, self.embedding_dim), "float32")
         output_embedding = T.concatenate([start, output_embedding], axis=1)
         teacher = T.concatenate([output_embedding, final_canvas], axis=2)
