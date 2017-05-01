@@ -122,7 +122,7 @@ class DeepReluTransReadWrite(object):
         o_init = get_output(self.out_mlp, h_init)
         attention_init = T.nnet.relu(get_output(self.attention, o_init[:, :self.embedding_dim]))
         source_embedding = source_embedding * encode_mask.reshape((n, self.seq_len, 1))
-        ([h_t_1, canvases, attention], update) \
+        ([h_t_1, h_t_2, canvases, attention], update) \
             = theano.scan(self.step, outputs_info=[h_init[:, :self.hid_size], h_init[:, self.hid_size:],
                                                    canvas_init, attention_init],
                           non_sequences=[source_embedding],
@@ -317,7 +317,7 @@ def run(out_dir):
 
     optimiser, updates = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
 
-    for i in range(100000):
+    for i in range(300000):
         start = time.clock()
         batch_indices = np.random.choice(len(train_data), 25, replace=False)
         batch = np.array([train_data[ind] for ind in batch_indices])
@@ -330,14 +330,14 @@ def run(out_dir):
         attention = output[1]
         training_loss.append(loss)
 
-        if i % 1000 == 0:
+        if i % 500 == 0:
             print("==" * 5)
             print(
-                'Iteration ' + str(i + 1) + ' per data point (time taken = ' + str(time.clock() - start) + ' seconds)')
+                'Iteration ' + str(i) + ' per data point (time taken = ' + str(time.clock() - start) + ' seconds)')
             print('The training loss : ' + str(loss))
             print("")
 
-        if i % 1000 == 0:
+        if i % 5000 == 0:
             for n in range(1):
                 for t in range(20):
                     print("======")
