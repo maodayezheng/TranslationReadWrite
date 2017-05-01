@@ -13,7 +13,7 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams
 random = MRG_RandomStreams(seed=1234)
 
 
-class ReluTransReadWrite(object):
+class Seq2Seq(object):
     def __init__(self, training_batch_size=25, source_vocab_size=20003, target_vocab_size=20003,
                  embed_dim=300, hid_dim=1024, source_seq_len=50,
                  target_seq_len=50, sample_size=301):
@@ -25,18 +25,17 @@ class ReluTransReadWrite(object):
         self.embedding_dim = embed_dim
         # Init the word embeddings.
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
-        self.encoder = self.mlp(self.embedding_dim, self.hid_size, n_layers=2, activation=tanh)
+        self.encoder = lasagne.layers.GRULayer(self.embedding_dim, self.hid_size)
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
+
         # init decoding RNNs
         self.gru_update_1 = self.gru_update(2 * self.hid_size, self.hid_size)
         self.gru_reset_1 = self.gru_reset(2 * self.hid_size, self.hid_size)
         self.gru_candidate_1 = self.gru_candidate(2 * self.hid_size, self.hid_size)
 
-        # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size, 600, activation=tanh)
         # attention parameters
-        self.attention = lasagne.layers.DenseLayer(lasagne.layers.InputLayer((None, self.embedding_dim)), 2,
+        self.attention = lasagne.layers.DenseLayer(lasagne.layers.InputLayer((None, self.hid_size)), self.embedding_dim,
                                                    nonlinearity=sigmoid, W=lasagne.init.GlorotUniform(), b=None)
 
         # teacher mapper
@@ -95,11 +94,6 @@ class ReluTransReadWrite(object):
         # Get input embedding
         embedding_in = get_output(self.input_embedding, source)
         # Generate Index Vectors
-        index = T.arange(self.seq_len, dtype="float32")
-        index = index.reshape((1, self.seq_len)) + 1.0
-        index = T.cast(T.tile(index, (n, 1)), "float32")
-        index = index / T.cast(target_l.reshape((n, 1)) + 1.0, "float32")
-        # Create Input Mask
         encode_mask = T.cast(T.gt(source, 1), "float32")
         decode_mask = T.cast(T.gt(target, 0), "float32")
         # Init Decoding States
@@ -111,13 +105,12 @@ class ReluTransReadWrite(object):
 
         samples = get_output(sample_candidates, target)
         h_init = T.zeros((n, self.hid_size))
-        embedding_in = embedding_in * encode_mask.reshape((n, l, 1))
-        incoming = T.mean(embedding_in, axis=1)
-        incoming = get_output(self.encoder, incoming)
+
+        hidden_in = get_output(self.encoder, embedding_in)
         start_init = T.zeros((n,))
         ([h_t_1, canvases, start_pos], update)\
-            = theano.scan(self.step, outputs_info=[h_init, canvas_init, start_init],
-                          non_sequences=[incoming, index, decode_mask],
+            = theano.scan(self.step, outputs_info=[h_init],
+                          non_sequences=[hidden_in],
                           n_steps=20)
 
         # Complementary Sum for softmax approximation http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf

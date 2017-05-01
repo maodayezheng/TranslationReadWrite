@@ -93,14 +93,13 @@ class ReluTransReadWrite(object):
         :return elbo: The symbolic variable representing the ELBO.
         """
         n = source.shape[0]
-        l = source.shape[1]
         # Get input embedding
         source_embedding = get_output(self.input_embedding, source)
         # Generate Index Vectors
 
         # Create Input Mask
         encode_mask = T.cast(T.gt(source, 1), "float32")
-        decode_mask = T.cast(T.gt(target, 0), "float32")
+        decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
         # Init Decoding States
         canvas_init = T.zeros((n, self.seq_len, self.embedding_dim), dtype="float32")
 
@@ -108,7 +107,7 @@ class ReluTransReadWrite(object):
             InputLayer((None, self.target_vocab_size), input_var=T.imatrix()
                        ), input_size=self.target_vocab_size, output_size=301, W=self.sample_candi)
 
-        samples = get_output(sample_candidates, target)
+        samples = get_output(sample_candidates, target[:, 1:])
         start = self.start
         h_init = T.tile(start.reshape((1, start.shape[0])), (n, 1))
         o_init = get_output(self.out_mlp, h_init)
@@ -122,9 +121,7 @@ class ReluTransReadWrite(object):
         # Complementary Sum for softmax approximation http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
         final_canvas = canvases[-1]
         output_embedding = get_output(self.target_input_embedding, target)
-        output_embedding = output_embedding[:, 1:, :]
-        start = T.zeros((n, 1, self.embedding_dim), "float32")
-        output_embedding = T.concatenate([start, output_embedding], axis=1)
+        output_embedding = output_embedding[:, :-1]
         teacher = T.concatenate([output_embedding, final_canvas], axis=2)
         n = teacher.shape[0]
         l = teacher.shape[1]
@@ -146,7 +143,6 @@ class ReluTransReadWrite(object):
         # Loss per sentence
         loss = decode_mask * T.log(T.clip(prob, 1.0 / self.target_vocab_size, 1.0))
         loss = -T.mean(T.sum(loss, axis=1))
-
 
         return loss, attention
 
@@ -234,30 +230,23 @@ class ReluTransReadWrite(object):
 
     def decode_fn(self):
         source = T.imatrix('source')
-        source_l = T.ivector("source_l")
-
         n = source.shape[0]
-        l = source.shape[1]
         # Get input embedding
         source_embedding = get_output(self.input_embedding, source)
         # Generate Index Vectors
-        index = T.arange(self.seq_len, dtype="float32")
-        index = index.reshape((1, self.seq_len)) + 1.0
-        index = T.cast(T.tile(index, (n, 1)), "float32")
-        t_index = index / T.cast(self.seq_len + 1.0, "float32")
-        s_index = index / T.cast(source_l.reshape((n, 1)) + 1.0, "float32")
 
+        # Create Input Mask
+        encode_mask = T.cast(T.gt(source, 1), "float32")
         # Init Decoding States
         canvas_init = T.zeros((n, self.seq_len, self.embedding_dim), dtype="float32")
-
-        h_init = T.zeros((n, self.hid_size))
-        attention_init = get_output(self.attention, T.zeros((n, self.embedding_dim)))
-        stop_init = attention_init[:, 2:]
-        start_init = T.zeros((n, 2), "float32")
-        stop_init = start_init + (1.0 - start_init) * stop_init
-        ([h_t_1, canvases, start_pos, stop_pos], update) \
-            = theano.scan(self.step, outputs_info=[h_init, canvas_init, start_init, stop_init],
-                          non_sequences=[source_embedding, s_index, t_index],
+        start = self.start
+        h_init = T.tile(start.reshape((1, start.shape[0])), (n, 1))
+        o_init = get_output(self.out_mlp, h_init)
+        attention_init = T.nnet.relu(get_output(self.attention, o_init[:, :self.embedding_dim]))
+        source_embedding = source_embedding * encode_mask.reshape((n, self.seq_len, 1))
+        ([h_t_1, canvases, attention], update) \
+            = theano.scan(self.step, outputs_info=[h_init, canvas_init, attention_init],
+                          non_sequences=[source_embedding],
                           n_steps=20)
 
         # Pre-compute the first step
@@ -269,6 +258,7 @@ class ReluTransReadWrite(object):
         s0 = get_output(self.score, s0)
         # Sample embedding => VxD
         candidate_embed = self.target_output_embedding.W
+
         s0 = T.dot(s0, candidate_embed.T)
         max_clip = T.max(s0, axis=-1)
         score_clip = zero_grad(max_clip)
@@ -276,27 +266,32 @@ class ReluTransReadWrite(object):
         prob0 = T.nnet.softmax(s0)
         orders = T.argsort(prob0, axis=1)
         top_k = T.cast(orders[:, :5], "int8")
-        prob0 = prob0[T.arange(n), top_k]
+        prob0 = prob0[T.arange(n).reshape((n, 1)), top_k]
         top_k = top_k.reshape((n * 5,))
         prev_embed_init = get_output(self.target_input_embedding, top_k)
         prev_embed_init = prev_embed_init.reshape((n, 5, self.embedding_dim))
 
         # Forward path
-        ([prob, embed, prev_idx, canddaite_idx], updates) = theano.scan(self.forward_step, sequences=[canvas[1:]],
-                                                                        outputs_info=[prob0, prev_embed_init, None,
-                                                                                      None],
-                                                                        non_sequences=[candidate_embed])
+        ([prob, embed, prev_idx, candidate_idx, tops], update1) = theano.scan(self.forward_step, sequences=[canvas[1:]],
+                                                                              outputs_info=[prob0, prev_embed_init,
+                                                                                            None, None, None],
+                                                                              non_sequences=[candidate_embed])
         last_prob = prob[-1]
-        last_idx = T.cast(T.argmax(last_prob, axis=-1), "int8")
-        top_k = top_k.reshape((1, n, 5))
-        candidates = T.concatenate([top_k, canddaite_idx], axis=0)
-
+        last_idx = T.cast(T.argmax(last_prob, axis=-1), "int32")
         # Backward
-        ([i, decodes], update) = theano.scan(self.backward_step, sequences=[prev_idx, candidates],
-                                             outputs_info=[last_idx, None],
-                                             go_backwards=True)
 
-        decode_fn = theano.function(inputs=[source, source_l], outputs=[decodes])
+        ([i, decodes], update2) = theano.scan(self.backward_step, sequences=[prev_idx, candidate_idx],
+                                              outputs_info=[last_idx, None],
+                                              go_backwards=True)
+
+        def reverse(idx):
+            return idx
+        (seq, update3) = theano.scan(reverse, sequences=[decodes], outputs_info=[None], go_backwards=True)
+
+        first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), i[-1]]
+        decode = T.concatenate([first.reshape((1, n)), seq], axis=0)
+
+        decode_fn = theano.function(inputs=[source], outputs=[prev_idx, candidate_idx, tops, decode])
         return decode_fn
 
     def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
@@ -306,21 +301,22 @@ class ReluTransReadWrite(object):
         prev: The state from previous => NxKxD
         candidate: All possible candidate
 
-        :return pair: first element is previous state idx, second element is the idx of content 
+        :return pair: first element is previous state idx, second element is the idx of content
         :return prob: All the intermediate probabilities
         """
 
         # Compute the trans prob
         n = canvas_info.shape[0]
+        d = canvas_info.shape[-1]
         k = prev_embed.shape[1]
         v = candate_embed.shape[0]
-        c = T.tile(canvas_info, (1, k, 1))
+        c = T.tile(canvas_info.reshape((n, 1, d)), (1, k, 1))
         info = T.concatenate([prev_embed, c], axis=-1)
         d = info.shape[-1]
         info = info.reshape((n * k, d))
         teacher = get_output(self.score, info)
         score = T.dot(teacher, candate_embed.T)
-        max_clip = T.max(score, axis=-1).reshape((n, k, 1))
+        max_clip = T.max(score, axis=-1).reshape((n * k, 1))
         score = score - max_clip
         score = score.reshape((n * k, v))
         trans_prob = T.nnet.softmax(score)
@@ -331,20 +327,18 @@ class ReluTransReadWrite(object):
         prob = prob.reshape((n, k * v))
         orders = T.argsort(prob, axis=-1)
         top_k = orders[:, :5]
-        prob = prob[T.arange(n), top_k]
+        prob = prob[T.arange(n).reshape((n, 1)), top_k]
 
         # Get the true idx
-        candidate_idx = T.cast(T.mod(T.cast(top_k, "float32"), T.cast(v, "float32")), "int8")
+        candidate_idx = (top_k % self.target_vocab_size)
         # Get the previous idx
-        prev_idx = T.cast(T.ceil(T.true_div(T.cast(top_k, "float32"), T.cast(v, "float32"))), "int8")
+        prev_idx = T.cast(T.floor(T.true_div(top_k, v)), "int32")
         embedding = get_output(self.target_input_embedding, candidate_idx)
-        prev_idx = prev_idx.reshape((n, k, self.embedding_dim))
-        return prob, embedding, prev_idx, candidate_idx
+        prev_idx = prev_idx.reshape((n, k))
+        return prob, embedding, prev_idx, candidate_idx, top_k
 
     def backward_step(self, prev_idx, k_candidate, idx):
         n = k_candidate.shape[0]
-        print(idx)
-        idx = idx.reshape((n, 1))
         decode = k_candidate[T.arange(n, dtype="int8"), idx]
         idx = prev_idx[T.arange(n, dtype="int8"), idx]
         return idx, decode
@@ -394,16 +388,12 @@ def run(out_dir):
     print("Run the Relu read and  write only version ")
     training_loss = []
     update_kwargs = {'learning_rate': 1e-6}
-    with open("SentenceData/WMT/Data/data_idx.txt", "r") as dataset:
+    with open("SentenceData/WMT/Data/10k_train.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
     candidates = None
-    with open("SentenceData/WMT/Data/de_candidate_sample.txt", "r") as sample:
+    with open("SentenceData/WMT/Data/10_samples.txt", "r") as sample:
         candidates = json.loads(sample.read())
     model = ReluTransReadWrite(sample_candi=np.array(candidates))
-
-    if True:
-        with open("code_outputs/2017_04_30_00_38_54/final_model_params.save", 'rb') as params:
-            model.set_param_values(cPickle.load(params))
 
     optimiser, updates = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
 
@@ -443,4 +433,17 @@ def run(out_dir):
 
 def decode_process():
     model = ReluTransReadWrite(sample_candi=None)
+    with open("code_outputs/2017_04_30_11_48_41/final_model_params.save", "rb") as params:
+        model.set_param_values(cPickle.load(params))
+
     decode_process = model.decode_fn()
+    data = None
+    with open("SentenceData/WMT/Data/newstest2012.txt", "r") as dataset:
+        train_data = json.loads(dataset.read())
+        batch_indices = np.random.choice(len(train_data), 2, replace=False)
+        data = np.array([train_data[ind] for ind in batch_indices])
+        en_batch = data[:, 0]
+        en_batch = np.array(en_batch.tolist()).astype("int8")
+        output = decode_process(en_batch)
+        print(output[-1])
+        print(data[:, 1])

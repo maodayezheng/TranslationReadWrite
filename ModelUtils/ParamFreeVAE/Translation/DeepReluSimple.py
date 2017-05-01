@@ -108,7 +108,7 @@ class DeepReluTransReadWrite(object):
 
         # Create Input Mask
         encode_mask = T.cast(T.gt(source, 1), "float32")
-        decode_mask = T.cast(T.gt(target, 0), "float32")
+        decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
         # Init Decoding States
         canvas_init = T.zeros((n, self.seq_len, self.embedding_dim), dtype="float32")
 
@@ -116,7 +116,7 @@ class DeepReluTransReadWrite(object):
             InputLayer((None, self.target_vocab_size), input_var=T.imatrix()
                        ), input_size=self.target_vocab_size, output_size=301, W=self.sample_candi)
 
-        samples = get_output(sample_candidates, target)
+        samples = get_output(sample_candidates, target[:, 1:])
         start = self.start
         h_init = T.tile(start.reshape((1, start.shape[0])), (n, 1))
         o_init = get_output(self.out_mlp, h_init)
@@ -131,9 +131,7 @@ class DeepReluTransReadWrite(object):
         # Complementary Sum for softmax approximation http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
         final_canvas = canvases[-1]
         output_embedding = get_output(self.target_input_embedding, target)
-        output_embedding = output_embedding[:, 1:, :]
-        start = T.zeros((n, 1, self.embedding_dim), "float32")
-        output_embedding = T.concatenate([start, output_embedding], axis=1)
+        output_embedding = output_embedding[:, :-1]
         teacher = T.concatenate([output_embedding, final_canvas], axis=2)
         n = teacher.shape[0]
         l = teacher.shape[1]
