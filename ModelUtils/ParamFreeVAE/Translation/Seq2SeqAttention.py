@@ -1,6 +1,7 @@
 import theano.tensor as T
 import theano
-from lasagne.layers import EmbeddingLayer, InputLayer, get_output
+from lasagne.layers import EmbeddingLayer, InputLayer, get_output, DenseLayer
+from lasagne.init import Constant
 import lasagne
 from lasagne.nonlinearities import linear, sigmoid, tanh, softmax
 from theano.gradient import zero_grad, grad_clip
@@ -15,31 +16,48 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class DeepReluTransReadWrite(object):
-    def __init__(self, training_batch_size=25, source_vocab_size=50000, target_vocab_size=50000,
-                 embed_dim=300, hid_dim=1024, source_seq_len=50,
+    def __init__(self, source_vocab_size=50000, target_vocab_size=50000,
+                 embed_dim=620, hid_dim=1000, source_seq_len=50,
                  target_seq_len=50, sample_size=301, sample_candi=None):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
-        self.batch_size = training_batch_size
-        self.hid_size = 1024
+        self.hid_size = hid_dim
         self.max_len = 51
         self.embedding_dim = embed_dim
         self.sample_candi = sample_candi
-        # Init the word embeddings.
+        self.output_score_dim = 500
+
+        # init the word embeddings.
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
-        self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
+        self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
 
         # init forward encoding RNN
-        self.forward_rnn_encoder = lasagne.layers.GRULayer(self.embedding_dim, self.hid_size)
-        self.backward_rnn_encoder = lasagne.layers.GRULayer()
-        # init decoding RNNs
-        self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
-        self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
-        self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
+        self.forward_rnn_encoder = lasagne.layers.GRULayer(InputLayer((None, None, self.embedding_dim)), self.hid_size)
+        self.backward_rnn_encoder = lasagne.layers.GRULayer(InputLayer((None, None, self.embedding_dim)), self.hid_size,
+                                                            backwards=True, mask_input=InputLayer(None, None))
 
-        # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size*2, 600, activation=tanh)
+        # init the decoding hidden init
+        self.hidden_init = DenseLayer(InputLayer((None, self.hid_size)), num_units=self.hid_size, nonlinearity=tanh,
+                                      b=Constant(0.0))
+
+        # init decoding RNNs
+        self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size*3, self.hid_size)
+        self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size*3, self.hid_size)
+        self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size*3, self.hid_size)
+
+        # init the attention param
+        self.attention_1 = DenseLayer(InputLayer((None, self.hid_size)), num_units=self.hid_size, nonlinearity=linear,
+                                      b=Constant(0.0))
+        self.attention_2 = DenseLayer(InputLayer((None, self.hid_size*2)), num_units=self.hid_size, nonlinearity=linear,
+                                      b=None)
+
+        v = np.random.uniform(-0.05, 0.05, (self.hid_size, ))
+        self.attention_3 = theano.shared(value=v.astype(theano.config.floatX), name="attention_3")
+
+        # init output mapper
+        self.out_mlp = DenseLayer(InputLayer((None, self.hid_size * 3 + self.embedding_dim)),
+                                  num_units=self.output_score_dim * 2, nonlinearity=linear, b=Constant(0.0))
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -47,20 +65,6 @@ class DeepReluTransReadWrite(object):
         embed_input = InputLayer((None, input_dim), input_var=T.imatrix())
         e = EmbeddingLayer(embed_input, input_size=cats, output_size=output_dim, W=w)
         return e
-
-    def mlp(self, input_size, output_size, n_layers=1, activation=linear):
-        """
-        :return:
-        """
-        layer = lasagne.layers.InputLayer((None, input_size))
-        if n_layers > 1:
-            for i in range(n_layers - 1):
-                layer = lasagne.layers.DenseLayer(layer, output_size, W=lasagne.init.GlorotUniform(),
-                                                  b=lasagne.init.Constant(0.0))
-        h = lasagne.layers.DenseLayer(layer, output_size, nonlinearity=activation, W=lasagne.init.GlorotUniform(),
-                                      b=lasagne.init.Constant(0.0))
-
-        return h
 
     def gru_update(self, input_size, hid_size):
         input_ = lasagne.layers.InputLayer((None, input_size))
@@ -89,13 +93,10 @@ class DeepReluTransReadWrite(object):
         :return elbo: The symbolic variable representing the ELBO.
         """
         n = source.shape[0]
+        l = source.shape[1]
         # Get input embedding
         # Exclude the first token
         source_embedding = get_output(self.input_embedding, source[:, 1:])
-
-        # RNN encoder for source language
-        encode_info = get_output(self.rnn_encoder, source_embedding)
-
         # Create Input Mask
         # Mask out the <s> </s> and <pad>
         encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
@@ -112,28 +113,41 @@ class DeepReluTransReadWrite(object):
         # Exclude the first token <s>
         samples = get_output(sample_candidates, target[:, 1:])
 
+        # RNN encoder for source language
+        forward_info = get_output(self.forward_rnn_encoder, source_embedding)
+        backward_info = self.backward_rnn_encoder.get_output_for([source_embedding, encode_mask])
+        encode_info = T.concatenate([forward_info, backward_info], axis=-1)
+
         # Init the decoding RNN
-        h_init = T.zeros((n, self.hid_size))
+        h_init = get_output(self.hidden_init, backward_info[:, -1])
 
         # Get the decoding input
         decoding_in = get_output(self.target_input_embedding, target)
         decoding_in = decoding_in[:, :-1]
         decoding_in = decoding_in.dimshuffle((1, 0, 2))
 
-        (h_t_1, update) = theano.scan(self.decode_step, sequences=[decoding_in],
-                                      outputs_info=[h_init], non_sequences=[encode_info, encode_mask])
+        hidden_score = get_output(self.attention_2, encode_info.reshape((n*l, self.hid_size*2)))
+        ([h_t_1, read_info], update) = theano.scan(self.decode_step, sequences=[decoding_in],
+                                                   outputs_info=[h_init, None],
+                                                   non_sequences=[encode_info, hidden_score, encode_mask])
 
         # Complementary sum for softmax approximation
         # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
+        hiddens = T.concatenate([h_init.reshape((1, n, self.hid_size)), h_t_1[:-1]], axis=0)
+        o = T.concatenate([hiddens, read_info, decoding_in], axis=-1)
+        d = o.shape[-1]
+        o = o.reshape((l*n, d))
+        o = get_output(self.out_mlp, o)
+        # Max out layer
+        o = o.reshape((n*l, self.output_score_dim, 2))
+        o = T.max(o, axis=-1)
 
         l = h_t_1.shape[0]
 
         # Calculate the sample score
-        h_t_1 = h_t_1.reshape((n*l, self.hid_size))
-        o = get_output(self.out_mlp, h_t_1)
-        o = o.reshape((n*l, 1, self.embedding_dim))
+        o = o.reshape((n*l, 1, self.output_score_dim))
         sample_embed = get_output(self.target_output_embedding, samples)
-        sample_embed = sample_embed.reshape((n * l, 301, self.embedding_dim))
+        sample_embed = sample_embed.reshape((n * l, 301, self.output_score_dim))
         sample_score = T.sum(sample_embed * o, axis=-1).reshape((n, l, 301))
 
         # Clip the score
@@ -152,14 +166,13 @@ class DeepReluTransReadWrite(object):
 
         return loss
 
-    def decode_step(self, teacher, h1, e_i, mask):
+    def decode_step(self, teacher, h1, e_i, h_s, mask):
         n = h1.shape[0]
         l = e_i.shape[1]
 
         # Softmax attention
-        d = h1.shape[-1]
-        h = h1.reshape((n, 1, d))
-        score = T.sum(h*e_i, axis=-1)
+        score = get_output(self.attention_1, h1)
+        score = T.dot(T.tanh(score.reshape((n, 1, self.hid_size)) + h_s), self.attention_3)
         max_clip = zero_grad(T.max(score, axis=-1))
         score = score - max_clip.reshape((n, 1))
         score = T.exp(score) * mask.reshape((n, l, 1))
@@ -176,15 +189,7 @@ class DeepReluTransReadWrite(object):
         c1 = get_output(self.gru_candidate_1, c_in)
         h1 = (1.0 - u1) * h1 + u1 * c1
 
-        return h1
-
-    def backward_step(self, x, h, m):
-        """
-        x : embedding
-        h : hidden state
-        m : mask
-        """
-
+        return h1, read_info
 
     def elbo_fn(self, num_samples):
         """
@@ -239,40 +244,75 @@ class DeepReluTransReadWrite(object):
         return optimiser, updates
 
     def get_params(self):
+        # Embeddings
         input_embedding_param = lasagne.layers.get_all_params(self.input_embedding)
         target_input_embedding_param = lasagne.layers.get_all_params(self.target_input_embedding)
         target_output_embedding_param = lasagne.layers.get_all_params(self.target_output_embedding)
-        rnn_encoder_params = lasagne.layers.get_all_params(self.rnn_encoder)
+
+        # Encoding RNNs
+        forward_rnn_param = lasagne.layers.get_all_params(self.forward_rnn_encoder)
+        backward_rnn_param = lasagne.layers.get_all_params(self.backward_rnn_encoder)
+
+        # Decoding RNNs
+        hidden_init_param = lasagne.layers.get_all_params(self.hidden_init)
         gru_1_u_param = lasagne.layers.get_all_params(self.gru_update_1)
         gru_1_r_param = lasagne.layers.get_all_params(self.gru_reset_1)
         gru_1_c_param = lasagne.layers.get_all_params(self.gru_candidate_1)
+        atn_1_param = lasagne.layers.get_all_params(self.attention_1)
+        atn_2_param = lasagne.layers.get_all_params(self.attention_2)
+        atn_3_param = [self.attention_3]
+
+        # Output layer
         out_param = lasagne.layers.get_all_params(self.out_mlp)
-        return target_input_embedding_param + target_output_embedding_param + \
+
+        return target_input_embedding_param + target_output_embedding_param + input_embedding_param + \
+               forward_rnn_param + backward_rnn_param + \
                gru_1_c_param + gru_1_r_param + gru_1_u_param + \
-               out_param + input_embedding_param + rnn_encoder_params
+               hidden_init_param + atn_1_param + atn_2_param + atn_3_param + \
+               out_param
 
     def get_param_values(self):
+        # Embeddings
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
         target_input_embedding_param = lasagne.layers.get_all_param_values(self.target_input_embedding)
         target_output_embedding_param = lasagne.layers.get_all_param_values(self.target_output_embedding)
-        rnn_encoder_params = lasagne.layers.get_all_param_values(self.rnn_encoder)
+
+        # Encoding RNNs
+        forward_rnn_param = lasagne.layers.get_all_param_values(self.forward_rnn_encoder)
+        backward_rnn_param = lasagne.layers.get_all_param_values(self.backward_rnn_encoder)
+
+        # Decoding RNNs
+        hidden_init_param = lasagne.layers.get_all_param_values(self.hidden_init)
         gru_1_u_param = lasagne.layers.get_all_param_values(self.gru_update_1)
         gru_1_r_param = lasagne.layers.get_all_param_values(self.gru_reset_1)
         gru_1_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_1)
+        atn_1_param = lasagne.layers.get_all_param_values(self.attention_1)
+        atn_2_param = lasagne.layers.get_all_param_values(self.attention_2)
+        atn_3_param = self.attention_3.get_value()
+
+        # Output layer
         out_param = lasagne.layers.get_all_param_values(self.out_mlp)
+
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
-                rnn_encoder_params, gru_1_u_param, gru_1_r_param, gru_1_c_param,
+                forward_rnn_param, backward_rnn_param, hidden_init_param,
+                gru_1_u_param, gru_1_r_param, gru_1_c_param,
+                atn_1_param, atn_2_param, atn_3_param,
                 out_param]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
         lasagne.layers.set_all_param_values(self.target_input_embedding, params[1])
         lasagne.layers.set_all_param_values(self.target_output_embedding, params[2])
-        lasagne.layers.set_all_param_values(self.rnn_encoder, params[3])
-        lasagne.layers.set_all_param_values(self.gru_update_1, params[4])
-        lasagne.layers.set_all_param_values(self.gru_reset_1, params[5])
-        lasagne.layers.set_all_param_values(self.gru_candidate_1, params[6])
-        lasagne.layers.set_all_param_values(self.out_mlp, params[7])
+        lasagne.layers.set_all_param_values(self.forward_rnn_encoder, params[3])
+        lasagne.layers.set_all_param_values(self.backward_rnn_encoder, params[4])
+        lasagne.layers.set_all_param_values(self.hidden_init, params[5])
+        lasagne.layers.set_all_param_values(self.gru_update_1, params[6])
+        lasagne.layers.set_all_param_values(self.gru_reset_1, params[7])
+        lasagne.layers.set_all_param_values(self.gru_candidate_1, params[8])
+        lasagne.layers.set_all_param_values(self.attention_1, params[9])
+        lasagne.layers.set_all_param_values(self.attention_2, params[10])
+        self.attention_3.set_value(params[11])
+        lasagne.layers.set_all_param_values(self.out_mlp, params[12])
 
 
 def run(out_dir):
