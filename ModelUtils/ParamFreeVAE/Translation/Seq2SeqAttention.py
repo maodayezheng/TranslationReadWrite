@@ -31,16 +31,15 @@ class DeepReluTransReadWrite(object):
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
 
         # init encoding RNN
-        self.rnn_encoder = lasagne.layers.GRULayer(lasagne.layers.InputLayer((None, None, self.embedding_dim)),
-                                                   num_units=self.hid_size)
+        self.rnn_encoder = lasagne.layers.GRULayer(self.embedding_dim, self.hid_size)
 
         # init decoding RNNs
-        self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size*2, self.hid_size)
-        self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size*2, self.hid_size)
-        self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size*2, self.hid_size)
+        self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
+        self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
+        self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
         # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size, 300, activation=tanh)
+        self.out_mlp = self.mlp(self.hid_size*2, 600, activation=tanh)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -91,22 +90,32 @@ class DeepReluTransReadWrite(object):
         """
         n = source.shape[0]
         # Get input embedding
+        # Exclude the first token
         source_embedding = get_output(self.input_embedding, source[:, 1:])
 
+        # RNN encoder for source language
         encode_info = get_output(self.rnn_encoder, source_embedding)
+
         # Create Input Mask
+        # Mask out the <s> </s> and <pad>
         encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+
         d_m = T.cast(T.gt(target, -1), "float32")
+        # Mask out <s> for decoding
         decode_mask = d_m[:, 1:]
-        # Init Decoding States
 
         sample_candidates = lasagne.layers.EmbeddingLayer(
             InputLayer((None, self.target_vocab_size), input_var=T.imatrix()
                        ), input_size=self.target_vocab_size, output_size=301, W=self.sample_candi)
 
+        # Get the approximation samples for output softmax
+        # Exclude the first token <s>
         samples = get_output(sample_candidates, target[:, 1:])
+
+        # Init the decoding RNN
         h_init = T.zeros((n, self.hid_size))
 
+        # Get the decoding input
         decoding_in = get_output(self.target_input_embedding, target)
         decoding_in = decoding_in[:, :-1]
         decoding_in = decoding_in.dimshuffle((1, 0, 2))
@@ -114,17 +123,25 @@ class DeepReluTransReadWrite(object):
         (h_t_1, update) = theano.scan(self.step, sequences=[decoding_in],
                                       outputs_info=[h_init], non_sequences=[encode_info, encode_mask])
 
-        # Complementary Sum for softmax approximation http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
+        # Complementary sum for softmax approximation
+        # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
+
         l = h_t_1.shape[0]
+
+        # Calculate the sample score
         h_t_1 = h_t_1.reshape((n*l, self.hid_size))
         o = get_output(self.out_mlp, h_t_1)
         o = o.reshape((n*l, 1, self.embedding_dim))
         sample_embed = get_output(self.target_output_embedding, samples)
         sample_embed = sample_embed.reshape((n * l, 301, self.embedding_dim))
         sample_score = T.sum(sample_embed * o, axis=-1).reshape((n, l, 301))
+
+        # Clip the score
         max_clip = T.max(sample_score, axis=-1)
         score_clip = zero_grad(max_clip)
         sample_score = T.exp(sample_score - score_clip.reshape((n, l, 1)))
+
+        # The last token is the true label
         score = sample_score[:, :, -1]
         sample_score = T.sum(sample_score, axis=-1)
         prob = score / sample_score
@@ -139,16 +156,16 @@ class DeepReluTransReadWrite(object):
         n = h1.shape[0]
         l = e_i.shape[1]
 
-        # Softmax
+        # Softmax attention
         d = h1.shape[-1]
         h = h1.reshape((n, 1, d))
         score = T.sum(h*e_i, axis=-1)
         max_clip = zero_grad(T.max(score, axis=-1))
         score = score - max_clip.reshape((n, 1))
-        score = T.exp(score) * mask.reshape((n, l))
+        score = T.exp(score) * mask.reshape((n, l, 1))
         total = T.sum(score, axis=-1)
         attention = score / total.reshape((n, 1))
-        read_info = T.sum(e_i * attention.reshape((n, l, 1)), axis=1)
+        read_info = T.sum(e_i * attention.reshape((n, l, 1)), axis=-1)
 
         # Decoding GRU layer 1
         h_in = T.concatenate([teacher, h1, read_info], axis=1)
@@ -274,14 +291,18 @@ def run(out_dir):
         candidates = json.loads(sample.read())
     model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1])
 
-    op, up = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
+    optimisers = []
+    for b in buckets:
+        op, up = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
+        optimisers.append(op)
     l0 = len(batchs[0])
     l1 = len(batchs[1])
     l2 = len(batchs[2])
-    l = l0 + l1 + l2
-    idxs = np.random.choice(a=[0, 1, 2], size=200000, p=[float(l0 / l), float(l1 / l), float(l2 / l)])
+    l = l0+l1+l2
+    idxs = np.random.choice(a=[0, 1, 2], size=300000, p=[float(l0/l), float(l1/l), float(l2/l)])
     iter = 0
     for b_idx in idxs.tolist():
+        optimiser = optimisers[b_idx]
         batch = batchs[b_idx]
         start = time.clock()
         batch_indices = np.random.choice(len(batch), 25, replace=False)
@@ -290,21 +311,15 @@ def run(out_dir):
         en_batch = np.array(en_batch.tolist())
         de_batch = mini_batch[:, 1]
         de_batch = np.array(de_batch.tolist())
-        output = op(en_batch, de_batch)
+        output = optimiser(en_batch, de_batch)
         loss = output[0]
         training_loss.append(loss)
 
         if iter % 500 == 0:
             print("==" * 5)
-            print(
-                'Iteration ' + str(iter) + ' per data point (time taken = ' + str(time.clock() - start) + ' seconds)')
+            print('Iteration ' + str(iter) + ' per data point (time taken = ' + str(time.clock() - start) + ' seconds)')
             print('The training loss : ' + str(loss))
             print("")
-
-        if iter % 50000 == 0 and iter is not 0:
-            with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:
-                cPickle.dump(model.get_param_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
-                f.close()
         iter += 1
 
     np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
