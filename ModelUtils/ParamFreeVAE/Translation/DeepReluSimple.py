@@ -16,7 +16,7 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=50000, target_vocab_size=50000,
-                 embed_dim=300, hid_dim=1024, source_seq_len=50,
+                 embed_dim=600, hid_dim=1024, source_seq_len=50,
                  target_seq_len=50, sample_size=301, sample_candi=None):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
@@ -44,7 +44,7 @@ class DeepReluTransReadWrite(object):
         self.gru_candidate_2 = self.gru_candidate(self.embedding_dim + self.hid_size*2, self.hid_size)
 
         # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size*2, 600, activation=tanh)
+        self.out_mlp = self.mlp(self.hid_size*2, self.embedding_dim*2, activation=tanh)
         # attention parameters
         v = np.random.uniform(-0.05, 0.05, (self.embedding_dim, 2*self.max_len)).astype(theano.config.floatX)
         self.attention_weight = theano.shared(name="attention_weight", value=v)
@@ -346,7 +346,7 @@ def run(out_dir):
         candidates = json.loads(sample.read())
     model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1])
 
-    with open('code_outputs/2017_05_01_17_22_36/final_model_params.save', 'rb') as f:
+    with open('code_outputs/2017_05_02_01_00_11/final_model_params.save', 'rb') as f:
         model.set_param_values(cPickle.load(f))
 
     optimisers = []
@@ -357,7 +357,7 @@ def run(out_dir):
     l1 = len(batchs[1])
     l2 = len(batchs[2])
     l = l0+l1+l2
-    idxs = np.random.choice(a=[0, 1, 2], size=200000, p=[float(l0/l), float(l1/l), float(l2/l)])
+    idxs = np.random.choice(a=[0, 1, 2], size=500000, p=[float(l0/l), float(l1/l), float(l2/l)])
     iter = 0
     for b_idx in idxs.tolist():
         optimiser = optimisers[b_idx]
