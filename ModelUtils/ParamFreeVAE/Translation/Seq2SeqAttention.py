@@ -347,7 +347,7 @@ def run(out_dir):
     l1 = len(batchs[1])
     l2 = len(batchs[2])
     l = l0+l1+l2
-    idxs = np.random.choice(a=[0, 1, 2], size=300000, p=[float(l0/l), float(l1/l), float(l2/l)])
+    idxs = np.random.choice(a=[0, 1, 2], size=1, p=[float(l0/l), float(l1/l), float(l2/l)])
     iter = 0
     for b_idx in idxs.tolist():
         optimiser = optimisers[b_idx]
