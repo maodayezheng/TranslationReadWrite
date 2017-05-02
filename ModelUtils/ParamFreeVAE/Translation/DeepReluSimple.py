@@ -49,16 +49,16 @@ class DeepReluTransReadWrite(object):
         self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size*2, self.hid_size)
 
         # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size*2, self.output_score_dim*2, activation=tanh)
+        self.out_mlp = self.mlp(self.hid_size, self.output_score_dim*2, activation=tanh)
         # attention parameters
-        v = np.random.uniform(-0.05, 0.05, (self.embedding_dim, 2*self.max_len)).astype(theano.config.floatX)
+        v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, 2*self.max_len)).astype(theano.config.floatX)
         self.attention_weight = theano.shared(name="attention_weight", value=v)
 
         v = np.zeros((2 * self.max_len, )).astype(theano.config.floatX)
         self.attention_bias = theano.shared(name="attention_bias", value=v)
 
         # teacher mapper
-        self.score = self.mlp(self.output_score_dim*2, self.output_score_dim, activation=linear)
+        self.score = self.mlp(self.output_score_dim + self.embedding_dim, self.output_score_dim, activation=linear)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -139,8 +139,8 @@ class DeepReluTransReadWrite(object):
         write_attention_bias = self.attention_bias[self.max_len:(self.max_len + seq_len)]
         write_attention_bias = write_attention_bias.reshape((1, seq_len))
 
-        read_attention_init = T.nnet.relu(T.tanh(T.dot(o_init[:, :self.embedding_dim], read_attention_weight) + read_attention_bias))
-        write_attention_init = T.nnet.relu(T.tanh(T.dot(o_init[:, :self.embedding_dim], write_attention_weight) + write_attention_bias))
+        read_attention_init = T.nnet.relu(T.tanh(T.dot(o_init[:, :self.output_score_dim], read_attention_weight) + read_attention_bias))
+        write_attention_init = T.nnet.relu(T.tanh(T.dot(o_init[:, :self.output_score_dim], write_attention_weight) + write_attention_bias))
 
         ([h_t_1, h_t_2, h_t_3, canvases, read_attention, write_attention], update) \
             = theano.scan(self.step, outputs_info=[h_init[:, :, 0], h_init[:, :, 1], h_init[:, :, 2],
@@ -380,9 +380,6 @@ def run(out_dir):
         candidates = json.loads(sample.read())
     model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1])
 
-    with open('code_outputs/2017_05_02_01_00_11/final_model_params.save', 'rb') as f:
-        model.set_param_values(cPickle.load(f))
-
     optimisers = []
     for b in buckets:
         op, up = model.optimiser(lasagne.updates.rmsprop, update_kwargs, b[0], b[1])
@@ -391,13 +388,13 @@ def run(out_dir):
     l1 = len(batchs[1])
     l2 = len(batchs[2])
     l = l0+l1+l2
-    idxs = np.random.choice(a=[0, 1, 2], size=500000, p=[float(l0/l), float(l1/l), float(l2/l)])
+    idxs = np.random.choice(a=[0, 1, 2], size=300000, p=[float(l0/l), float(l1/l), float(l2/l)])
     iter = 0
     for b_idx in idxs.tolist():
         optimiser = optimisers[b_idx]
         batch = batchs[b_idx]
         start = time.clock()
-        batch_indices = np.random.choice(len(batch), 25, replace=False)
+        batch_indices = np.random.choice(len(batch), 80, replace=False)
         mini_batch = np.array([batch[ind] for ind in batch_indices])
         en_batch = mini_batch[:, 0]
         en_batch = np.array(en_batch.tolist())
