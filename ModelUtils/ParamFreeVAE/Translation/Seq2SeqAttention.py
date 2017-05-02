@@ -31,15 +31,16 @@ class DeepReluTransReadWrite(object):
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
 
         # init encoding RNN
-        self.rnn_encoder = lasagne.layers.GRULayer(self.embedding_dim, self.hid_size)
+        self.rnn_encoder = lasagne.layers.GRULayer(lasagne.layers.InputLayer((None, None, self.embedding_dim)),
+                                                   num_units=self.hid_size)
 
         # init decoding RNNs
-        self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
-        self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
-        self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
+        self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size*2, self.hid_size)
+        self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size*2, self.hid_size)
+        self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size*2, self.hid_size)
 
         # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size*2, 600, activation=tanh)
+        self.out_mlp = self.mlp(self.hid_size, 300, activation=tanh)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -144,10 +145,10 @@ class DeepReluTransReadWrite(object):
         score = T.sum(h*e_i, axis=-1)
         max_clip = zero_grad(T.max(score, axis=-1))
         score = score - max_clip.reshape((n, 1))
-        score = T.exp(score) * mask.reshape((n, l, 1))
+        score = T.exp(score) * mask.reshape((n, l))
         total = T.sum(score, axis=-1)
         attention = score / total.reshape((n, 1))
-        read_info = T.sum(e_i * attention.reshape((n, l, 1)), axis=-1)
+        read_info = T.sum(e_i * attention.reshape((n, l, 1)), axis=1)
 
         # Decoding GRU layer 1
         h_in = T.concatenate([teacher, h1, read_info], axis=1)
@@ -177,7 +178,7 @@ class DeepReluTransReadWrite(object):
                                   allow_input_downcast=True)
         return elbo_fn
 
-    def optimiser(self, update, update_kwargs, seq_len, n_step, saved_update=None):
+    def optimiser(self, update, update_kwargs, saved_update=None):
         """
         Return the compiled Theano function which both evaluates the evidence lower bound (ELBO), and updates the model
         parameters to increase the ELBO.
@@ -273,18 +274,14 @@ def run(out_dir):
         candidates = json.loads(sample.read())
     model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1])
 
-    optimisers = []
-    for b in buckets:
-        op, up = model.optimiser(lasagne.updates.rmsprop, update_kwargs, b[0], b[1])
-        optimisers.append(op)
+    op, up = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
     l0 = len(batchs[0])
     l1 = len(batchs[1])
     l2 = len(batchs[2])
-    l = l0+l1+l2
-    idxs = np.random.choice(a=[0, 1, 2], size=300000, p=[float(l0/l), float(l1/l), float(l2/l)])
+    l = l0 + l1 + l2
+    idxs = np.random.choice(a=[0, 1, 2], size=200000, p=[float(l0 / l), float(l1 / l), float(l2 / l)])
     iter = 0
     for b_idx in idxs.tolist():
-        optimiser = optimisers[b_idx]
         batch = batchs[b_idx]
         start = time.clock()
         batch_indices = np.random.choice(len(batch), 25, replace=False)
@@ -293,15 +290,21 @@ def run(out_dir):
         en_batch = np.array(en_batch.tolist())
         de_batch = mini_batch[:, 1]
         de_batch = np.array(de_batch.tolist())
-        output = optimiser(en_batch, de_batch)
+        output = op(en_batch, de_batch)
         loss = output[0]
         training_loss.append(loss)
 
         if iter % 500 == 0:
             print("==" * 5)
-            print('Iteration ' + str(iter) + ' per data point (time taken = ' + str(time.clock() - start) + ' seconds)')
+            print(
+                'Iteration ' + str(iter) + ' per data point (time taken = ' + str(time.clock() - start) + ' seconds)')
             print('The training loss : ' + str(loss))
             print("")
+
+        if iter % 50000 == 0 and iter is not 0:
+            with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:
+                cPickle.dump(model.get_param_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
+                f.close()
         iter += 1
 
     np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
