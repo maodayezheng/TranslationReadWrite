@@ -30,9 +30,9 @@ class DeepReluTransReadWrite(object):
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
 
-        # init encoding RNN
-        self.rnn_encoder = lasagne.layers.GRULayer(self.embedding_dim, self.hid_size)
-
+        # init forward encoding RNN
+        self.forward_rnn_encoder = lasagne.layers.GRULayer(self.embedding_dim, self.hid_size)
+        self.backward_rnn_encoder = lasagne.layers.GRULayer()
         # init decoding RNNs
         self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
@@ -120,7 +120,7 @@ class DeepReluTransReadWrite(object):
         decoding_in = decoding_in[:, :-1]
         decoding_in = decoding_in.dimshuffle((1, 0, 2))
 
-        (h_t_1, update) = theano.scan(self.step, sequences=[decoding_in],
+        (h_t_1, update) = theano.scan(self.decode_step, sequences=[decoding_in],
                                       outputs_info=[h_init], non_sequences=[encode_info, encode_mask])
 
         # Complementary sum for softmax approximation
@@ -152,7 +152,7 @@ class DeepReluTransReadWrite(object):
 
         return loss
 
-    def step(self, teacher, h1, e_i, mask):
+    def decode_step(self, teacher, h1, e_i, mask):
         n = h1.shape[0]
         l = e_i.shape[1]
 
@@ -177,6 +177,14 @@ class DeepReluTransReadWrite(object):
         h1 = (1.0 - u1) * h1 + u1 * c1
 
         return h1
+
+    def backward_step(self, x, h, m):
+        """
+        x : embedding
+        h : hidden state
+        m : mask
+        """
+
 
     def elbo_fn(self, num_samples):
         """
