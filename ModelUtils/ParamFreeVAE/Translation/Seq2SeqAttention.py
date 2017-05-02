@@ -90,22 +90,32 @@ class DeepReluTransReadWrite(object):
         """
         n = source.shape[0]
         # Get input embedding
+        # Exclude the first token
         source_embedding = get_output(self.input_embedding, source[:, 1:])
 
+        # RNN encoder for source language
         encode_info = get_output(self.rnn_encoder, source_embedding)
+
         # Create Input Mask
+        # Mask out the <s> </s> and <pad>
         encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+
         d_m = T.cast(T.gt(target, -1), "float32")
+        # Mask out <s> for decoding
         decode_mask = d_m[:, 1:]
-        # Init Decoding States
 
         sample_candidates = lasagne.layers.EmbeddingLayer(
             InputLayer((None, self.target_vocab_size), input_var=T.imatrix()
                        ), input_size=self.target_vocab_size, output_size=301, W=self.sample_candi)
 
+        # Get the approximation samples for output softmax
+        # Exclude the first token <s>
         samples = get_output(sample_candidates, target[:, 1:])
+
+        # Init the decoding RNN
         h_init = T.zeros((n, self.hid_size))
 
+        # Get the decoding input
         decoding_in = get_output(self.target_input_embedding, target)
         decoding_in = decoding_in[:, :-1]
         decoding_in = decoding_in.dimshuffle((1, 0, 2))
@@ -113,17 +123,25 @@ class DeepReluTransReadWrite(object):
         (h_t_1, update) = theano.scan(self.step, sequences=[decoding_in],
                                       outputs_info=[h_init], non_sequences=[encode_info, encode_mask])
 
-        # Complementary Sum for softmax approximation http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
+        # Complementary sum for softmax approximation
+        # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
+
         l = h_t_1.shape[0]
+
+        # Calculate the sample score
         h_t_1 = h_t_1.reshape((n*l, self.hid_size))
         o = get_output(self.out_mlp, h_t_1)
         o = o.reshape((n*l, 1, self.embedding_dim))
         sample_embed = get_output(self.target_output_embedding, samples)
         sample_embed = sample_embed.reshape((n * l, 301, self.embedding_dim))
         sample_score = T.sum(sample_embed * o, axis=-1).reshape((n, l, 301))
+
+        # Clip the score
         max_clip = T.max(sample_score, axis=-1)
         score_clip = zero_grad(max_clip)
         sample_score = T.exp(sample_score - score_clip.reshape((n, l, 1)))
+
+        # The last token is the true label
         score = sample_score[:, :, -1]
         sample_score = T.sum(sample_score, axis=-1)
         prob = score / sample_score
@@ -138,7 +156,7 @@ class DeepReluTransReadWrite(object):
         n = h1.shape[0]
         l = e_i.shape[1]
 
-        # Softmax
+        # Softmax attention
         d = h1.shape[-1]
         h = h1.reshape((n, 1, d))
         score = T.sum(h*e_i, axis=-1)
