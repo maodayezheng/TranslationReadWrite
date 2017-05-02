@@ -195,7 +195,7 @@ class DeepReluTransReadWrite(object):
                                   allow_input_downcast=True)
         return elbo_fn
 
-    def optimiser(self, update, update_kwargs, seq_len, n_step, saved_update=None):
+    def optimiser(self, update, update_kwargs, saved_update=None):
         """
         Return the compiled Theano function which both evaluates the evidence lower bound (ELBO), and updates the model
         parameters to increase the ELBO.
@@ -293,7 +293,7 @@ def run(out_dir):
 
     optimisers = []
     for b in buckets:
-        op, up = model.optimiser(lasagne.updates.rmsprop, update_kwargs, b[0], b[1])
+        op, up = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
         optimisers.append(op)
     l0 = len(batchs[0])
     l1 = len(batchs[1])

@@ -105,13 +105,15 @@ class DeepReluTransReadWrite(object):
         n = source.shape[0]
         # Get input embedding
         source_embedding = get_output(self.input_embedding, source[:, 1:])
-        # Generate Index Vectors
 
-        # Create Input Mask
+        # Create input mask
         encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+
+        # Create decoding mask
         d_m = T.cast(T.gt(target, -1), "float32")
         decode_mask = d_m[:, 1:]
-        # Init Decoding States
+
+        # Init decoding states
         canvas_init = T.zeros((n, seq_len, self.embedding_dim), dtype="float32")
 
         sample_candidates = lasagne.layers.EmbeddingLayer(
@@ -141,7 +143,8 @@ class DeepReluTransReadWrite(object):
                                          read_attention_bias, write_attention_bias],
                           n_steps=n_step)
 
-        # Complementary Sum for softmax approximation http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
+        # Complementary Sum for softmax approximation
+        # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
         final_canvas = canvases[-1]
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
