@@ -127,7 +127,7 @@ class DeepReluTransReadWrite(object):
 
         samples = get_output(sample_candidates, target[:, 1:])
         start = self.start
-        h_init = T.tile(start.reshape((1, start.shape[0])), (n, 1))
+        h_init = T.tile(start.reshape((1, start.shape[0], 3)), (n, 1, 1))
         o_init = get_output(self.out_mlp, T.max(start, axis=-1))
         o_init = T.tile(o_init.reshape((1, self.hid_size)), (n, 1))
         source_embedding = source_embedding * encode_mask.reshape((n, seq_len, 1))
@@ -234,7 +234,7 @@ class DeepReluTransReadWrite(object):
 
         # Writing position
         # Write: K => L
-        return h1, h2, canvas, read_attention, write_attention
+        return h1, h2, h3, canvas, read_attention, write_attention
 
     def elbo_fn(self, num_samples):
         """
