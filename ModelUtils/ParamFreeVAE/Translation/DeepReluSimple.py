@@ -343,6 +343,9 @@ def run(out_dir):
         candidates = json.loads(sample.read())
     model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1])
 
+    with open('code_outputs/2017_05_01_17_22_36/final_model_params.save', 'rb') as f:
+        model.set_param_values(cPickle.load(f))
+
     optimisers = []
     for b in buckets:
         op, up = model.optimiser(lasagne.updates.rmsprop, update_kwargs, b[0], b[1])
@@ -351,7 +354,7 @@ def run(out_dir):
     l1 = len(batchs[1])
     l2 = len(batchs[2])
     l = l0+l1+l2
-    idxs = np.random.choice(a=[0, 1, 2], size=100000, p=[float(l0/l), float(l1/l), float(l2/l)])
+    idxs = np.random.choice(a=[0, 1, 2], size=200000, p=[float(l0/l), float(l1/l), float(l2/l)])
     iter = 0
     for b_idx in idxs.tolist():
         optimiser = optimisers[b_idx]
@@ -386,6 +389,10 @@ def run(out_dir):
                     print(" Target " + str(write_attention[t, n]))
                     print("")
 
+        if iter % 50000 == 0 and iter is not 0:
+            with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:
+                cPickle.dump(model.get_param_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
+                f.close()
         iter += 1
 
     np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
