@@ -125,7 +125,7 @@ class DeepReluTransReadWrite(object):
                                                        encode_mask.dimshuffle((1, 0))],
                                             outputs_info=[T.zeros((n, self.hid_size), dtype="float32")],
                                             go_backwards=True)
-        (backward_info, up_back) = theano.scan(fn=lambda x: x, sequences=[back_h])
+        (backward_info, up_back) = theano.scan(fn=lambda x: x, sequences=[back_h], go_backwards=True)
 
         backward_info = backward_info.dimshuffle((1, 0, 2))
         encode_info = T.concatenate([forward_info, backward_info], axis=-1)
