@@ -34,8 +34,12 @@ class DeepReluTransReadWrite(object):
 
         # init forward encoding RNN
         self.forward_rnn_encoder = lasagne.layers.GRULayer(InputLayer((None, None, self.embedding_dim)), self.hid_size)
-        self.backward_rnn_encoder = lasagne.layers.GRULayer(InputLayer((None, None, self.embedding_dim)), self.hid_size,
-                                                            backwards=True, mask_input=InputLayer(None, None))
+
+        # init backward encoding RNN
+
+        self.back_gru_update = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
+        self.back_gru_reset = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
+        self.back_gru_candidate = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
         # init the decoding hidden init
         self.hidden_init = DenseLayer(InputLayer((None, self.hid_size)), num_units=self.hid_size, nonlinearity=tanh,
@@ -115,7 +119,15 @@ class DeepReluTransReadWrite(object):
 
         # RNN encoder for source language
         forward_info = get_output(self.forward_rnn_encoder, source_embedding)
-        backward_info = self.backward_rnn_encoder.get_output_for([source_embedding, encode_mask])
+
+        (back_h, update_back) = theano.scan(self.backward_step,
+                                            sequences=[source_embedding.dimshuffle((1, 0, 2)),
+                                                       encode_mask.dimshuffle((1, 0, 2))],
+                                            outputs_info=[T.zeros((n, self.hid_size), dtype="float32")],
+                                            go_backwards=True)
+        (backward_info, up_back) = theano.scan(fn=lambda x: x, sequences=[back_h])
+
+        backward_info = backward_info.dimshuffle((1, 0, 2))
         encode_info = T.concatenate([forward_info, backward_info], axis=-1)
 
         # Init the decoding RNN
@@ -165,6 +177,18 @@ class DeepReluTransReadWrite(object):
         loss = -T.mean(T.sum(loss, axis=1))
 
         return loss
+
+    def backward_step(self, x, m, h):
+        n = h.shape[0]
+        h_in = T.concatenate([x, h], axis=1)
+        u1 = get_output(self.back_gru_update, h_in)
+        r1 = get_output(self.back_gru_reset, h_in)
+        reset_h1 = h * r1
+        c_in = T.concatenate([x, reset_h1], axis=1)
+        c1 = get_output(self.gru_candidate_1, c_in)
+        h = (1.0 - u1) * h + u1 * c1
+
+        return h*m.reshape((n, 1))
 
     def decode_step(self, teacher, h1, e_i, h_s, mask):
         n = h1.shape[0]
@@ -251,7 +275,10 @@ class DeepReluTransReadWrite(object):
 
         # Encoding RNNs
         forward_rnn_param = lasagne.layers.get_all_params(self.forward_rnn_encoder)
-        backward_rnn_param = lasagne.layers.get_all_params(self.backward_rnn_encoder)
+
+        back_u_param = lasagne.layers.get_all_params(self.back_gru_update)
+        back_r_param = lasagne.layers.get_all_params(self.back_gru_reset)
+        back_c_param = lasagne.layers.get_all_params(self.back_gru_candidate)
 
         # Decoding RNNs
         hidden_init_param = lasagne.layers.get_all_params(self.hidden_init)
@@ -266,7 +293,7 @@ class DeepReluTransReadWrite(object):
         out_param = lasagne.layers.get_all_params(self.out_mlp)
 
         return target_input_embedding_param + target_output_embedding_param + input_embedding_param + \
-               forward_rnn_param + backward_rnn_param + \
+               forward_rnn_param + back_c_param + back_u_param + back_r_param +\
                gru_1_c_param + gru_1_r_param + gru_1_u_param + \
                hidden_init_param + atn_1_param + atn_2_param + atn_3_param + \
                out_param
@@ -279,7 +306,9 @@ class DeepReluTransReadWrite(object):
 
         # Encoding RNNs
         forward_rnn_param = lasagne.layers.get_all_param_values(self.forward_rnn_encoder)
-        backward_rnn_param = lasagne.layers.get_all_param_values(self.backward_rnn_encoder)
+        back_u_param = lasagne.layers.get_all_param_values(self.back_gru_update)
+        back_r_param = lasagne.layers.get_all_param_values(self.back_gru_reset)
+        back_c_param = lasagne.layers.get_all_param_values(self.back_gru_candidate)
 
         # Decoding RNNs
         hidden_init_param = lasagne.layers.get_all_param_values(self.hidden_init)
@@ -294,7 +323,8 @@ class DeepReluTransReadWrite(object):
         out_param = lasagne.layers.get_all_param_values(self.out_mlp)
 
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
-                forward_rnn_param, backward_rnn_param, hidden_init_param,
+                forward_rnn_param, back_u_param, back_r_param, back_c_param,
+                hidden_init_param,
                 gru_1_u_param, gru_1_r_param, gru_1_c_param,
                 atn_1_param, atn_2_param, atn_3_param,
                 out_param]
@@ -304,15 +334,17 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.target_input_embedding, params[1])
         lasagne.layers.set_all_param_values(self.target_output_embedding, params[2])
         lasagne.layers.set_all_param_values(self.forward_rnn_encoder, params[3])
-        lasagne.layers.set_all_param_values(self.backward_rnn_encoder, params[4])
-        lasagne.layers.set_all_param_values(self.hidden_init, params[5])
-        lasagne.layers.set_all_param_values(self.gru_update_1, params[6])
-        lasagne.layers.set_all_param_values(self.gru_reset_1, params[7])
-        lasagne.layers.set_all_param_values(self.gru_candidate_1, params[8])
-        lasagne.layers.set_all_param_values(self.attention_1, params[9])
-        lasagne.layers.set_all_param_values(self.attention_2, params[10])
-        self.attention_3.set_value(params[11])
-        lasagne.layers.set_all_param_values(self.out_mlp, params[12])
+        lasagne.layers.set_all_param_values(self.hidden_init, params[4])
+        lasagne.layers.set_all_param_values(self.gru_update_1, params[5])
+        lasagne.layers.set_all_param_values(self.gru_reset_1, params[6])
+        lasagne.layers.set_all_param_values(self.gru_candidate_1, params[7])
+        lasagne.layers.set_all_param_values(self.back_gru_update, params[8])
+        lasagne.layers.set_all_param_values(self.back_gru_reset, params[9])
+        lasagne.layers.set_all_param_values(self.back_gru_candidate, params[10])
+        lasagne.layers.set_all_param_values(self.attention_1, params[11])
+        lasagne.layers.set_all_param_values(self.attention_2, params[12])
+        self.attention_3.set_value(params[13])
+        lasagne.layers.set_all_param_values(self.out_mlp, params[14])
 
 
 def run(out_dir):
