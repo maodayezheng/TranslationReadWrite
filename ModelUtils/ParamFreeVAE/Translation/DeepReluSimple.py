@@ -388,13 +388,13 @@ def run(out_dir):
     l1 = len(batchs[1])
     l2 = len(batchs[2])
     l = l0+l1+l2
-    idxs = np.random.choice(a=[0, 1, 2], size=300000, p=[float(l0/l), float(l1/l), float(l2/l)])
+    idxs = np.random.choice(a=[0, 1, 2], size=900000, p=[float(l0/l), float(l1/l), float(l2/l)])
     iter = 0
     for b_idx in idxs.tolist():
         optimiser = optimisers[b_idx]
         batch = batchs[b_idx]
         start = time.clock()
-        batch_indices = np.random.choice(len(batch), 80, replace=False)
+        batch_indices = np.random.choice(len(batch), 30, replace=False)
         mini_batch = np.array([batch[ind] for ind in batch_indices])
         en_batch = mini_batch[:, 0]
         en_batch = np.array(en_batch.tolist())
