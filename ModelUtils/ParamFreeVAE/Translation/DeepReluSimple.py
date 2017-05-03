@@ -424,6 +424,7 @@ def run(out_dir):
                     print("")
 
         if iter % 50000 == 0 and iter is not 0:
+            np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
             with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:
                 cPickle.dump(model.get_param_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
                 f.close()

@@ -97,10 +97,10 @@ class DeepReluTransReadWrite(object):
         :return elbo: The symbolic variable representing the ELBO.
         """
         n = source.shape[0]
-        l = source.shape[1]
         # Get input embedding
         # Exclude the first token
         source_embedding = get_output(self.input_embedding, source[:, 1:])
+        l = source_embedding.shape[1]
         # Create Input Mask
         # Mask out the <s> </s> and <pad>
         encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
@@ -122,7 +122,7 @@ class DeepReluTransReadWrite(object):
 
         (back_h, update_back) = theano.scan(self.backward_step,
                                             sequences=[source_embedding.dimshuffle((1, 0, 2)),
-                                                       encode_mask.dimshuffle((1, 0, 2))],
+                                                       encode_mask.dimshuffle((1, 0))],
                                             outputs_info=[T.zeros((n, self.hid_size), dtype="float32")],
                                             go_backwards=True)
         (backward_info, up_back) = theano.scan(fn=lambda x: x, sequences=[back_h])
@@ -139,6 +139,7 @@ class DeepReluTransReadWrite(object):
         decoding_in = decoding_in.dimshuffle((1, 0, 2))
 
         hidden_score = get_output(self.attention_2, encode_info.reshape((n*l, self.hid_size*2)))
+        hidden_score = hidden_score.reshape((n, l, self.hid_size))
         ([h_t_1, read_info], update) = theano.scan(self.decode_step, sequences=[decoding_in],
                                                    outputs_info=[h_init, None],
                                                    non_sequences=[encode_info, hidden_score, encode_mask])
@@ -185,7 +186,7 @@ class DeepReluTransReadWrite(object):
         r1 = get_output(self.back_gru_reset, h_in)
         reset_h1 = h * r1
         c_in = T.concatenate([x, reset_h1], axis=1)
-        c1 = get_output(self.gru_candidate_1, c_in)
+        c1 = get_output(self.back_gru_candidate, c_in)
         h = (1.0 - u1) * h + u1 * c1
 
         return h*m.reshape((n, 1))
@@ -196,13 +197,14 @@ class DeepReluTransReadWrite(object):
 
         # Softmax attention
         score = get_output(self.attention_1, h1)
-        score = T.dot(T.tanh(score.reshape((n, 1, self.hid_size)) + h_s), self.attention_3)
+        score = T.tanh(score.reshape((n, 1, self.hid_size)) + h_s).reshape((n*l, self.hid_size))
+        score = T.dot(score, self.attention_3).reshape((n, l))
         max_clip = zero_grad(T.max(score, axis=-1))
         score = score - max_clip.reshape((n, 1))
-        score = T.exp(score) * mask.reshape((n, l, 1))
+        score = T.exp(score) * mask.reshape((n, l))
         total = T.sum(score, axis=-1)
         attention = score / total.reshape((n, 1))
-        read_info = T.sum(e_i * attention.reshape((n, l, 1)), axis=-1)
+        read_info = T.sum(e_i * attention.reshape((n, l, 1)), axis=1)
 
         # Decoding GRU layer 1
         h_in = T.concatenate([teacher, h1, read_info], axis=1)
@@ -379,13 +381,13 @@ def run(out_dir):
     l1 = len(batchs[1])
     l2 = len(batchs[2])
     l = l0+l1+l2
-    idxs = np.random.choice(a=[0, 1, 2], size=1, p=[float(l0/l), float(l1/l), float(l2/l)])
+    idxs = np.random.choice(a=[0, 1, 2], size=900000, p=[float(l0/l), float(l1/l), float(l2/l)])
     iter = 0
     for b_idx in idxs.tolist():
         optimiser = optimisers[b_idx]
         batch = batchs[b_idx]
         start = time.clock()
-        batch_indices = np.random.choice(len(batch), 25, replace=False)
+        batch_indices = np.random.choice(len(batch), 30, replace=False)
         mini_batch = np.array([batch[ind] for ind in batch_indices])
         en_batch = mini_batch[:, 0]
         en_batch = np.array(en_batch.tolist())
@@ -400,6 +402,13 @@ def run(out_dir):
             print('Iteration ' + str(iter) + ' per data point (time taken = ' + str(time.clock() - start) + ' seconds)')
             print('The training loss : ' + str(loss))
             print("")
+
+        if iter % 50000 == 0 and iter is not 0:
+            np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
+            with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:
+                cPickle.dump(model.get_param_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
+                f.close()
+
         iter += 1
 
     np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
