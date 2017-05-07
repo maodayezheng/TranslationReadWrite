@@ -487,6 +487,14 @@ class DeepReluTransReadWrite(object):
         self.attention_bias.set_value(params[16])
 
 
+def decode():
+    print("Decoding the sequence")
+    with open("SentenceData/WMT/Data/approximate_samples.txt", "r") as sample:
+        candidates = json.loads(sample.read())
+    model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1])
+    model.decode_fn(30, 20)
+
+
 def run(out_dir):
     print("Run the Relu read and  write only version ")
     training_loss = []
