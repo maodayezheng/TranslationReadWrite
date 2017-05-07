@@ -15,17 +15,22 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams
 random = MRG_RandomStreams(seed=1234)
 
 
-class Seq2seqAttention(object):
+class DeepReluTransReadWrite(object):
     def __init__(self, source_vocab_size=50000, target_vocab_size=50000,
                  embed_dim=620, hid_dim=1000, source_seq_len=50,
                  target_seq_len=50, sample_size=301, sample_candi=None):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
-        self.max_len = 51
+        self.source_len = source_seq_len
+        self.target_len = target_seq_len
         self.embedding_dim = embed_dim
-        self.sample_candi = sample_candi
         self.output_score_dim = 500
+
+        self.sample_candidates = lasagne.layers.EmbeddingLayer(InputLayer((None, self.target_vocab_size),
+                                                                          input_var=T.imatrix()),
+                                                               input_size=self.target_vocab_size,
+                                                               output_size=301, W=sample_candi)
 
         # init the word embeddings.
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -33,13 +38,12 @@ class Seq2seqAttention(object):
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
 
         # init forward encoding RNN
-        self.forward_rnn_encoder = lasagne.layers.GRULayer(InputLayer((None, None, self.embedding_dim)), self.hid_size)
+        self.forward_rnn_encoder = lasagne.layers.GRULayer(InputLayer((None, None, self.embedding_dim)), self.hid_size,
+                                                           mask_input=InputLayer((None, self.source_len)))
 
         # init backward encoding RNN
-
-        self.back_gru_update = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
-        self.back_gru_reset = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
-        self.back_gru_candidate = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
+        self.backward_rnn_encoder = lasagne.layers.GRULayer(InputLayer((None, None, self.embedding_dim)), self.hid_size,
+                                                            backwards=True, mask_input=InputLayer((None, self.source_len)))
 
         # init the decoding hidden init
         self.hidden_init = DenseLayer(InputLayer((None, self.hid_size)), num_units=self.hid_size, nonlinearity=tanh,
@@ -109,29 +113,18 @@ class Seq2seqAttention(object):
         # Mask out <s> for decoding
         decode_mask = d_m[:, 1:]
 
-        sample_candidates = lasagne.layers.EmbeddingLayer(
-            InputLayer((None, self.target_vocab_size), input_var=T.imatrix()
-                       ), input_size=self.target_vocab_size, output_size=301, W=self.sample_candi)
-
         # Get the approximation samples for output softmax
         # Exclude the first token <s>
-        samples = get_output(sample_candidates, target[:, 1:])
+        samples = get_output(self.sample_candidates, target[:, 1:])
 
         # RNN encoder for source language
-        forward_info = get_output(self.forward_rnn_encoder, source_embedding)
+        forward_info = self.forward_rnn_encoder.get_output_for([source_embedding, encode_mask])
+        backward_info = self.backward_rnn_encoder.get_output_for([source_embedding, encode_mask])
 
-        (back_h, update_back) = theano.scan(self.backward_step,
-                                            sequences=[source_embedding.dimshuffle((1, 0, 2)),
-                                                       encode_mask.dimshuffle((1, 0))],
-                                            outputs_info=[T.zeros((n, self.hid_size), dtype="float32")],
-                                            go_backwards=True)
-        (backward_info, up_back) = theano.scan(fn=lambda x: x, sequences=[back_h], go_backwards=True)
-
-        backward_info = backward_info.dimshuffle((1, 0, 2))
         encode_info = T.concatenate([forward_info, backward_info], axis=-1)
 
         # Init the decoding RNN
-        h_init = get_output(self.hidden_init, backward_info[:, -1])
+        h_init = get_output(self.hidden_init, backward_info[:, 0])
 
         # Get the decoding input
         decoding_in = get_output(self.target_input_embedding, target)
@@ -178,18 +171,6 @@ class Seq2seqAttention(object):
         loss = -T.mean(T.sum(loss, axis=1))
 
         return loss
-
-    def backward_step(self, x, m, h):
-        n = h.shape[0]
-        h_in = T.concatenate([x, h], axis=1)
-        u1 = get_output(self.back_gru_update, h_in)
-        r1 = get_output(self.back_gru_reset, h_in)
-        reset_h1 = h * r1
-        c_in = T.concatenate([x, reset_h1], axis=1)
-        c1 = get_output(self.back_gru_candidate, c_in)
-        h = (1.0 - u1) * h + u1 * c1
-
-        return h*m.reshape((n, 1))
 
     def decode_step(self, teacher, h1, e_i, h_s, mask):
         n = h1.shape[0]
@@ -277,11 +258,7 @@ class Seq2seqAttention(object):
 
         # Encoding RNNs
         forward_rnn_param = lasagne.layers.get_all_params(self.forward_rnn_encoder)
-
-        back_u_param = lasagne.layers.get_all_params(self.back_gru_update)
-        back_r_param = lasagne.layers.get_all_params(self.back_gru_reset)
-        back_c_param = lasagne.layers.get_all_params(self.back_gru_candidate)
-
+        backward_rnn_param = lasagne.layers.get_all_params(self.backward_rnn_encoder)
         # Decoding RNNs
         hidden_init_param = lasagne.layers.get_all_params(self.hidden_init)
         gru_1_u_param = lasagne.layers.get_all_params(self.gru_update_1)
@@ -295,7 +272,7 @@ class Seq2seqAttention(object):
         out_param = lasagne.layers.get_all_params(self.out_mlp)
 
         return target_input_embedding_param + target_output_embedding_param + input_embedding_param + \
-               forward_rnn_param + back_c_param + back_u_param + back_r_param +\
+               forward_rnn_param + backward_rnn_param +\
                gru_1_c_param + gru_1_r_param + gru_1_u_param + \
                hidden_init_param + atn_1_param + atn_2_param + atn_3_param + \
                out_param
@@ -308,9 +285,7 @@ class Seq2seqAttention(object):
 
         # Encoding RNNs
         forward_rnn_param = lasagne.layers.get_all_param_values(self.forward_rnn_encoder)
-        back_u_param = lasagne.layers.get_all_param_values(self.back_gru_update)
-        back_r_param = lasagne.layers.get_all_param_values(self.back_gru_reset)
-        back_c_param = lasagne.layers.get_all_param_values(self.back_gru_candidate)
+        backward_rnn_param = lasagne.layers.get_all_params(self.backward_rnn_encoder)
 
         # Decoding RNNs
         hidden_init_param = lasagne.layers.get_all_param_values(self.hidden_init)
@@ -325,7 +300,7 @@ class Seq2seqAttention(object):
         out_param = lasagne.layers.get_all_param_values(self.out_mlp)
 
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
-                forward_rnn_param, back_u_param, back_r_param, back_c_param,
+                forward_rnn_param, backward_rnn_param,
                 hidden_init_param,
                 gru_1_u_param, gru_1_r_param, gru_1_c_param,
                 atn_1_param, atn_2_param, atn_3_param,
@@ -336,17 +311,15 @@ class Seq2seqAttention(object):
         lasagne.layers.set_all_param_values(self.target_input_embedding, params[1])
         lasagne.layers.set_all_param_values(self.target_output_embedding, params[2])
         lasagne.layers.set_all_param_values(self.forward_rnn_encoder, params[3])
-        lasagne.layers.set_all_param_values(self.hidden_init, params[4])
-        lasagne.layers.set_all_param_values(self.gru_update_1, params[5])
-        lasagne.layers.set_all_param_values(self.gru_reset_1, params[6])
-        lasagne.layers.set_all_param_values(self.gru_candidate_1, params[7])
-        lasagne.layers.set_all_param_values(self.back_gru_update, params[8])
-        lasagne.layers.set_all_param_values(self.back_gru_reset, params[9])
-        lasagne.layers.set_all_param_values(self.back_gru_candidate, params[10])
-        lasagne.layers.set_all_param_values(self.attention_1, params[11])
-        lasagne.layers.set_all_param_values(self.attention_2, params[12])
-        self.attention_3.set_value(params[13])
-        lasagne.layers.set_all_param_values(self.out_mlp, params[14])
+        lasagne.layers.set_all_param_values(self.backward_rnn_encoder, params[4])
+        lasagne.layers.set_all_param_values(self.hidden_init, params[5])
+        lasagne.layers.set_all_param_values(self.gru_update_1, params[6])
+        lasagne.layers.set_all_param_values(self.gru_reset_1, params[7])
+        lasagne.layers.set_all_param_values(self.gru_candidate_1, params[8])
+        lasagne.layers.set_all_param_values(self.attention_1, params[9])
+        lasagne.layers.set_all_param_values(self.attention_2, params[10])
+        self.attention_3.set_value(params[11])
+        lasagne.layers.set_all_param_values(self.out_mlp, params[12])
 
 
 def run(out_dir):
@@ -371,12 +344,8 @@ def run(out_dir):
     candidates = None
     with open("SentenceData/WMT/Data/approximate_samples.txt", "r") as sample:
         candidates = json.loads(sample.read())
-    model = Seq2seqAttention(sample_candi=np.array(candidates)[:-1])
-
-    optimisers = []
-    for b in buckets:
-        op, up = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
-        optimisers.append(op)
+    model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1], source_seq_len=51)
+    optimiser, update = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
     l0 = len(batchs[0])
     l1 = len(batchs[1])
     l2 = len(batchs[2])
@@ -384,7 +353,6 @@ def run(out_dir):
     idxs = np.random.choice(a=[0, 1, 2], size=900000, p=[float(l0/l), float(l1/l), float(l2/l)])
     iter = 0
     for b_idx in idxs.tolist():
-        optimiser = optimisers[b_idx]
         batch = batchs[b_idx]
         start = time.clock()
         batch_indices = np.random.choice(len(batch), 30, replace=False)
