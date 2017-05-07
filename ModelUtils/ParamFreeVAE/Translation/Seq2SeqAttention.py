@@ -15,7 +15,7 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams
 random = MRG_RandomStreams(seed=1234)
 
 
-class DeepReluTransReadWrite(object):
+class Seq2seqAttention(object):
     def __init__(self, source_vocab_size=50000, target_vocab_size=50000,
                  embed_dim=620, hid_dim=1000, source_seq_len=50,
                  target_seq_len=50, sample_size=301, sample_candi=None):
@@ -371,7 +371,7 @@ def run(out_dir):
     candidates = None
     with open("SentenceData/WMT/Data/approximate_samples.txt", "r") as sample:
         candidates = json.loads(sample.read())
-    model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1])
+    model = Seq2seqAttention(sample_candi=np.array(candidates)[:-1])
 
     optimisers = []
     for b in buckets:
