@@ -236,6 +236,137 @@ class DeepReluTransReadWrite(object):
         # Write: K => L
         return h1, h2, h3, canvas, read_attention, write_attention
 
+    def decode_fn(self, seq_len, n_step):
+        source = T.imatrix('source')
+        n = source.shape[0]
+        source_embedding = get_output(self.input_embedding, source[:, 1:])
+
+        # Create input mask
+        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+
+        canvas_init = T.zeros((n, seq_len, self.output_score_dim), dtype="float32")
+
+        start = self.start
+        h_init = T.tile(start.reshape((1, start.shape[0], 3)), (n, 1, 1))
+        o_init = get_output(self.out_mlp, T.max(start, axis=-1))
+        o_init = T.tile(o_init.reshape((1, self.hid_size)), (n, 1))
+        source_embedding = source_embedding * encode_mask.reshape((n, seq_len, 1))
+
+        read_attention_weight = self.attention_weight[:, :seq_len]
+        write_attention_weight = self.attention_weight[:, self.max_len:(self.max_len + seq_len)]
+        read_attention_bias = self.attention_bias[:seq_len]
+        read_attention_bias = read_attention_bias.reshape((1, seq_len))
+        write_attention_bias = self.attention_bias[self.max_len:(self.max_len + seq_len)]
+        write_attention_bias = write_attention_bias.reshape((1, seq_len))
+
+        read_attention_init = T.nnet.relu(
+            T.tanh(T.dot(o_init[:, :self.output_score_dim], read_attention_weight) + read_attention_bias))
+        write_attention_init = T.nnet.relu(
+            T.tanh(T.dot(o_init[:, :self.output_score_dim], write_attention_weight) + write_attention_bias))
+
+        ([h_t_1, h_t_2, h_t_3, canvases, read_attention, write_attention], update) \
+            = theano.scan(self.step, outputs_info=[h_init[:, :, 0], h_init[:, :, 1], h_init[:, :, 2],
+                                                   canvas_init, read_attention_init, write_attention_init],
+                          non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
+                                         read_attention_bias, write_attention_bias],
+                          n_steps=n_step)
+
+        # Pre-compute the first step
+        canvas = canvases[-1]
+        canvas = canvas.dimshuffle((1, 0, 2))
+        c0 = canvas[0]
+        first_token = T.zeros((n,), "int8")
+        first_embedding = get_output(self.target_input_embedding, first_token)
+        s0 = T.concatenate([first_embedding, c0], axis=1)
+        s0 = get_output(self.score, s0)
+
+        # Sample embedding => VxD
+        candidate_output_embedding = self.target_output_embedding.W
+
+        s0 = T.dot(s0, candidate_output_embedding.T)
+        max_clip = T.max(s0, axis=-1)
+        score_clip = zero_grad(max_clip)
+        s0 = s0 - score_clip.reshape((n, 1))
+        prob0 = T.nnet.softmax(s0)
+        orders = T.argsort(prob0, axis=1)
+        top_k = T.cast(orders[:, :5], "int8")
+        prob0 = prob0[T.arange(n).reshape((n, 1)), top_k]
+        top_k = top_k.reshape((n * 5,))
+        prev_embed_init = get_output(self.target_input_embedding, top_k)
+        prev_embed_init = prev_embed_init.reshape((n, 5, self.embedding_dim))
+
+        # Forward path
+        ([prob, embed, prev_idx, candidate_idx, tops], update1) = theano.scan(self.forward_step, sequences=[canvas[1:]],
+                                                                              outputs_info=[prob0, prev_embed_init,
+                                                                                            None, None, None],
+                                                                              non_sequences=[candidate_output_embedding])
+        last_prob = prob[-1]
+        last_idx = T.cast(T.argmax(last_prob, axis=-1), "int32")
+        # Backward
+
+        ([i, decodes], update2) = theano.scan(self.backward_step, sequences=[prev_idx, candidate_idx],
+                                              outputs_info=[last_idx, None],
+                                              go_backwards=True)
+
+        def reverse(idx):
+            return idx
+        (seq, update3) = theano.scan(reverse, sequences=[decodes], outputs_info=[None], go_backwards=True)
+
+        first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), i[-1]]
+        decode = T.concatenate([first.reshape((1, n)), seq], axis=0)
+
+        decode_fn = theano.function(inputs=[source], outputs=[prev_idx, candidate_idx, tops, decode])
+        return decode_fn
+
+    def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
+        """
+        c: A column of canvas => NxD
+        prob: Max prob from previous step => NxK
+        prev: The state from previous => NxKxD
+        candidate: All possible candidate
+
+        :return pair: first element is previous state idx, second element is the idx of content
+        :return prob: All the intermediate probabilities
+        """
+
+        # Compute the trans prob
+        n = canvas_info.shape[0]
+        d = canvas_info.shape[-1]
+        k = prev_embed.shape[1]
+        v = candate_embed.shape[0]
+        c = T.tile(canvas_info.reshape((n, 1, d)), (1, k, 1))
+        info = T.concatenate([prev_embed, c], axis=-1)
+        d = info.shape[-1]
+        info = info.reshape((n * k, d))
+        teacher = get_output(self.score, info)
+        score = T.dot(teacher, candate_embed.T)
+        max_clip = T.max(score, axis=-1).reshape((n * k, 1))
+        score = score - max_clip
+        score = score.reshape((n * k, v))
+        trans_prob = T.nnet.softmax(score)
+
+        # Find the top k candidate
+        prob = prob.reshape((n * k, 1))
+        prob = prob * trans_prob
+        prob = prob.reshape((n, k * v))
+        orders = T.argsort(prob, axis=-1)
+        top_k = orders[:, :5]
+        prob = prob[T.arange(n).reshape((n, 1)), top_k]
+
+        # Get the true idx
+        candidate_idx = (top_k % self.target_vocab_size)
+        # Get the previous idx
+        prev_idx = T.cast(T.floor(T.true_div(top_k, v)), "int32")
+        embedding = get_output(self.target_input_embedding, candidate_idx)
+        prev_idx = prev_idx.reshape((n, k))
+        return prob, embedding, prev_idx, candidate_idx, top_k
+
+    def backward_step(self, prev_idx, k_candidate, idx):
+        n = k_candidate.shape[0]
+        decode = k_candidate[T.arange(n, dtype="int8"), idx]
+        idx = prev_idx[T.arange(n, dtype="int8"), idx]
+        return idx, decode
+
     def elbo_fn(self, num_samples):
         """
         Return the compiled Theano function which evaluates the evidence lower bound (ELBO).
