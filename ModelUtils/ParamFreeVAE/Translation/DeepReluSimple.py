@@ -219,7 +219,6 @@ class DeepReluTransReadWrite(object):
         h3 = (1.0 - u3) * h3 + u3 * c3
 
         # Maxout layer
-
         h = T.concatenate([h1.reshape((n, self.hid_size, 1)), h2.reshape((n, self.hid_size, 1)),
                            h3.reshape((n, self.hid_size, 1))], axis=-1)
         h = T.max(h, axis=-1)
@@ -238,11 +237,14 @@ class DeepReluTransReadWrite(object):
 
     def decode_fn(self, seq_len, n_step):
         source = T.imatrix('source')
+        target = T.imatrix('target')
         n = source.shape[0]
         source_embedding = get_output(self.input_embedding, source[:, 1:])
 
         # Create input mask
         encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+        d_m = T.cast(T.gt(target, -1), "float32")
+        decode_mask = d_m[:, 1:]
 
         canvas_init = T.zeros((n, seq_len, self.output_score_dim), dtype="float32")
 
@@ -270,6 +272,40 @@ class DeepReluTransReadWrite(object):
                           non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
                                          read_attention_bias, write_attention_bias],
                           n_steps=n_step)
+
+        # Check the likelihood on full vocab
+        final_canvas = canvases[-1]
+        output_embedding = get_output(self.target_input_embedding, target)
+        output_embedding = output_embedding[:, :-1]
+        teacher = T.concatenate([output_embedding, final_canvas], axis=2)
+        n = teacher.shape[0]
+        l = teacher.shape[1]
+        d = teacher.shape[2]
+        # Get sample embedding
+        teacher = teacher.reshape((n * l, d))
+        teacher = get_output(self.score, teacher)
+        teacher = teacher.reshape((n, l, self.output_score_dim))
+        sample_embed = self.target_output_embedding.W
+
+        def probs_step(t, t_idx, s_embedding):
+            n = t_idx.shape[0]
+            sample_score = T.dot(t, s_embedding.T)
+            forced_max = T.argmax(sample_score, axis=-1)
+            max_clip = T.max(sample_score, axis=-1)
+            score_clip = zero_grad(max_clip)
+            sample_score = T.exp(sample_score - score_clip.reshape((n, 1)))
+            score = sample_score[T.arange(n), t_idx]
+            sample_score = T.sum(sample_score, axis=-1)
+            prob = score / sample_score
+            return prob, forced_max
+
+        target_idx = target[:, 1:]
+        ([probs, forced_max], update0) = theano.scan(probs_step, sequences=[teacher, target_idx],
+                                                     non_sequences=[sample_embed])
+
+        loss = decode_mask * T.log(probs + 1e-5)
+        loss = -T.mean(T.sum(loss, axis=1))
+
 
         # Pre-compute the first step
         canvas = canvases[-1]
@@ -315,7 +351,8 @@ class DeepReluTransReadWrite(object):
         first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), i[-1]]
         decode = T.concatenate([first.reshape((1, n)), seq], axis=0)
 
-        decode_fn = theano.function(inputs=[source], outputs=[prev_idx, candidate_idx, tops, decode])
+        decode_fn = theano.function(inputs=[source, target], outputs=[prev_idx, candidate_idx, tops, decode, read_attention,
+                                                               write_attention, loss, forced_max])
         return decode_fn
 
     def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
@@ -367,7 +404,7 @@ class DeepReluTransReadWrite(object):
         idx = prev_idx[T.arange(n, dtype="int8"), idx]
         return idx, decode
 
-    def elbo_fn(self, num_samples):
+    def elbo_fn(self, seq_len, n_step):
         """
         Return the compiled Theano function which evaluates the evidence lower bound (ELBO).
 
@@ -378,7 +415,7 @@ class DeepReluTransReadWrite(object):
         """
         source = T.imatrix('source')
         target = T.imatrix('target')
-        reconstruction_loss, read_attention, write_attention = self.symbolic_elbo(source, target)
+        reconstruction_loss, read_attention, write_attention = self.symbolic_elbo(source, target, seq_len, n_step)
         elbo_fn = theano.function(inputs=[source, target],
                                   outputs=[reconstruction_loss, read_attention, write_attention],
                                   allow_input_downcast=True)
@@ -489,10 +526,37 @@ class DeepReluTransReadWrite(object):
 
 def decode():
     print("Decoding the sequence")
+    test_data = None
     with open("SentenceData/WMT/Data/approximate_samples.txt", "r") as sample:
         candidates = json.loads(sample.read())
     model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1])
-    model.decode_fn(30, 20)
+    with open("code_outputs/2017_05_03_01_48_19/model_params.save", "rb") as params:
+        model.set_param_values(cPickle.load(params))
+    with open("SentenceData/WMT/Data/data_idx_22.txt", "r") as dataset:
+        test_data = json.loads(dataset.read())
+    batch_indices = np.random.choice(len(test_data), 5, replace=False)
+    mini_batch = np.array([test_data[ind] for ind in batch_indices])
+    en_test = mini_batch[:, 0]
+    en_batch = np.array(en_test.tolist())
+    de_batch = np.array(mini_batch[:, 1].tolist())
+    decode = model.decode_fn(21, 8)
+    elbo = model.elbo_fn(21, 8)
+    prev_idx, candidate_idx, tops, prediction, read, write, loss, force_max = decode(en_batch, de_batch)
+    smaple_loss, r, w = elbo(en_batch, de_batch)
+    print("Loss : ")
+    print(loss)
+    print("Sample loss : ")
+    print(smaple_loss)
+    for n in range(5):
+        print("Force max : ")
+        print(force_max[n])
+        print("True ")
+        print(de_batch[n])
+        for t in range(8):
+            print("======")
+            print(" Source " + str(read[t, n]))
+            print(" Target " + str(write[t, n]))
+        print("***************************")
 
 
 def run(out_dir):
