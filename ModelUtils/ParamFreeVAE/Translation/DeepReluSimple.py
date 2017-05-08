@@ -4,6 +4,7 @@ from lasagne.layers import EmbeddingLayer, InputLayer, get_output
 import lasagne
 from lasagne.nonlinearities import linear, sigmoid, tanh, softmax
 from theano.gradient import zero_grad, grad_clip
+import numpy.lib.recfunctions as rfn
 import numpy as np
 import json
 import time
@@ -15,7 +16,7 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class DeepReluTransReadWrite(object):
-    def __init__(self, training_batch_size=25, source_vocab_size=50000, target_vocab_size=50000,
+    def __init__(self, training_batch_size=25, source_vocab_size=30000, target_vocab_size=30000,
                  embed_dim=620, hid_dim=1000, source_seq_len=50,
                  target_seq_len=50, sample_size=301, sample_candi=None):
         self.source_vocab_size = source_vocab_size
@@ -566,22 +567,8 @@ def run(out_dir):
     update_kwargs = {'learning_rate': 1e-6}
     batchs = []
 
-    with open("SentenceData/WMT/Data/data_idx_22.txt", "r") as dataset:
+    with open("SentenceData/WMT/Data/data_idx.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
-        batchs.append(train_data)
-
-    with open("SentenceData/WMT/Data/data_idx_37.txt", "r") as dataset:
-        train_data = json.loads(dataset.read())
-        batchs.append(train_data)
-
-    with open("SentenceData/WMT/Data/data_idx_52.txt", "r") as dataset:
-        train_data = json.loads(dataset.read())
-        batchs.append(train_data)
-
-    candidates = None
-    with open("SentenceData/WMT/Data/approximate_samples.txt", "r") as sample:
-        candidates = json.loads(sample.read())
-    model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1])
 
     optimisers = []
     for b in buckets:
@@ -593,12 +580,19 @@ def run(out_dir):
     l = l0+l1+l2
     idxs = np.random.choice(a=[0, 1, 2], size=900000, p=[float(l0/l), float(l1/l), float(l2/l)])
     iter = 0
-    for b_idx in idxs.tolist():
+    batch_type = [('source', list), ('target', list), ('length', int)]
+    for iters in range(100000):
         optimiser = optimisers[b_idx]
         batch = batchs[b_idx]
         start = time.clock()
-        batch_indices = np.random.choice(len(batch), 30, replace=False)
-        mini_batch = np.array([batch[ind] for ind in batch_indices])
+        batch_indices = np.random.choice(len(batch), 300, replace=False)
+        mini_batch = [batch[ind] for ind in batch_indices]
+        mini_batch = np.array(mini_batch, dtype=batch_type)
+        mini_batch = np.sort(mini_batch, order='length', kind='mergesort')
+
+        source = mini_batch['source']
+        targets = mini_batch['target']
+
         en_batch = mini_batch[:, 0]
         en_batch = np.array(en_batch.tolist())
         de_batch = mini_batch[:, 1]
@@ -637,3 +631,13 @@ def run(out_dir):
     with open(os.path.join(out_dir, 'final_model_params.save'), 'wb') as f:
         cPickle.dump(model.get_param_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
         f.close()
+
+
+def test_run():
+    with open("SentenceData/WMT/Data/data_idx.txt", "r") as dataset:
+        train_data = json.loads(dataset.read())
+
+        batch_indices = np.random.choice(len(train_data), 300, replace=False)
+        mini_batch = [train_data[ind] for ind in batch_indices]
+        mini_batch = sorted(mini_batch, key=lambda d: d[1])
+        print(mini_batch[:, 1])
