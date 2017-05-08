@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.DeepReluSimple import test_run
+from ModelUtils.ParamFreeVAE.Translation.DeepReluSimple import run
 
 import sys
 import lasagne
@@ -35,5 +35,5 @@ test_sub_sample_size = 100
 
 
 if __name__ == '__main__':
-    test_run()
+    run(out_dir)
 
