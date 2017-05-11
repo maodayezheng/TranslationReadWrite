@@ -230,43 +230,48 @@ class DeepReluTransReadWrite(object):
         # Write: K => L
         return h1, h2, h3, canvas, read_attention, write_attention
 
-    def decode_fn(self, seq_len, n_step):
+    def decode_fn(self):
         source = T.imatrix('source')
         target = T.imatrix('target')
         n = source.shape[0]
+        l = source[:, 1:].shape[1]
+        # Get input embedding
         source_embedding = get_output(self.input_embedding, source[:, 1:])
 
         # Create input mask
         encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+
+        # Create decoding mask
         d_m = T.cast(T.gt(target, -1), "float32")
         decode_mask = d_m[:, 1:]
 
-        canvas_init = T.zeros((n, seq_len, self.output_score_dim), dtype="float32")
+        # Init decoding states
+        canvas_init = T.zeros((n, self.max_len, self.output_score_dim), dtype="float32")
+        canvas_init = canvas_init[:, :l]
 
-        start = self.start
-        h_init = T.tile(start.reshape((1, start.shape[0], 3)), (n, 1, 1))
-        o_init = get_output(self.out_mlp, T.max(start, axis=-1))
-        o_init = T.tile(o_init.reshape((1, self.hid_size)), (n, 1))
-        source_embedding = source_embedding * encode_mask.reshape((n, seq_len, 1))
+        h_init = T.zeros((n, self.hid_size))
+        o_init = get_output(self.out_mlp, h_init)
+        source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
 
-        read_attention_weight = self.attention_weight[:, :seq_len]
-        write_attention_weight = self.attention_weight[:, self.max_len:(self.max_len + seq_len)]
-        read_attention_bias = self.attention_bias[:seq_len]
-        read_attention_bias = read_attention_bias.reshape((1, seq_len))
-        write_attention_bias = self.attention_bias[self.max_len:(self.max_len + seq_len)]
-        write_attention_bias = write_attention_bias.reshape((1, seq_len))
+        read_attention_weight = self.attention_weight[:, :l]
+        write_attention_weight = self.attention_weight[:, self.max_len:(self.max_len + l)]
+        read_attention_bias = self.attention_bias[:l]
+        read_attention_bias = read_attention_bias.reshape((1, l))
+        write_attention_bias = self.attention_bias[self.max_len:(self.max_len + l)]
+        write_attention_bias = write_attention_bias.reshape((1, l))
 
         read_attention_init = T.nnet.relu(
             T.tanh(T.dot(o_init[:, :self.output_score_dim], read_attention_weight) + read_attention_bias))
         write_attention_init = T.nnet.relu(
             T.tanh(T.dot(o_init[:, :self.output_score_dim], write_attention_weight) + write_attention_bias))
+        time_steps = T.cast(T.round(l / 2), "int8")
 
         ([h_t_1, h_t_2, h_t_3, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[h_init[:, :, 0], h_init[:, :, 1], h_init[:, :, 2],
+            = theano.scan(self.step, outputs_info=[h_init, h_init, h_init,
                                                    canvas_init, read_attention_init, write_attention_init],
                           non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
                                          read_attention_bias, write_attention_bias],
-                          n_steps=n_step)
+                          sequences=[T.arange(time_steps)])
 
         # Check the likelihood on full vocab
         final_canvas = canvases[-1]
@@ -521,31 +526,52 @@ class DeepReluTransReadWrite(object):
 def decode():
     print("Decoding the sequence")
     test_data = None
-    with open("SentenceData/WMT/Data/approximate_samples.txt", "r") as sample:
-        candidates = json.loads(sample.read())
+    print("Run the Relu read and  write only version ")
+    training_loss = []
     model = DeepReluTransReadWrite()
-    with open("code_outputs/2017_05_03_01_48_19/model_params.save", "rb") as params:
+    with open("code_outputs/2017_05_09_18_59_58/model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
-    with open("SentenceData/WMT/Data/data_idx_22.txt", "r") as dataset:
-        test_data = json.loads(dataset.read())
-    batch_indices = np.random.choice(len(test_data), 5, replace=False)
-    mini_batch = np.array([test_data[ind] for ind in batch_indices])
-    en_test = mini_batch[:, 0]
-    en_batch = np.array(en_test.tolist())
-    de_batch = np.array(mini_batch[:, 1].tolist())
-    decode = model.decode_fn(21, 8)
-    elbo = model.elbo_fn(21, 8)
-    prev_idx, candidate_idx, tops, prediction, read, write, loss, force_max = decode(en_batch, de_batch)
-    smaple_loss, r, w = elbo(en_batch, de_batch)
+    update_kwargs = {'learning_rate': 1e-6}
+    optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs)
+
+    train_data = None
+    with open("SentenceData/WMT/Data/data_idx.txt", "r") as dataset:
+        train_data = json.loads(dataset.read())
+
+    batch_indices = np.random.choice(len(train_data), 100, replace=False)
+    mini_batch = np.array([train_data[ind] for ind in batch_indices])
+    mini_batch = sorted(mini_batch, key=lambda d: d[2])
+    mini_batch = np.array(mini_batch)
+    l = mini_batch[-1, -1]
+    source = None
+    target = None
+    for datapoint in mini_batch:
+        s = np.array(datapoint[0])
+        t = np.array(datapoint[1])
+        if len(s) != l:
+            s = np.append(s, [-1] * (l - len(s)))
+        if len(t) != l:
+            t = np.append(t, [-1] * (l - len(t)))
+        if source is None:
+            source = s.reshape((1, s.shape[0]))
+        else:
+            source = np.concatenate([source, s.reshape((1, s.shape[0]))])
+        if target is None:
+            target = s.reshape((1, t.shape[0]))
+        else:
+            target = np.concatenate([target, t.reshape((1, t.shape[0]))])
+
+    decode = model.decode_fn()
+    #elbo = model.elbo_fn()
+    prev_idx, candidate_idx, tops, prediction, read, write, loss, force_max = decode(source, target)
+    #smaple_loss, r, w = elbo(en_batch, de_batch)
     print("Loss : ")
     print(loss)
-    print("Sample loss : ")
-    print(smaple_loss)
+    #print("Sample loss : ")
+    #print(smaple_loss)
     for n in range(5):
         print("Force max : ")
         print(force_max[n])
-        print("True ")
-        print(de_batch[n])
         for t in range(8):
             print("======")
             print(" Source " + str(read[t, n]))
