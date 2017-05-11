@@ -143,8 +143,7 @@ class DeepReluTransReadWrite(object):
         # Complementary Sum for softmax approximation
         # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
         final_canvas = canvases[-1]
-        output_embedding = get_output(self.target_input_embedding, target)
-        output_embedding = output_embedding[:, :-1]
+        output_embedding = get_output(self.target_input_embedding, target[:, :-1])
         teacher = T.concatenate([output_embedding, final_canvas], axis=2)
         n = teacher.shape[0]
         l = teacher.shape[1]
