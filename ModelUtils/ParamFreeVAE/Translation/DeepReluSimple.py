@@ -583,7 +583,7 @@ def run(out_dir):
     print("Run the Relu read and  write only version ")
     training_loss = []
     model = DeepReluTransReadWrite()
-    with open("code_outputs/2017_05_09_18_59_58/model_params.save", "rb") as params:
+    with open("code_outputs/2017_05_10_20_45_11/model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-6}
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs)

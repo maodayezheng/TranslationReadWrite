@@ -16,4 +16,4 @@ PYTHON_FILE=${1}
 
 cp ${PYTHON_FILE} ${OUT_DIR}/${PYTHON_FILE}
 
-THEANO_FLAGS=mode=Mode,device=cuda1,floatX=float32 python -u ${PYTHON_FILE} ${DIR} ${OUT_DIR} | tee ${OUT_DIR}/out.txt
+THEANO_FLAGS=mode=Mode,device=cuda0,floatX=float32 python -u ${PYTHON_FILE} ${DIR} ${OUT_DIR} | tee ${OUT_DIR}/out.txt
