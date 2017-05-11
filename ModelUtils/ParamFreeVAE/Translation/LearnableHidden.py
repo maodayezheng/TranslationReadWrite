@@ -157,7 +157,11 @@ class DeepReluTransReadWrite(object):
         teacher = teacher.reshape((n * l, d))
         teacher = get_output(self.score, teacher)
         teacher = teacher.reshape((n * l, self.output_score_dim))
-        sample_embed = get_output(self.target_output_embedding, samples)
+        sample_embed = None
+        if samples is None:
+            sample_embed = self.target_output_embedding.W
+        else:
+            sample_embed = get_output(self.target_output_embedding, samples)
         sample_score = T.dot(teacher, sample_embed.T)
         max_clip = T.max(sample_score, axis=-1)
         score_clip = zero_grad(max_clip)
@@ -420,7 +424,7 @@ class DeepReluTransReadWrite(object):
                                   allow_input_downcast=True)
         return elbo_fn
 
-    def optimiser(self, update, update_kwargs, saved_update=None):
+    def optimiser(self, update, update_kwargs, draw_sample, saved_update=None):
         """
         Return the compiled Theano function which both evaluates the evidence lower bound (ELBO), and updates the model
         parameters to increase the ELBO.
@@ -437,7 +441,9 @@ class DeepReluTransReadWrite(object):
 
         source = T.imatrix('source')
         target = T.imatrix('target')
-        samples = T.ivector('samples')
+        samples = None
+        if draw_sample:
+            samples = T.ivector('samples')
         reconstruction_loss, read_attention, write_attetion = self.symbolic_elbo(source, target, samples)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
@@ -448,13 +454,20 @@ class DeepReluTransReadWrite(object):
         if saved_update is not None:
             for u, v in zip(updates, saved_update.keys()):
                 u.set_value(v.get_value())
-        optimiser = theano.function(inputs=[source, target, samples],
-                                    outputs=[reconstruction_loss, read_attention, write_attetion],
-                                    updates=updates,
-                                    allow_input_downcast=True
-                                    )
-
-        return optimiser, updates
+        if draw_sample:
+            optimiser = theano.function(inputs=[source, target, samples],
+                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        updates=updates,
+                                        allow_input_downcast=True
+                                        )
+            return optimiser, updates
+        else:
+            optimiser = theano.function(inputs=[source, target],
+                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        updates=updates,
+                                        allow_input_downcast=True
+                                        )
+            return optimiser, updates
 
     def get_params(self):
         input_embedding_param = lasagne.layers.get_all_params(self.input_embedding)
@@ -564,7 +577,8 @@ def run(out_dir):
     training_loss = []
     model = DeepReluTransReadWrite()
     update_kwargs = {'learning_rate': 1e-6}
-    optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs)
+    draw_sample = False
+    optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
 
     train_data = None
     with open("SentenceData/WMT/Data/data_idx.txt", "r") as dataset:
@@ -574,17 +588,19 @@ def run(out_dir):
         batch_indices = np.random.choice(len(train_data), 300, replace=False)
         mini_batch = [train_data[ind] for ind in batch_indices]
         mini_batch = sorted(mini_batch, key=lambda d: d[2])
+        samples = None
+        if draw_sample:
+            unique_target = []
+            for m in mini_batch:
+                unique_target += m[1]
+            unique_target = np.unique(unique_target)
 
-        unique_target = []
-        for m in mini_batch:
-            unique_target += m[1]
-        unique_target = np.unique(unique_target)
+            num_samples = 8000 - len(unique_target)
+            candidate = np.arange(30004)
+            candidate = np.delete(candidate, unique_target, None)
+            samples = np.random.choice(a=candidate, size=num_samples, replace=False)
+            samples = np.concatenate([unique_target, samples])
 
-        num_samples = 8000 - len(unique_target)
-        candidate = np.arange(30004)
-        candidate = np.delete(candidate, unique_target, None)
-        samples = np.random.choice(a=candidate, size=num_samples, replace=False)
-        samples = np.concatenate([unique_target, samples])
         mini_batch = np.array(mini_batch)
         mini_batchs = np.split(mini_batch, 10)
         loss = None
@@ -610,7 +626,11 @@ def run(out_dir):
                     target = s.reshape((1, t.shape[0]))
                 else:
                     target = np.concatenate([target, t.reshape((1, t.shape[0]))])
-            output = optimiser(source, target, samples)
+            output = None
+            if draw_sample:
+                output = optimiser(source, target, samples)
+            else:
+                output = optimiser(source, target)
             iter_time = time.clock() - start
             loss = output[0]
             read_attention = output[1]
