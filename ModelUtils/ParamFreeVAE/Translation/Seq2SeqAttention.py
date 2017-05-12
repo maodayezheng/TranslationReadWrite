@@ -16,7 +16,7 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class DeepReluTransReadWrite(object):
-    def __init__(self, source_vocab_size=50000, target_vocab_size=50000,
+    def __init__(self, source_vocab_size=30004, target_vocab_size=30004,
                  embed_dim=620, hid_dim=1000, source_seq_len=50,
                  target_seq_len=50, sample_size=301, sample_candi=None):
         self.source_vocab_size = source_vocab_size
@@ -26,12 +26,6 @@ class DeepReluTransReadWrite(object):
         self.target_len = target_seq_len
         self.embedding_dim = embed_dim
         self.output_score_dim = 500
-
-        self.sample_candidates = lasagne.layers.EmbeddingLayer(InputLayer((None, self.target_vocab_size),
-                                                                          input_var=T.imatrix()),
-                                                               input_size=self.target_vocab_size,
-                                                               output_size=301, W=sample_candi)
-
         # init the word embeddings.
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
@@ -92,7 +86,7 @@ class DeepReluTransReadWrite(object):
                                       b=lasagne.init.Constant(0.0))
         return h
 
-    def symbolic_elbo(self, source, target):
+    def symbolic_elbo(self, source, target, samples):
 
         """
         Return a symbolic variable, representing the ELBO, for the given minibatch.
@@ -115,7 +109,6 @@ class DeepReluTransReadWrite(object):
 
         # Get the approximation samples for output softmax
         # Exclude the first token <s>
-        samples = get_output(self.sample_candidates, target[:, 1:])
 
         # RNN encoder for source language
         forward_info = self.forward_rnn_encoder.get_output_for([source_embedding, encode_mask])
@@ -151,20 +144,23 @@ class DeepReluTransReadWrite(object):
         l = h_t_1.shape[0]
 
         # Calculate the sample score
-        o = o.reshape((n*l, 1, self.output_score_dim))
-        sample_embed = get_output(self.target_output_embedding, samples)
-        sample_embed = sample_embed.reshape((n * l, 301, self.output_score_dim))
-        sample_score = T.sum(sample_embed * o, axis=-1).reshape((n, l, 301))
-
-        # Clip the score
+        if samples is None:
+            sample_embed = self.target_output_embedding.W
+        else:
+            sample_embed = get_output(self.target_output_embedding, samples)
+        sample_score = T.dot(o, sample_embed.T)
         max_clip = T.max(sample_score, axis=-1)
         score_clip = zero_grad(max_clip)
-        sample_score = T.exp(sample_score - score_clip.reshape((n, l, 1)))
-
-        # The last token is the true label
-        score = sample_score[:, :, -1]
+        sample_score = T.exp(sample_score - score_clip.reshape((n*l, 1)))
         sample_score = T.sum(sample_score, axis=-1)
+
+        # Get true embedding
+        true_embed = get_output(self.target_output_embedding, target[:, 1:])
+        true_embed = true_embed.reshape((n*l, self.output_score_dim))
+        score = T.exp(T.sum(o * true_embed, axis=-1) - score_clip)
+
         prob = score / sample_score
+        prob = prob.reshape((n, l))
 
         # Loss per sentence
         loss = decode_mask * T.log(prob + 1e-5)
@@ -215,7 +211,7 @@ class DeepReluTransReadWrite(object):
                                   allow_input_downcast=True)
         return elbo_fn
 
-    def optimiser(self, update, update_kwargs, saved_update=None):
+    def optimiser(self, update, update_kwargs, draw_sample, saved_update=None):
         """
         Return the compiled Theano function which both evaluates the evidence lower bound (ELBO), and updates the model
         parameters to increase the ELBO.
@@ -232,7 +228,10 @@ class DeepReluTransReadWrite(object):
 
         source = T.imatrix('source')
         target = T.imatrix('target')
-        reconstruction_loss = self.symbolic_elbo(source, target)
+        samples = None
+        if draw_sample:
+            samples = T.ivector('samples')
+        reconstruction_loss = self.symbolic_elbo(source, target, samples)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         scaled_grads = lasagne.updates.total_norm_constraint(grads, 5)
@@ -242,13 +241,20 @@ class DeepReluTransReadWrite(object):
         if saved_update is not None:
             for u, v in zip(updates, saved_update.keys()):
                 u.set_value(v.get_value())
-        optimiser = theano.function(inputs=[source, target],
-                                    outputs=[reconstruction_loss],
-                                    updates=updates,
-                                    allow_input_downcast=True
-                                    )
-
-        return optimiser, updates
+        if draw_sample:
+            optimiser = theano.function(inputs=[source, target, samples],
+                                        outputs=[reconstruction_loss],
+                                        updates=updates,
+                                        allow_input_downcast=True
+                                        )
+            return optimiser, updates
+        else:
+            optimiser = theano.function(inputs=[source, target],
+                                        outputs=[reconstruction_loss],
+                                        updates=updates,
+                                        allow_input_downcast=True
+                                        )
+            return optimiser, updates
 
     def get_params(self):
         # Embeddings
@@ -285,7 +291,7 @@ class DeepReluTransReadWrite(object):
 
         # Encoding RNNs
         forward_rnn_param = lasagne.layers.get_all_param_values(self.forward_rnn_encoder)
-        backward_rnn_param = lasagne.layers.get_all_params(self.backward_rnn_encoder)
+        backward_rnn_param = lasagne.layers.get_all_param_values(self.backward_rnn_encoder)
 
         # Decoding RNNs
         hidden_init_param = lasagne.layers.get_all_param_values(self.hidden_init)
@@ -323,63 +329,80 @@ class DeepReluTransReadWrite(object):
 
 
 def run(out_dir):
-    print(" Seq 2 Seq attention model  ")
+    print(" RNNSearch with full vocabulary ")
     training_loss = []
-    buckets = [[21, 8], [36, 15], [51, 20]]
+    model = DeepReluTransReadWrite()
+    #with open("code_outputs/2017_05_11_20_34_09/model_params.save", "rb") as params:
+    #    model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-6}
-    batchs = []
+    draw_sample = False
+    optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
 
-    with open("SentenceData/WMT/Data/data_idx_22.txt", "r") as dataset:
+    train_data = None
+    with open("SentenceData/WMT/Data/data_idx_small.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
-        batchs.append(train_data)
 
-    with open("SentenceData/WMT/Data/data_idx_37.txt", "r") as dataset:
-        train_data = json.loads(dataset.read())
-        batchs.append(train_data)
+    for iters in range(100000):
+        batch_indices = np.random.choice(len(train_data), 300, replace=False)
+        mini_batch = [train_data[ind] for ind in batch_indices]
+        mini_batch = sorted(mini_batch, key=lambda d: d[2])
+        samples = None
+        if draw_sample:
+            unique_target = []
+            for m in mini_batch:
+                unique_target += m[1]
+            unique_target = np.unique(unique_target)
 
-    with open("SentenceData/WMT/Data/data_idx_52.txt", "r") as dataset:
-        train_data = json.loads(dataset.read())
-        batchs.append(train_data)
+            num_samples = 8000 - len(unique_target)
+            candidate = np.arange(30004)
+            candidate = np.delete(candidate, unique_target, None)
+            samples = np.random.choice(a=candidate, size=num_samples, replace=False)
+            samples = np.concatenate([unique_target, samples])
 
-    candidates = None
-    with open("SentenceData/WMT/Data/approximate_samples.txt", "r") as sample:
-        candidates = json.loads(sample.read())
-    model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1], source_seq_len=51)
-    optimiser, update = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
-    l0 = len(batchs[0])
-    l1 = len(batchs[1])
-    l2 = len(batchs[2])
-    l = l0+l1+l2
-    idxs = np.random.choice(a=[0, 1, 2], size=900000, p=[float(l0/l), float(l1/l), float(l2/l)])
-    iter = 0
-    for b_idx in idxs.tolist():
-        batch = batchs[b_idx]
-        start = time.clock()
-        batch_indices = np.random.choice(len(batch), 30, replace=False)
-        mini_batch = np.array([batch[ind] for ind in batch_indices])
-        en_batch = mini_batch[:, 0]
-        en_batch = np.array(en_batch.tolist())
-        de_batch = mini_batch[:, 1]
-        de_batch = np.array(de_batch.tolist())
-        output = optimiser(en_batch, de_batch)
-        loss = output[0]
-        training_loss.append(loss)
+        mini_batch = np.array(mini_batch)
+        mini_batchs = np.split(mini_batch, 10)
+        loss = None
+        read_attention = None
+        write_attention = None
+        for m in mini_batchs:
+            l = m[-1, -1]
+            source = None
+            target = None
+            start = time.clock()
+            for datapoint in m:
+                s = np.array(datapoint[0])
+                t = np.array(datapoint[1])
+                if len(s) != l:
+                    s = np.append(s, [-1] * (l - len(s)))
+                if len(t) != l:
+                    t = np.append(t, [-1] * (l - len(t)))
+                if source is None:
+                    source = s.reshape((1, s.shape[0]))
+                else:
+                    source = np.concatenate([source, s.reshape((1, s.shape[0]))])
+                if target is None:
+                    target = s.reshape((1, t.shape[0]))
+                else:
+                    target = np.concatenate([target, t.reshape((1, t.shape[0]))])
+            output = None
+            if draw_sample:
+                output = optimiser(source, target, samples)
+            else:
+                output = optimiser(source, target)
+            iter_time = time.clock() - start
+            loss = output[0]
+            training_loss.append(loss)
+            if iters % 500 == 0:
+                print(" At " + str(iters) + " The training time per iter : " + str(iter_time) + " The training loss " + str(loss))
 
-        if iter % 500 == 0:
-            print("==" * 5)
-            print('Iteration ' + str(iter) + ' per data point (time taken = ' + str(time.clock() - start) + ' seconds)')
-            print('The training loss : ' + str(loss))
-            print("")
-
-        if iter % 50000 == 0 and iter is not 0:
+        if iters % 2000 == 0 and iters is not 0:
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
             with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:
                 cPickle.dump(model.get_param_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
                 f.close()
 
-        iter += 1
-
     np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
     with open(os.path.join(out_dir, 'final_model_params.save'), 'wb') as f:
         cPickle.dump(model.get_param_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
         f.close()
+

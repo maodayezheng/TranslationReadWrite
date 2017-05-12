@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 folder = 'code_outputs/'
 relu_loss = np.load(folder+'2017_05_10_20_45_11/training_loss.npy')
-relu_loss = np.mean(relu_loss[:-10].reshape((300, 1000)), axis=-1)
+relu_loss = np.mean(relu_loss.reshape((500, 1000)), axis=-1)
 
 #attn_loss = np.load(folder+'2017_05_06_12_47_56/training_loss.npy')
 #attn_loss = np.mean(attn_loss[:-1].reshape((6, 25000)), axis=-1)

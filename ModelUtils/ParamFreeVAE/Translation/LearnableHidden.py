@@ -576,12 +576,14 @@ def run(out_dir):
     print("Run the Relu read and  write only version learnable start ")
     training_loss = []
     model = DeepReluTransReadWrite()
+    with open("code_outputs/2017_05_10_20_56_56/model_params.save", "rb") as params:
+        model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-6}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
 
     train_data = None
-    with open("SentenceData/WMT/Data/data_idx.txt", "r") as dataset:
+    with open("SentenceData/WMT/Data/data_idx_small.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
     for iters in range(100000):
