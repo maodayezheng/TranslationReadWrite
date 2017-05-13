@@ -43,7 +43,7 @@ class DeepReluTransReadWrite(object):
 
         # init backward encoding RNN
         self.backward_rnn_encoder = lasagne.layers.GRULayer(InputLayer((None, None, self.embedding_dim)), self.hid_size,
-                                                            backwards=True, mask_input=InputLayer((None, self.source_len)))
+                                                            mask_input=InputLayer((None, self.source_len)))
 
         # init the decoding hidden init
         self.hidden_init = DenseLayer(InputLayer((None, self.hid_size)), num_units=self.hid_size, nonlinearity=tanh,
@@ -119,8 +119,9 @@ class DeepReluTransReadWrite(object):
 
         # RNN encoder for source language
         forward_info = self.forward_rnn_encoder.get_output_for([source_embedding, encode_mask])
-        backward_info = self.backward_rnn_encoder.get_output_for([source_embedding, encode_mask])
 
+        backward_info = self.backward_rnn_encoder.get_output_for([source_embedding[:, ::-1], encode_mask[:, ::-1]])
+        backward_info = backward_info[:, ::-1]
         encode_info = T.concatenate([forward_info, backward_info], axis=-1)
 
         # Init the decoding RNN
