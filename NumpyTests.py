@@ -3,6 +3,13 @@ from numpy import array
 import json
 import string
 import time
-np.set_printoptions(threshold=1000000)
-a = np.array([[1, 2, 3], [4, 5, 6]])
-print(a[:, ::-1])
+
+small = []
+with open("SentenceData/WMT/Data/data_idx.txt", "r") as dataset:
+    train_data = json.loads(dataset.read())
+    for d in train_data:
+        if len(d) <= 30:
+            small.append(d)
+
+with open("SentenceData/WMT/Data/data_idx_small.txt", "w") as dataset:
+    dataset.write(json.dumps(small))

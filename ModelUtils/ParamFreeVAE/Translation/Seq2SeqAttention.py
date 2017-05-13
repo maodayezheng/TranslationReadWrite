@@ -16,7 +16,7 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class DeepReluTransReadWrite(object):
-    def __init__(self, source_vocab_size=50000, target_vocab_size=50000,
+    def __init__(self, source_vocab_size=30004, target_vocab_size=30004,
                  embed_dim=620, hid_dim=1000, source_seq_len=50,
                  target_seq_len=50, sample_size=301, sample_candi=None):
         self.source_vocab_size = source_vocab_size
@@ -26,11 +26,6 @@ class DeepReluTransReadWrite(object):
         self.target_len = target_seq_len
         self.embedding_dim = embed_dim
         self.output_score_dim = 500
-
-        self.sample_candidates = lasagne.layers.EmbeddingLayer(InputLayer((None, self.target_vocab_size),
-                                                                          input_var=T.imatrix()),
-                                                               input_size=self.target_vocab_size,
-                                                               output_size=301, W=sample_candi)
 
         # init the word embeddings.
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -115,7 +110,6 @@ class DeepReluTransReadWrite(object):
 
         # Get the approximation samples for output softmax
         # Exclude the first token <s>
-        samples = get_output(self.sample_candidates, target[:, 1:])
 
         # RNN encoder for source language
         forward_info = self.forward_rnn_encoder.get_output_for([source_embedding, encode_mask])
@@ -152,21 +146,19 @@ class DeepReluTransReadWrite(object):
         l = h_t_1.shape[0]
 
         # Calculate the sample score
-        o = o.reshape((n*l, 1, self.output_score_dim))
-        sample_embed = get_output(self.target_output_embedding, samples)
-        sample_embed = sample_embed.reshape((n * l, 301, self.output_score_dim))
-        sample_score = T.sum(sample_embed * o, axis=-1).reshape((n, l, 301))
+        sample_embed = self.target_output_embedding.W
+        sample_score = T.dot(o, sample_embed.T)
 
         # Clip the score
         max_clip = T.max(sample_score, axis=-1)
         score_clip = zero_grad(max_clip)
-        sample_score = T.exp(sample_score - score_clip.reshape((n, l, 1)))
-
-        # The last token is the true label
-        score = sample_score[:, :, -1]
+        sample_score = T.exp(sample_score - score_clip.reshape((n*l, 1)))
+        output_idx = target[:, 1:]
+        output_idx = output_idx.reshape((n*l, ))
+        score = sample_score[T.arange(n*l), output_idx]
         sample_score = T.sum(sample_score, axis=-1)
         prob = score / sample_score
-
+        prob = prob.reshape((n, l))
         # Loss per sentence
         loss = decode_mask * T.log(prob + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
@@ -323,62 +315,86 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.out_mlp, params[12])
 
 
+
 def run(out_dir):
-    print(" Seq 2 Seq attention model  ")
+    print("Run the Relu read and  write only version learnable start ")
     training_loss = []
-    buckets = [[21, 8], [36, 15], [51, 20]]
+    model = DeepReluTransReadWrite()
     update_kwargs = {'learning_rate': 1e-6}
-    batchs = []
+    draw_sample = False
+    optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
 
-    with open("SentenceData/WMT/Data/data_idx_22.txt", "r") as dataset:
+    train_data = None
+    with open("SentenceData/WMT/Data/data_idx.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
-        batchs.append(train_data)
 
-    with open("SentenceData/WMT/Data/data_idx_37.txt", "r") as dataset:
-        train_data = json.loads(dataset.read())
-        batchs.append(train_data)
+    for iters in range(100000):
+        batch_indices = np.random.choice(len(train_data), 300, replace=False)
+        mini_batch = [train_data[ind] for ind in batch_indices]
+        mini_batch = sorted(mini_batch, key=lambda d: d[2])
+        samples = None
+        if draw_sample:
+            unique_target = []
+            for m in mini_batch:
+                unique_target += m[1]
+            unique_target = np.unique(unique_target)
 
-    with open("SentenceData/WMT/Data/data_idx_52.txt", "r") as dataset:
-        train_data = json.loads(dataset.read())
-        batchs.append(train_data)
+            num_samples = 8000 - len(unique_target)
+            candidate = np.arange(30004)
+            candidate = np.delete(candidate, unique_target, None)
+            samples = np.random.choice(a=candidate, size=num_samples, replace=False)
+            samples = np.concatenate([unique_target, samples])
 
-    candidates = None
-    with open("SentenceData/WMT/Data/approximate_samples.txt", "r") as sample:
-        candidates = json.loads(sample.read())
-    model = DeepReluTransReadWrite(sample_candi=np.array(candidates)[:-1], source_seq_len=51)
-    optimiser, update = model.optimiser(lasagne.updates.rmsprop, update_kwargs)
-    l0 = len(batchs[0])
-    l1 = len(batchs[1])
-    l2 = len(batchs[2])
-    l = l0+l1+l2
-    idxs = np.random.choice(a=[0, 1, 2], size=900000, p=[float(l0/l), float(l1/l), float(l2/l)])
-    iter = 0
-    for b_idx in idxs.tolist():
-        batch = batchs[b_idx]
-        start = time.clock()
-        batch_indices = np.random.choice(len(batch), 30, replace=False)
-        mini_batch = np.array([batch[ind] for ind in batch_indices])
-        en_batch = mini_batch[:, 0]
-        en_batch = np.array(en_batch.tolist())
-        de_batch = mini_batch[:, 1]
-        de_batch = np.array(de_batch.tolist())
-        output = optimiser(en_batch, de_batch)
-        loss = output[0]
-        training_loss.append(loss)
+        mini_batch = np.array(mini_batch)
+        mini_batchs = np.split(mini_batch, 10)
+        loss = None
+        read_attention = None
+        write_attention = None
+        for m in mini_batchs:
+            l = m[-1, -1]
+            source = None
+            target = None
+            start = time.clock()
+            for datapoint in m:
+                s = np.array(datapoint[0])
+                t = np.array(datapoint[1])
+                if len(s) != l:
+                    s = np.append(s, [-1] * (l - len(s)))
+                if len(t) != l:
+                    t = np.append(t, [-1] * (l - len(t)))
+                if source is None:
+                    source = s.reshape((1, s.shape[0]))
+                else:
+                    source = np.concatenate([source, s.reshape((1, s.shape[0]))])
+                if target is None:
+                    target = s.reshape((1, t.shape[0]))
+                else:
+                    target = np.concatenate([target, t.reshape((1, t.shape[0]))])
+            output = None
+            if draw_sample:
+                output = optimiser(source, target, samples)
+            else:
+                output = optimiser(source, target)
+            iter_time = time.clock() - start
+            loss = output[0]
+            read_attention = output[1]
+            write_attention = output[2]
+            training_loss.append(loss)
+            if iters % 500 == 0:
+                print(" At " + str(iters) + " The training time per iter : " + str(iter_time) + " The training loss " + str(loss))
+        if iters % 5000 == 0:
+            for n in range(1):
+                for t in range(read_attention.shape[0]):
+                    print("======")
+                    print(" Source " + str(read_attention[t, n]))
+                    print(" Target " + str(write_attention[t, n]))
+                    print("")
 
-        if iter % 500 == 0:
-            print("==" * 5)
-            print('Iteration ' + str(iter) + ' per data point (time taken = ' + str(time.clock() - start) + ' seconds)')
-            print('The training loss : ' + str(loss))
-            print("")
-
-        if iter % 50000 == 0 and iter is not 0:
+        if iters % 2000 == 0 and iters is not 0:
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
             with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:
                 cPickle.dump(model.get_param_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
                 f.close()
-
-        iter += 1
 
     np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
     with open(os.path.join(out_dir, 'final_model_params.save'), 'wb') as f:
