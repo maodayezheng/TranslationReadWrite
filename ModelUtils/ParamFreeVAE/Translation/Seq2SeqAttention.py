@@ -208,7 +208,7 @@ class DeepReluTransReadWrite(object):
                                   allow_input_downcast=True)
         return elbo_fn
 
-    def optimiser(self, update, update_kwargs, saved_update=None):
+    def optimiser(self, update, update_kwargs, draw_sample, saved_update=None):
         """
         Return the compiled Theano function which both evaluates the evidence lower bound (ELBO), and updates the model
         parameters to increase the ELBO.
@@ -225,7 +225,10 @@ class DeepReluTransReadWrite(object):
 
         source = T.imatrix('source')
         target = T.imatrix('target')
-        reconstruction_loss = self.symbolic_elbo(source, target)
+        samples = None
+        if draw_sample:
+            samples = T.ivector('samples')
+        reconstruction_loss, read_attention, write_attetion = self.symbolic_elbo(source, target)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         scaled_grads = lasagne.updates.total_norm_constraint(grads, 5)
@@ -235,13 +238,20 @@ class DeepReluTransReadWrite(object):
         if saved_update is not None:
             for u, v in zip(updates, saved_update.keys()):
                 u.set_value(v.get_value())
-        optimiser = theano.function(inputs=[source, target],
-                                    outputs=[reconstruction_loss],
-                                    updates=updates,
-                                    allow_input_downcast=True
-                                    )
-
-        return optimiser, updates
+        if draw_sample:
+            optimiser = theano.function(inputs=[source, target, samples],
+                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        updates=updates,
+                                        allow_input_downcast=True
+                                        )
+            return optimiser, updates
+        else:
+            optimiser = theano.function(inputs=[source, target],
+                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        updates=updates,
+                                        allow_input_downcast=True
+                                        )
+            return optimiser, updates
 
     def get_params(self):
         # Embeddings
@@ -317,7 +327,7 @@ class DeepReluTransReadWrite(object):
 
 
 def run(out_dir):
-    print("Run the Relu read and  write only version learnable start ")
+    print("Run the RNN search start ")
     training_loss = []
     model = DeepReluTransReadWrite()
     update_kwargs = {'learning_rate': 1e-6}
