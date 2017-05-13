@@ -325,7 +325,7 @@ def run(out_dir):
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
 
     train_data = None
-    with open("SentenceData/WMT/Data/data_idx.txt", "r") as dataset:
+    with open("SentenceData/WMT/Data/data_idx_small.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
     for iters in range(100000):
