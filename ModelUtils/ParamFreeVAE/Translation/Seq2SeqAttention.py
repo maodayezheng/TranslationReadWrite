@@ -228,7 +228,7 @@ class DeepReluTransReadWrite(object):
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
-        reconstruction_loss, read_attention, write_attetion = self.symbolic_elbo(source, target)
+        reconstruction_loss = self.symbolic_elbo(source, target)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         scaled_grads = lasagne.updates.total_norm_constraint(grads, 5)
@@ -240,14 +240,14 @@ class DeepReluTransReadWrite(object):
                 u.set_value(v.get_value())
         if draw_sample:
             optimiser = theano.function(inputs=[source, target, samples],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        outputs=[reconstruction_loss],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
             return optimiser, updates
         else:
             optimiser = theano.function(inputs=[source, target],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        outputs=[reconstruction_loss],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
@@ -358,8 +358,6 @@ def run(out_dir):
         mini_batch = np.array(mini_batch)
         mini_batchs = np.split(mini_batch, 10)
         loss = None
-        read_attention = None
-        write_attention = None
         for m in mini_batchs:
             l = m[-1, -1]
             source = None
@@ -387,18 +385,9 @@ def run(out_dir):
                 output = optimiser(source, target)
             iter_time = time.clock() - start
             loss = output[0]
-            read_attention = output[1]
-            write_attention = output[2]
             training_loss.append(loss)
-            if iters % 500 == 0:
-                print(" At " + str(iters) + " The training time per iter : " + str(iter_time) + " The training loss " + str(loss))
-        if iters % 5000 == 0:
-            for n in range(1):
-                for t in range(read_attention.shape[0]):
-                    print("======")
-                    print(" Source " + str(read_attention[t, n]))
-                    print(" Target " + str(write_attention[t, n]))
-                    print("")
+        if iters % 500 == 0:
+            print(" At " + str(iters) + " The training time per iter : " + str(iter_time) + " The training loss " + str(loss))
 
         if iters % 2000 == 0 and iters is not 0:
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
