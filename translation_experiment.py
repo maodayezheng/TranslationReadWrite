@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.MemoryWeight import run
+from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleV2 import run
 
 import sys
 import lasagne
