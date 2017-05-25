@@ -1,5 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.DeepReluSimple import decode
-
+from ModelUtils.ParamFreeVAE.Translation.MemoryWeight import decode
 import sys
 import lasagne
 import numpy as np
@@ -27,7 +26,6 @@ val_num_samples = 1
 
 generate_output_prior = False
 generate_output_posterior = False
-test = False
 
 test_batch_size = 10
 test_num_samples = 5000

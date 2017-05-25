@@ -238,43 +238,47 @@ class DeepReluTransReadWrite(object):
         # Write: K => L
         return h1, h2, h3, canvas, read_attention, write_attention
 
-    def decode_fn(self, seq_len, n_step):
+    def decode_fn(self):
         source = T.imatrix('source')
         target = T.imatrix('target')
         n = source.shape[0]
+        l = source[:, 1:].shape[1]
+        # Get input embedding
         source_embedding = get_output(self.input_embedding, source[:, 1:])
 
         # Create input mask
         encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+
+        # Create decoding mask
         d_m = T.cast(T.gt(target, -1), "float32")
         decode_mask = d_m[:, 1:]
 
-        canvas_init = T.zeros((n, seq_len, self.output_score_dim), dtype="float32")
+        # Init decoding states
+        canvas_init = T.zeros((n, self.max_len, self.output_score_dim), dtype="float32")
+        canvas_init = canvas_init[:, :l]
 
-        start = self.start
-        h_init = T.tile(start.reshape((1, start.shape[0], 3)), (n, 1, 1))
-        o_init = get_output(self.out_mlp, T.max(start, axis=-1))
-        o_init = T.tile(o_init.reshape((1, self.hid_size)), (n, 1))
-        source_embedding = source_embedding * encode_mask.reshape((n, seq_len, 1))
+        h_init = T.zeros((n, self.hid_size))
+        source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
 
-        read_attention_weight = self.attention_weight[:, :seq_len]
-        write_attention_weight = self.attention_weight[:, self.max_len:(self.max_len + seq_len)]
-        read_attention_bias = self.attention_bias[:seq_len]
-        read_attention_bias = read_attention_bias.reshape((1, seq_len))
-        write_attention_bias = self.attention_bias[self.max_len:(self.max_len + seq_len)]
-        write_attention_bias = write_attention_bias.reshape((1, seq_len))
+        read_attention_weight = self.attention_weight[:, :l]
+        write_attention_weight = self.attention_weight[:, self.max_len:(self.max_len + l)]
+        read_attention_bias = self.attention_bias[:l]
+        read_attention_bias = read_attention_bias.reshape((1, l))
+        write_attention_bias = self.attention_bias[self.max_len:(self.max_len + l)]
+        write_attention_bias = write_attention_bias.reshape((1, l))
 
-        read_attention_init = T.nnet.relu(
-            T.tanh(T.dot(o_init[:, :self.output_score_dim], read_attention_weight) + read_attention_bias))
-        write_attention_init = T.nnet.relu(
-            T.tanh(T.dot(o_init[:, :self.output_score_dim], write_attention_weight) + write_attention_bias))
+        read_attention_init = T.nnet.relu(T.tanh(T.dot(self.start, read_attention_weight) + read_attention_bias))
+        read_attention_init = T.tile(read_attention_init.reshape((1, l)), (n, 1))
+        write_attention_init = T.nnet.relu(T.tanh(T.dot(self.start, write_attention_weight) + write_attention_bias))
+        write_attention_init = T.tile(write_attention_init.reshape((1, l)), (n, 1))
+        time_steps = T.cast(T.round(l / 2), "int8")
 
         ([h_t_1, h_t_2, h_t_3, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[h_init[:, :, 0], h_init[:, :, 1], h_init[:, :, 2],
+            = theano.scan(self.step, outputs_info=[h_init, h_init, h_init,
                                                    canvas_init, read_attention_init, write_attention_init],
                           non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
                                          read_attention_bias, write_attention_bias],
-                          n_steps=n_step)
+                          sequences=[T.arange(time_steps)])
 
         # Check the likelihood on full vocab
         final_canvas = canvases[-1]
@@ -335,27 +339,24 @@ class DeepReluTransReadWrite(object):
         prev_embed_init = prev_embed_init.reshape((n, 5, self.embedding_dim))
 
         # Forward path
-        ([prob, embed, prev_idx, candidate_idx, tops], update1) = theano.scan(self.forward_step, sequences=[canvas[1:]],
-                                                                              outputs_info=[prob0, prev_embed_init,
-                                                                                            None, None, None],
-                                                                              non_sequences=[candidate_output_embedding])
+        ([prob, embed, best_idx, beam_idx, tops], update1) = theano.scan(self.forward_step, sequences=[canvas[1:]],
+                                                                         outputs_info=[prob0, prev_embed_init,
+                                                                                       None, None, None],
+                                                                         non_sequences=[candidate_output_embedding])
         last_prob = prob[-1]
-        last_idx = T.cast(T.argmax(last_prob, axis=-1), "int32")
+        last_idx_best = T.cast(T.argmax(last_prob, axis=-1), "int32")
         # Backward
 
-        ([i, decodes], update2) = theano.scan(self.backward_step, sequences=[prev_idx, candidate_idx],
-                                              outputs_info=[last_idx, None],
-                                              go_backwards=True)
+        ([best_beam, decodes], update2) = theano.scan(self.backward_step, sequences=[best_idx, beam_idx],
+                                                      outputs_info=[last_idx_best, None],
+                                                      go_backwards=True)
 
-        def reverse(idx):
-            return idx
-        (seq, update3) = theano.scan(reverse, sequences=[decodes], outputs_info=[None], go_backwards=True)
+        decodes = decodes[:, ::-1]
+        first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), best_beam[-1]]
+        best_idx = T.concatenate([first.reshape((1, n)), decodes], axis=0)
 
-        first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), i[-1]]
-        decode = T.concatenate([first.reshape((1, n)), seq], axis=0)
-
-        decode_fn = theano.function(inputs=[source, target], outputs=[prev_idx, candidate_idx, tops, decode, read_attention,
-                                                               write_attention, loss, forced_max])
+        decode_fn = theano.function(inputs=[source, target], outputs=[best_idx, best_beam, tops, read_attention,
+                                                                      write_attention, loss, forced_max])
         return decode_fn
 
     def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
@@ -393,19 +394,19 @@ class DeepReluTransReadWrite(object):
         top_k = orders[:, :5]
         prob = prob[T.arange(n).reshape((n, 1)), top_k]
 
-        # Get the true idx
-        candidate_idx = (top_k % self.target_vocab_size)
-        # Get the previous idx
-        prev_idx = T.cast(T.floor(T.true_div(top_k, v)), "int32")
-        embedding = get_output(self.target_input_embedding, candidate_idx)
-        prev_idx = prev_idx.reshape((n, k))
-        return prob, embedding, prev_idx, candidate_idx, top_k
+        # Get the best idx
+        best_idx = (top_k % self.target_vocab_size)
+        # Get the beam idx
+        beam_idx = T.cast(T.floor(T.true_div(top_k, self.target_vocab_size)), "int32")
+        embedding = get_output(self.target_input_embedding, best_idx)
+        best_idx = best_idx.reshape((n, k))
+        return prob, embedding, best_idx, beam_idx, top_k
 
-    def backward_step(self, prev_idx, k_candidate, idx):
-        n = k_candidate.shape[0]
-        decode = k_candidate[T.arange(n, dtype="int8"), idx]
-        idx = prev_idx[T.arange(n, dtype="int8"), idx]
-        return idx, decode
+    def backward_step(self, prev_idx, beam_idx, best_idx):
+        n = beam_idx.shape[0]
+        idx = prev_idx[T.arange(n, dtype="int8"), best_idx]
+        best_beam = T.cast(beam_idx[T.arange(n, dtype="int8"), best_idx], "int32")
+        return best_beam, idx
 
     def elbo_fn(self):
         """
@@ -540,54 +541,96 @@ class DeepReluTransReadWrite(object):
 def decode():
     print("Decoding the sequence")
     test_data = None
-    with open("SentenceData/WMT/Data/approximate_samples.txt", "r") as sample:
-        candidates = json.loads(sample.read())
     model = DeepReluTransReadWrite()
-    with open("code_outputs/2017_05_03_01_48_19/model_params.save", "rb") as params:
+    vocab = []
+    with open("SentenceData/en-fr/vocab_fr", "r", encoding="utf8") as v:
+        for line in v:
+            vocab.append(line.strip("\n"))
+    with open("code_outputs/2017_05_16_00_52_48/final_model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
-    with open("SentenceData/WMT/Data/data_idx_22.txt", "r") as dataset:
+    with open("SentenceData/en-fr/data_idx_small.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
-    batch_indices = np.random.choice(len(test_data), 5, replace=False)
-    mini_batch = np.array([test_data[ind] for ind in batch_indices])
-    en_test = mini_batch[:, 0]
-    en_batch = np.array(en_test.tolist())
-    de_batch = np.array(mini_batch[:, 1].tolist())
-    decode = model.decode_fn(21, 8)
-    elbo = model.elbo_fn(21, 8)
-    prev_idx, candidate_idx, tops, prediction, read, write, loss, force_max = decode(en_batch, de_batch)
-    smaple_loss, r, w = elbo(en_batch, de_batch)
+    mini_batch = test_data[0:500]
+    mini_batch = sorted(mini_batch, key=lambda d: d[2])
+    mini_batch = np.array(mini_batch)
+    l = mini_batch[-1, -1]
+    source = None
+    target = None
+    for datapoint in mini_batch:
+        s = np.array(datapoint[0])
+        t = np.array(datapoint[1])
+        if len(s) != l:
+                s = np.append(s, [-1] * (l - len(s)))
+        if len(t) != l:
+                t = np.append(t, [-1] * (l - len(t)))
+        if source is None:
+                source = s.reshape((1, s.shape[0]))
+        else:
+                source = np.concatenate([source, s.reshape((1, s.shape[0]))])
+        if target is None:
+                target = s.reshape((1, t.shape[0]))
+        else:
+                target = np.concatenate([target, t.reshape((1, t.shape[0]))])
+
+    decode = model.decode_fn()
+    best_idx, beam_idx, tops, read, write, loss, force_max = decode(source, target)
+    print(best_idx.shape)
     print("Loss : ")
     print(loss)
-    print("Sample loss : ")
-    print(smaple_loss)
-    for n in range(5):
-        print("Force max : ")
-        print(force_max[n])
-        print("True ")
-        print(de_batch[n])
-        for t in range(8):
-            print("======")
-            print(" Source " + str(read[t, n]))
-            print(" Target " + str(write[t, n]))
-        print("***************************")
+
+    for n in range(100):
+        t = target[n, 1:]
+        p = force_max[n]
+        t_string = ""
+        for t_idx in t:
+            t_string += (vocab[t_idx] + " ")
+            if t_idx == 1:
+                break
+        p_string = ""
+        for p_idx in p:
+            p_string += (vocab[p_idx] + " ")
+            if p_idx == 1:
+                break
+        print("Pred : " + p_string)
+        print("True : " + t_string)
+        print("")
+
+
+def test():
+    vocab = []
+    with open("SentenceData/en-fr/vocab_fr", "r", encoding="utf8") as v:
+        for line in v:
+            vocab.append(line.strip("\n"))
+    outs = []
+    with open("SentenceData/en-fr/data_idx_small.txt", "r") as dataset:
+        test_data = json.loads(dataset.read())
+        for point in test_data:
+            french = point[1]
+            f_string = ""
+            for f in french:
+                f_string += (vocab[f] + " ")
+            outs.append(f_string)
+    with open("SentenceData/en-fr/reconstruction.txt", "w", encoding="utf8") as r:
+        for o in outs:
+            r.write(o)
 
 
 def run(out_dir):
-    print("Run the Relu read and  write only version learnable start ")
+    print("Run the Relu read and  write only version learnable start")
     training_loss = []
     model = DeepReluTransReadWrite()
-    with open("code_outputs/2017_05_10_20_56_56/model_params.save", "rb") as params:
+    with open("code_outputs/2017_05_16_00_52_48/final_model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-6}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
 
     train_data = None
-    with open("SentenceData/WMT/Data/data_idx_small.txt", "r") as dataset:
+    with open("SentenceData/en-fr/data_idx_small.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
-    for iters in range(100000):
-        batch_indices = np.random.choice(len(train_data), 300, replace=False)
+    for iters in range(10000):
+        batch_indices = np.random.choice(len(train_data), 500, replace=False)
         mini_batch = [train_data[ind] for ind in batch_indices]
         mini_batch = sorted(mini_batch, key=lambda d: d[2])
         samples = None

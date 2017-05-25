@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.LearnableHidden import run
+from ModelUtils.ParamFreeVAE.Translation.MemoryWeight import run
 
 import sys
 import lasagne

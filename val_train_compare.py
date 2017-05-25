@@ -2,20 +2,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 folder = 'code_outputs/'
-relu_loss = np.load(folder+'2017_05_10_20_45_11/training_loss.npy')
-relu_loss = np.mean(relu_loss.reshape((500, 1000)), axis=-1)
-
+date = '2017_05_24_13_00_44/'
+train_loss = np.load(folder + date +'training_loss.npy')
+train_loss = np.mean(train_loss[:-10].reshape((240, 1000)), axis=-1)
+valid_loss = np.load(folder + date +'validation_loss.npy')
+x = np.arange(valid_loss.shape[0]) * 10
 #attn_loss = np.load(folder+'2017_05_06_12_47_56/training_loss.npy')
 #attn_loss = np.mean(attn_loss[:-1].reshape((6, 25000)), axis=-1)
 
 
-plt.plot(-relu_loss, label='relu', zorder=2)
+plt.plot(-train_loss, label='training', zorder=2)
+plt.plot(x, -valid_loss, label='validation', zorder=2)
 #plt.plot(-attn_loss, label='attn', zorder=1)
-plt.xlabel('Training elbo (Average over 200 iters) VS Testing elbo (Calculate every 100 time step)')
+plt.xlabel('Negative log likelihood (Averaged over 1000 iterations)')
 plt.ylabel('L(X))')
 plt.legend(loc=4)
 plt.tight_layout()
-plt.savefig('code_outputs/translation' + '.png')
+plt.savefig(folder + date + 'translation' + '.png')
 
 """
 total_elbos =0
