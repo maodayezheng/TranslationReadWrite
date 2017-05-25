@@ -1,3 +1,18 @@
+"""
+From previous experiment the effect of learnable hidden and memory weight matrix is tiny. (removed in v2)
+
+However the following problems are observed from previous experiment:
+ 1. The en-fr data set from Bengio group is noisy and have many miss matched language pairs (Replaced by de-en)
+ 2. The model seems can not correctly predict long sentences
+ 3. The reading mechanism seems ingoring the source language info because of unnecessary encoding mechanism 
+ 4. The use of Maxout layer is wrong (Replaced by a nonlinear transfer)
+ 5. The implementation of time step selection is not precise (Re-implemented)
+
+In this version:
+  1. Problems 1, 4, 5 are addressed and learnable hidden + memory weight is removed
+  
+"""
+
 import theano.tensor as T
 import theano
 from lasagne.layers import EmbeddingLayer, InputLayer, get_output
@@ -30,11 +45,6 @@ class DeepReluTransReadWrite(object):
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
-        v = np.random.uniform(-0.05, 0.05, (self.max_len, self.output_score_dim))
-        self.memory_embedding = theano.shared(value=v.astype(theano.config.floatX), name="memory-embedding")
-        # Init the pos start vector
-        v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, ))
-        self.start = theano.shared(value=v.astype(theano.config.floatX), name="start")
         # init decoding RNNs
         self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
@@ -138,12 +148,11 @@ class DeepReluTransReadWrite(object):
         write_attention_init = T.nnet.relu(T.tanh(T.dot(self.start, write_attention_weight) + write_attention_bias))
         write_attention_init = T.tile(write_attention_init.reshape((1, l)), (n, 1))
         time_steps = T.cast(T.round(l*0.7), "int8")
-        memory_embedding = self.memory_embedding[:l]
         ([h_t_1, h_t_2, h_t_3, canvases, read_attention, write_attention], update) \
             = theano.scan(self.step, outputs_info=[h_init, h_init, h_init,
                                                    canvas_init, read_attention_init, write_attention_init],
                           non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
-                                         read_attention_bias, write_attention_bias, memory_embedding],
+                                         read_attention_bias, write_attention_bias],
                           sequences=[T.arange(time_steps)])
 
         # Complementary Sum for softmax approximation
@@ -183,7 +192,7 @@ class DeepReluTransReadWrite(object):
 
         return loss, read_attention*encode_mask.reshape((1, n, l)), write_attention * d_m[:, :-1].reshape((1, n, l))
 
-    def step(self, iter, h1, h2, h3, canvas, r_a, w_a, ref, r_a_w, w_a_w, r_a_b, w_a_b, m_e):
+    def step(self, iter, h1, h2, h3, canvas, r_a, w_a, ref, r_a_w, w_a_w, r_a_b, w_a_b):
         n = h1.shape[0]
         l = canvas.shape[1]
         # Reading position information
@@ -231,7 +240,7 @@ class DeepReluTransReadWrite(object):
         a = o[:, :self.output_score_dim]
         c = o[:, self.output_score_dim:]
         pos = write_attention.reshape((n, l, 1))
-        canvas = canvas * (1.0 - pos) + c.reshape((n, 1, self.output_score_dim)) * m_e.reshape((1, l, self.output_score_dim)) * pos
+        canvas = canvas * (1.0 - pos) + c.reshape((n, 1, self.output_score_dim)) * pos
 
         read_attention = T.nnet.relu(T.tanh(T.dot(a, r_a_w) + r_a_b))
         write_attention = T.nnet.relu(T.tanh(T.dot(a, w_a_w) + w_a_b))
@@ -273,7 +282,7 @@ class DeepReluTransReadWrite(object):
         read_attention_init = T.tile(read_attention_init.reshape((1, l)), (n, 1))
         write_attention_init = T.nnet.relu(T.tanh(T.dot(self.start, write_attention_weight) + write_attention_bias))
         write_attention_init = T.tile(write_attention_init.reshape((1, l)), (n, 1))
-        time_steps = T.cast(T.round(l * 0.7), "int8")
+        time_steps = T.cast(T.round(l / 2), "int8")
         memory_embedding = self.memory_embedding[:l]
 
         ([h_t_1, h_t_2, h_t_3, canvases, read_attention, write_attention], update) \
@@ -284,7 +293,7 @@ class DeepReluTransReadWrite(object):
                           sequences=[T.arange(time_steps)])
 
         # Check the likelihood on full vocab
-        final_canvas = canvases[-1]
+        final_canvas = canvases[-2]
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
         teacher = T.concatenate([output_embedding, final_canvas], axis=2)
@@ -495,7 +504,7 @@ class DeepReluTransReadWrite(object):
                gru_2_c_param + gru_2_r_param + gru_2_u_param + \
                gru_3_c_param + gru_3_r_param + gru_3_u_param + \
                out_param + score_param + input_embedding_param + \
-               [self.attention_weight, self.attention_bias, self.start, self.memory_embedding]
+               [self.attention_weight, self.attention_bias]
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
@@ -518,8 +527,7 @@ class DeepReluTransReadWrite(object):
                 gru_1_u_param, gru_1_r_param, gru_1_c_param,
                 gru_2_u_param, gru_2_r_param, gru_2_c_param,
                 gru_3_u_param, gru_3_r_param, gru_3_c_param,
-                out_param, score_param, self.attention_weight.get_value(), self.attention_bias.get_value(),
-                self.start.get_value(), self.memory_embedding.get_value()]
+                out_param, score_param, self.attention_weight.get_value(), self.attention_bias.get_value()]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -538,8 +546,6 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.score, params[13])
         self.attention_weight.set_value(params[14])
         self.attention_bias.set_value(params[15])
-        self.start.set_value(params[16])
-        self.memory_embedding.set_value(params[17])
 
 
 def decode():
