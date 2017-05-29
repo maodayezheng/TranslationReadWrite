@@ -263,6 +263,7 @@ class DeepReluTransReadWrite(object):
         source = T.imatrix('source')
         target = T.imatrix('target')
         n = source.shape[0]
+        max_time_steps = T.iscalar('max_time_step')
         l = source[:, 1:].shape[1]
         # Get input embedding
         source_embedding = get_output(self.input_embedding, source[:, 1:])
@@ -287,23 +288,19 @@ class DeepReluTransReadWrite(object):
         read_attention_bias = read_attention_bias.reshape((1, l))
         write_attention_bias = self.attention_bias[self.max_len:(self.max_len + l)]
         write_attention_bias = write_attention_bias.reshape((1, l))
-
-        read_attention_init = T.nnet.relu(T.tanh(T.dot(self.start, read_attention_weight) + read_attention_bias))
-        read_attention_init = T.tile(read_attention_init.reshape((1, l)), (n, 1))
-        write_attention_init = T.nnet.relu(T.tanh(T.dot(self.start, write_attention_weight) + write_attention_bias))
-        write_attention_init = T.tile(write_attention_init.reshape((1, l)), (n, 1))
-        time_steps = T.cast(T.round(l / 2), "int8")
-        memory_embedding = self.memory_embedding[:l]
-
+        start = h_init[:, :self.output_score_dim]
+        read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
+        write_attention_init = T.nnet.relu(T.tanh(T.dot(start, write_attention_weight) + write_attention_bias))
+        time_steps = T.ones((max_time_steps, n, 1, 1), "float32")
         ([h_t_1, h_t_2, h_t_3, canvases, read_attention, write_attention], update) \
             = theano.scan(self.step, outputs_info=[h_init, h_init, h_init,
                                                    canvas_init, read_attention_init, write_attention_init],
                           non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
-                                         read_attention_bias, write_attention_bias, memory_embedding],
-                          sequences=[T.arange(time_steps)])
+                                         read_attention_bias, write_attention_bias],
+                          sequences=[time_steps])
 
         # Check the likelihood on full vocab
-        final_canvas = canvases[-2]
+        final_canvas = canvases[-1]
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
         teacher = T.concatenate([output_embedding, final_canvas], axis=2)
@@ -377,8 +374,8 @@ class DeepReluTransReadWrite(object):
         first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), best_beam[-1]]
         best_idx = T.concatenate([first.reshape((1, n)), decodes], axis=0)
 
-        decode_fn = theano.function(inputs=[source, target], outputs=[best_idx, best_beam, tops, read_attention,
-                                                                      write_attention, loss, forced_max])
+        decode_fn = theano.function(inputs=[source, target, max_time_steps], outputs=[best_idx, best_beam, tops, read_attention,
+                                                                                      write_attention, loss, forced_max])
         return decode_fn
 
     def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
@@ -586,7 +583,7 @@ def decode():
     with open("SentenceData/vocab_de", "r", encoding="utf8") as v:
         for line in v:
             de_vocab.append(line.strip("\n"))
-    with open("code_outputs/2017_05_24_13_00_44/model_params.save", "rb") as params:
+    with open("code_outputs/2017_05_28_19_51_47/model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/dev_idx_small.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
@@ -616,7 +613,7 @@ def decode():
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        best_idx, beam_idx, tops, read, write, loss, force_max = decode(source, target)
+        best_idx, beam_idx, tops, read, write, loss, force_max = decode(source, target, l)
         print("Loss : ")
         print(loss)
 
@@ -645,12 +642,12 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
-    pre_trained = False
+    pre_trained = True
     epoch = 10
     if pre_trained:
-        with open("code_outputs/2017_05_23_14_01_31/model_params.save", "rb") as params:
+        with open("code_outputs/2017_05_25_15_12_21/final_model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
-    update_kwargs = {'learning_rate': 1e-4}
+    update_kwargs = {'learning_rate': 1e-5}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
     validation = model.elbo_fn()

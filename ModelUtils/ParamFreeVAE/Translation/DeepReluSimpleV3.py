@@ -1,3 +1,14 @@
+"""
+Following problems are observed from version 2:
+ 1. The decoding layer is too simple to act as a target language model
+ 2. The reading mechanism seems ingoring the source language info because of unnecessary encoding mechanism 
+ 
+In this version:
+ 1. An RNN is removed from encoding layer
+ 2. An RNN is used for decoding 
+
+"""
+
 import theano.tensor as T
 import theano
 from lasagne.layers import EmbeddingLayer, InputLayer, get_output
@@ -22,7 +33,7 @@ class DeepReluTransReadWrite(object):
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
         self.hid_size = hid_dim
-        self.max_len = 51
+        self.max_len = 31
         self.output_score_dim = 500
         self.embedding_dim = embed_dim
 
@@ -30,31 +41,29 @@ class DeepReluTransReadWrite(object):
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
-        v = np.random.uniform(-0.05, 0.05, (self.max_len, self.output_score_dim))
-        self.memory_embedding = theano.shared(value=v.astype(theano.config.floatX), name="memory-embedding")
-        # Init the pos start vector
-        v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, ))
-        self.start = theano.shared(value=v.astype(theano.config.floatX), name="start")
         # init decoding RNNs
         self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
-        self.gru_update_2 = self.gru_update(self.embedding_dim + self.hid_size*2, self.hid_size)
-        self.gru_reset_2 = self.gru_reset(self.embedding_dim + self.hid_size*2, self.hid_size)
-        self.gru_candidate_2 = self.gru_candidate(self.embedding_dim + self.hid_size*2, self.hid_size)
+        self.gru_update_2 = self.gru_update(self.embedding_dim + self.hid_size * 2, self.hid_size)
+        self.gru_reset_2 = self.gru_reset(self.embedding_dim + self.hid_size * 2, self.hid_size)
+        self.gru_candidate_2 = self.gru_candidate(self.embedding_dim + self.hid_size * 2, self.hid_size)
 
-        self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size*2, self.hid_size)
-        self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size*2, self.hid_size)
-        self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size*2, self.hid_size)
+        self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size * 2, self.hid_size)
+        self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size * 2, self.hid_size)
+        self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size * 2, self.hid_size)
+
+        self.rnn_decoding = lasagne.layers.GRULayer(lasagne.layers.InputLayer((None, None, self.hid_size+embed_dim)),
+                                                    self.output_score_dim)
 
         # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size, self.output_score_dim*2, activation=tanh)
+        self.out_mlp = self.mlp(self.hid_size * 2, self.hid_size, activation=tanh)
         # attention parameters
-        v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, 2*self.max_len)).astype(theano.config.floatX)
+        v = np.random.uniform(-0.05, 0.05, (self.hid_size, 2 * self.max_len)).astype(theano.config.floatX)
         self.attention_weight = theano.shared(name="attention_weight", value=v)
 
-        v = np.zeros((2 * self.max_len, )).astype(theano.config.floatX)
+        v = np.ones((2 * self.max_len,)).astype(theano.config.floatX) * 0.05
         self.attention_bias = theano.shared(name="attention_bias", value=v)
 
         # teacher mapper
@@ -99,7 +108,7 @@ class DeepReluTransReadWrite(object):
                                       b=lasagne.init.Constant(0.0))
         return h
 
-    def symbolic_elbo(self, source, target, samples):
+    def symbolic_elbo(self, source, target, samples, true_l):
 
         """
         Return a symbolic variable, representing the ELBO, for the given minibatch.
@@ -108,6 +117,7 @@ class DeepReluTransReadWrite(object):
         :return elbo: The symbolic variable representing the ELBO.
         """
         n = source.shape[0]
+        max_time_steps = true_l[-1]
         l = source[:, 1:].shape[1]
         # Get input embedding
         source_embedding = get_output(self.input_embedding, source[:, 1:])
@@ -132,26 +142,29 @@ class DeepReluTransReadWrite(object):
         read_attention_bias = read_attention_bias.reshape((1, l))
         write_attention_bias = self.attention_bias[self.max_len:(self.max_len + l)]
         write_attention_bias = write_attention_bias.reshape((1, l))
-
-        read_attention_init = T.nnet.relu(T.tanh(T.dot(self.start, read_attention_weight) + read_attention_bias))
-        read_attention_init = T.tile(read_attention_init.reshape((1, l)), (n, 1))
-        write_attention_init = T.nnet.relu(T.tanh(T.dot(self.start, write_attention_weight) + write_attention_bias))
-        write_attention_init = T.tile(write_attention_init.reshape((1, l)), (n, 1))
-        time_steps = T.cast(T.round(l*0.7), "int8")
-        memory_embedding = self.memory_embedding[:l]
-        ([h_t_1, h_t_2, h_t_3, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[h_init, h_init, h_init,
+        start = h_init[:, :self.output_score_dim]
+        read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
+        write_attention_init = T.nnet.relu(T.tanh(T.dot(start, write_attention_weight) + write_attention_bias))
+        time_steps = T.arange(T.cast(max_time_steps, "int8"))
+        time_steps = - time_steps.reshape((max_time_steps, 1)) + true_l.reshape((1, n)) - 1
+        time_steps = T.cast(T.ge(time_steps, 0), "float32")
+        time_steps = time_steps.reshape((max_time_steps, n, 1, 1))
+        ([h_t_1, h_t_2, canvases, read_attention, write_attention], update) \
+            = theano.scan(self.step, outputs_info=[h_init, h_init,
                                                    canvas_init, read_attention_init, write_attention_init],
                           non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
-                                         read_attention_bias, write_attention_bias, memory_embedding],
-                          sequences=[T.arange(time_steps)])
+                                         read_attention_bias, write_attention_bias],
+                          sequences=[time_steps])
 
         # Complementary Sum for softmax approximation
         # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
         final_canvas = canvases[-1]
+
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
         teacher = T.concatenate([output_embedding, final_canvas], axis=2)
+
+        teacher = get_output(self.rnn_decoding, teacher)
         n = teacher.shape[0]
         l = teacher.shape[1]
         d = teacher.shape[2]
@@ -167,12 +180,12 @@ class DeepReluTransReadWrite(object):
         sample_score = T.dot(teacher, sample_embed.T)
         max_clip = T.max(sample_score, axis=-1)
         score_clip = zero_grad(max_clip)
-        sample_score = T.exp(sample_score - score_clip.reshape((n*l, 1)))
+        sample_score = T.exp(sample_score - score_clip.reshape((n * l, 1)))
         sample_score = T.sum(sample_score, axis=-1)
 
         # Get true embedding
         true_embed = get_output(self.target_output_embedding, target[:, 1:])
-        true_embed = true_embed.reshape((n*l, self.output_score_dim))
+        true_embed = true_embed.reshape((n * l, self.output_score_dim))
         score = T.exp(T.sum(teacher * true_embed, axis=-1) - score_clip)
 
         prob = score / sample_score
@@ -181,9 +194,9 @@ class DeepReluTransReadWrite(object):
         loss = decode_mask * T.log(prob + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
 
-        return loss, read_attention*encode_mask.reshape((1, n, l)), write_attention * d_m[:, :-1].reshape((1, n, l))
+        return loss, read_attention * encode_mask.reshape((1, n, l)), write_attention * d_m[:, :-1].reshape((1, n, l))
 
-    def step(self, iter, h1, h2, h3, canvas, r_a, w_a, ref, r_a_w, w_a_w, r_a_b, w_a_b, m_e):
+    def step(self, t_s, h1, h2, canvas, r_a, w_a, ref, r_a_w, w_a_w, r_a_b, w_a_b):
         n = h1.shape[0]
         l = canvas.shape[1]
         # Reading position information
@@ -213,37 +226,34 @@ class DeepReluTransReadWrite(object):
         c2 = get_output(self.gru_candidate_2, c_in)
         h2 = (1.0 - u2) * h2 + u2 * c2
 
-        # Decoding GRU layer 3
-
-        h_in = T.concatenate([h2, h3, selection], axis=1)
-        u3 = get_output(self.gru_update_3, h_in)
-        r3 = get_output(self.gru_reset_3, h_in)
-        reset_h3 = h3 * r3
-        c_in = T.concatenate([h2, reset_h3, selection], axis=1)
-        c3 = get_output(self.gru_candidate_3, c_in)
-        h3 = (1.0 - u3) * h3 + u3 * c3
-
-        # Maxout layer
-        h = T.concatenate([h1.reshape((n, self.hid_size, 1)), h2.reshape((n, self.hid_size, 1)),
-                           h3.reshape((n, self.hid_size, 1))], axis=-1)
-        h = T.max(h, axis=-1)
+        h = T.concatenate([h1, h2], axis=-1)
         o = get_output(self.out_mlp, h)
         a = o[:, :self.output_score_dim]
         c = o[:, self.output_score_dim:]
         pos = write_attention.reshape((n, l, 1))
-        canvas = canvas * (1.0 - pos) + c.reshape((n, 1, self.output_score_dim)) * m_e.reshape((1, l, self.output_score_dim)) * pos
+        new_canvas = canvas * (1.0 - pos) + c.reshape((n, 1, self.output_score_dim)) * pos
+        canvas = new_canvas * t_s + canvas * (1.0 - t_s)
 
         read_attention = T.nnet.relu(T.tanh(T.dot(a, r_a_w) + r_a_b))
         write_attention = T.nnet.relu(T.tanh(T.dot(a, w_a_w) + w_a_b))
 
         # Writing position
         # Write: K => L
-        return h1, h2, h3, canvas, read_attention, write_attention
+        return h1, h2, canvas, read_attention, write_attention
+
+    """
+
+
+        The following functions are for decoding
+
+
+    """
 
     def decode_fn(self):
         source = T.imatrix('source')
         target = T.imatrix('target')
         n = source.shape[0]
+        max_time_steps = T.iscalar('max_time_step')
         l = source[:, 1:].shape[1]
         # Get input embedding
         source_embedding = get_output(self.input_embedding, source[:, 1:])
@@ -268,20 +278,16 @@ class DeepReluTransReadWrite(object):
         read_attention_bias = read_attention_bias.reshape((1, l))
         write_attention_bias = self.attention_bias[self.max_len:(self.max_len + l)]
         write_attention_bias = write_attention_bias.reshape((1, l))
-
-        read_attention_init = T.nnet.relu(T.tanh(T.dot(self.start, read_attention_weight) + read_attention_bias))
-        read_attention_init = T.tile(read_attention_init.reshape((1, l)), (n, 1))
-        write_attention_init = T.nnet.relu(T.tanh(T.dot(self.start, write_attention_weight) + write_attention_bias))
-        write_attention_init = T.tile(write_attention_init.reshape((1, l)), (n, 1))
-        time_steps = T.cast(T.round(l * 0.7), "int8")
-        memory_embedding = self.memory_embedding[:l]
-
+        start = h_init[:, :self.output_score_dim]
+        read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
+        write_attention_init = T.nnet.relu(T.tanh(T.dot(start, write_attention_weight) + write_attention_bias))
+        time_steps = T.ones((max_time_steps, n, 1, 1), "float32")
         ([h_t_1, h_t_2, h_t_3, canvases, read_attention, write_attention], update) \
             = theano.scan(self.step, outputs_info=[h_init, h_init, h_init,
                                                    canvas_init, read_attention_init, write_attention_init],
                           non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
-                                         read_attention_bias, write_attention_bias, memory_embedding],
-                          sequences=[T.arange(time_steps)])
+                                         read_attention_bias, write_attention_bias],
+                          sequences=[time_steps])
 
         # Check the likelihood on full vocab
         final_canvas = canvases[-1]
@@ -315,7 +321,6 @@ class DeepReluTransReadWrite(object):
 
         loss = decode_mask * T.log(probs + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
-
 
         # Pre-compute the first step
         canvas = canvases[-1]
@@ -358,8 +363,9 @@ class DeepReluTransReadWrite(object):
         first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), best_beam[-1]]
         best_idx = T.concatenate([first.reshape((1, n)), decodes], axis=0)
 
-        decode_fn = theano.function(inputs=[source, target], outputs=[best_idx, best_beam, tops, read_attention,
-                                                                      write_attention, loss, forced_max])
+        decode_fn = theano.function(inputs=[source, target, max_time_steps],
+                                    outputs=[best_idx, best_beam, tops, read_attention,
+                                             write_attention, loss, forced_max])
         return decode_fn
 
     def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
@@ -411,6 +417,12 @@ class DeepReluTransReadWrite(object):
         best_beam = T.cast(beam_idx[T.arange(n, dtype="int8"), best_idx], "int32")
         return best_beam, idx
 
+    """
+
+    The following functions are for creating computational graphs
+
+    """
+
     def elbo_fn(self):
         """
         Return the compiled Theano function which evaluates the evidence lower bound (ELBO).
@@ -422,8 +434,9 @@ class DeepReluTransReadWrite(object):
         """
         source = T.imatrix('source')
         target = T.imatrix('target')
-        reconstruction_loss, read_attention, write_attention = self.symbolic_elbo(source, target, None)
-        elbo_fn = theano.function(inputs=[source, target],
+        true_l = T.ivector('true_l')
+        reconstruction_loss, read_attention, write_attention = self.symbolic_elbo(source, target, None, true_l)
+        elbo_fn = theano.function(inputs=[source, target, true_l],
                                   outputs=[reconstruction_loss, read_attention, write_attention],
                                   allow_input_downcast=True)
         return elbo_fn
@@ -445,10 +458,11 @@ class DeepReluTransReadWrite(object):
 
         source = T.imatrix('source')
         target = T.imatrix('target')
+        true_l = T.ivector('true_l')
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
-        reconstruction_loss, read_attention, write_attetion = self.symbolic_elbo(source, target, samples)
+        reconstruction_loss, read_attention, write_attetion = self.symbolic_elbo(source, target, samples, true_l)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         scaled_grads = lasagne.updates.total_norm_constraint(grads, 5)
@@ -459,14 +473,14 @@ class DeepReluTransReadWrite(object):
             for u, v in zip(updates, saved_update.keys()):
                 u.set_value(v.get_value())
         if draw_sample:
-            optimiser = theano.function(inputs=[source, target, samples],
+            optimiser = theano.function(inputs=[source, target, samples, true_l],
                                         outputs=[reconstruction_loss, read_attention, write_attetion],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
             return optimiser, updates
         else:
-            optimiser = theano.function(inputs=[source, target],
+            optimiser = theano.function(inputs=[source, target, true_l],
                                         outputs=[reconstruction_loss, read_attention, write_attetion],
                                         updates=updates,
                                         allow_input_downcast=True
@@ -495,7 +509,7 @@ class DeepReluTransReadWrite(object):
                gru_2_c_param + gru_2_r_param + gru_2_u_param + \
                gru_3_c_param + gru_3_r_param + gru_3_u_param + \
                out_param + score_param + input_embedding_param + \
-               [self.attention_weight, self.attention_bias, self.start, self.memory_embedding]
+               [self.attention_weight, self.attention_bias]
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
@@ -518,8 +532,7 @@ class DeepReluTransReadWrite(object):
                 gru_1_u_param, gru_1_r_param, gru_1_c_param,
                 gru_2_u_param, gru_2_r_param, gru_2_c_param,
                 gru_3_u_param, gru_3_r_param, gru_3_c_param,
-                out_param, score_param, self.attention_weight.get_value(), self.attention_bias.get_value(),
-                self.start.get_value(), self.memory_embedding.get_value()]
+                out_param, score_param, self.attention_weight.get_value(), self.attention_bias.get_value()]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -538,8 +551,13 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.score, params[13])
         self.attention_weight.set_value(params[14])
         self.attention_bias.set_value(params[15])
-        self.start.set_value(params[16])
-        self.memory_embedding.set_value(params[17])
+
+
+"""
+
+The following functions are for training and testing
+
+"""
 
 
 def decode():
@@ -556,7 +574,7 @@ def decode():
     with open("SentenceData/vocab_de", "r", encoding="utf8") as v:
         for line in v:
             de_vocab.append(line.strip("\n"))
-    with open("code_outputs/2017_05_24_13_00_44/model_params.save", "rb") as params:
+    with open("code_outputs/2017_05_28_19_51_47/model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/dev_idx_small.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
@@ -570,7 +588,6 @@ def decode():
         l = m[-1, -1]
         source = None
         target = None
-
         for datapoint in m:
             s = np.array(datapoint[0])
             t = np.array(datapoint[1])
@@ -587,7 +604,7 @@ def decode():
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        best_idx, beam_idx, tops, read, write, loss, force_max = decode(source, target)
+        best_idx, beam_idx, tops, read, write, loss, force_max = decode(source, target, l)
         print("Loss : ")
         print(loss)
 
@@ -612,16 +629,16 @@ def decode():
 
 
 def run(out_dir):
-    print("Run the Relu read and  write only version learnable start")
+    print("Run the Relu read and  write v2 ")
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
     pre_trained = True
     epoch = 10
     if pre_trained:
-        with open("code_outputs/2017_05_23_14_01_31/model_params.save", "rb") as params:
+        with open("code_outputs/2017_05_25_15_12_21/final_model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
-    update_kwargs = {'learning_rate': 1e-4}
+    update_kwargs = {'learning_rate': 1e-5}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
     validation = model.elbo_fn()
@@ -650,6 +667,7 @@ def run(out_dir):
         start = time.clock()
         source = None
         target = None
+        true_l = m[:, -1]
         for datapoint in m:
             s = np.array(datapoint[0])
             t = np.array(datapoint[1])
@@ -666,7 +684,7 @@ def run(out_dir):
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        validation_pair.append([source, target])
+        validation_pair.append([source, target, true_l])
 
     # calculate required iterations
     data_size = len(train_data)
@@ -677,7 +695,7 @@ def run(out_dir):
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
-        batch_indices = np.random.choice(len(train_data), batch_size*sample_groups, replace=False)
+        batch_indices = np.random.choice(len(train_data), batch_size * sample_groups, replace=False)
         mini_batch = [train_data[ind] for ind in batch_indices]
         mini_batch = sorted(mini_batch, key=lambda d: d[2])
         samples = None
@@ -702,6 +720,7 @@ def run(out_dir):
             l = m[-1, -1]
             source = None
             target = None
+            true_l = m[:, -1]
             start = time.clock()
             for datapoint in m:
                 s = np.array(datapoint[0])
@@ -720,34 +739,36 @@ def run(out_dir):
                     target = np.concatenate([target, t.reshape((1, t.shape[0]))])
             output = None
             if draw_sample:
-                output = optimiser(source, target, samples)
+                output = optimiser(source, target, samples, true_l)
             else:
-                output = optimiser(source, target)
+                output = optimiser(source, target, true_l)
             iter_time = time.clock() - start
             loss = output[0]
             training_loss.append(loss)
 
-            if i % 500 == 0:
-                print("training time " + str(iter_time) + " sec with sentence length " + str(l))
+            if i % 250 == 0:
+                print("training time " + str(iter_time) + " sec with sentence length " + str(l) + "training loss : " +
+                      str(loss))
 
-        if i % 1000 == 0:
+        if i % 500 == 0:
             valid_loss = 0
             p = 0
             v_r = None
             v_w = None
             for pair in validation_pair:
-               p += 1
-               v_l, v_r, v_w = validation(pair[0], pair[1])
-               valid_loss += v_l
+                p += 1
+                v_l, v_r, v_w = validation(pair[0], pair[1], pair[2])
+                valid_loss += v_l
 
-            print("The loss on testing set is : " + str(valid_loss/p))
-            validation_loss.append(valid_loss/p)
-            for n in range(1):
-                for t in range(v_r.shape[0]):
-                    print("======")
-                    print(" Source " + str(v_r[t, n]))
-                    print(" Target " + str(v_w[t, n]))
-                    print("")
+            print("The loss on testing set is : " + str(valid_loss / p))
+            validation_loss.append(valid_loss / p)
+            if i % 2000 == 0:
+                for n in range(1):
+                    for t in range(v_r.shape[0]):
+                        print("======")
+                        print(" Source " + str(v_r[t, n]))
+                        print(" Target " + str(v_w[t, n]))
+                        print("")
 
         if i % 2000 == 0 and iters is not 0:
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)

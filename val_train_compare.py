@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 folder = 'code_outputs/'
-date = '2017_05_24_13_00_44/'
+date = '2017_05_28_19_51_47/'
 train_loss = np.load(folder + date +'training_loss.npy')
-train_loss = np.mean(train_loss[:-10].reshape((260, 1000)), axis=-1)
+train_loss = np.mean(train_loss[:-10].reshape((200, 500)), axis=-1)
 valid_loss = np.load(folder + date +'validation_loss.npy')
 x = np.arange(valid_loss.shape[0]) * 10
 #attn_loss = np.load(folder+'2017_05_06_12_47_56/training_loss.npy')

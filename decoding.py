@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.MemoryWeight import decode
+from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleV2 import decode
 import sys
 import lasagne
 import numpy as np
