@@ -303,42 +303,22 @@ class DeepReluTransReadWrite(object):
         final_canvas = canvases[-1]
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
-        teacher = T.concatenate([output_embedding, final_canvas], axis=2)
-        n = teacher.shape[0]
-        l = teacher.shape[1]
-        d = teacher.shape[2]
-        # Get sample embedding
-        teacher = teacher.reshape((n * l, d))
-        teacher = get_output(self.score, teacher)
-        teacher = teacher.reshape((n, l, self.output_score_dim))
+        output_embedding = output_embedding.dimshuffle((1, 0, 2))
         sample_embed = self.target_output_embedding.W
+        sample_embed = sample_embed.T
 
-        def probs_step(t, t_idx, s_embedding):
-            n = t_idx.shape[0]
-            sample_score = T.dot(t, s_embedding.T)
-            forced_max = T.argmax(sample_score, axis=-1)
-            max_clip = T.max(sample_score, axis=-1)
-            score_clip = zero_grad(max_clip)
-            sample_score = T.exp(sample_score - score_clip.reshape((n, 1)))
-            score = sample_score[T.arange(n), t_idx]
-            sample_score = T.sum(sample_score, axis=-1)
-            prob = score / sample_score
-            return prob, forced_max
+        first_embedding = output_embedding[0]
 
-        target_idx = target[:, 1:]
-        ([probs, forced_max], update0) = theano.scan(probs_step, sequences=[teacher, target_idx],
-                                                     non_sequences=[sample_embed])
+        final_canvas = final_canvas.dimshuffle((1, 0, 2))
+        ([greedy_embed, greedy_max, force_max], update0) = theano.scan(self.greedy_step, sequences=[output_embedding, final_canvas],
+                                                                       non_sequences=[sample_embed],
+                                                                       outputs_info=[first_embedding, None, None])
+        greedy_max = greedy_max.dimshuffle((0, 1))
+        force_max = force_max.dimshuffle((0, 1))
 
-        loss = decode_mask * T.log(probs + 1e-5)
-        loss = -T.mean(T.sum(loss, axis=1))
-
-
-        # Pre-compute the first step
-        canvas = canvases[-1]
+        """
         canvas = canvas.dimshuffle((1, 0, 2))
-        c0 = canvas[0]
-        first_token = T.zeros((n,), "int8")
-        first_embedding = get_output(self.target_input_embedding, first_token)
+        c0 = canvas[:, -1]
         s0 = T.concatenate([first_embedding, c0], axis=1)
         s0 = get_output(self.score, s0)
 
@@ -373,10 +353,23 @@ class DeepReluTransReadWrite(object):
         decodes = decodes[:, ::-1]
         first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), best_beam[-1]]
         best_idx = T.concatenate([first.reshape((1, n)), decodes], axis=0)
+        """
 
-        decode_fn = theano.function(inputs=[source, target, max_time_steps], outputs=[best_idx, best_beam, tops, read_attention,
-                                                                                      write_attention, loss, forced_max])
+        decode_fn = theano.function(inputs=[source, target, max_time_steps], outputs=[read_attention, write_attention,
+                                                                                      force_max, greedy_max])
         return decode_fn
+
+    def greedy_step(self, f, c, g, s_embedding):
+        g_info = T.concatenate([g, c], axis=-1)
+        f_info = T.concatenate([f, c], axis=-1)
+        g_score = get_output(self.score, g_info)
+        f_score = get_output(self.score, f_info)
+        g_score = T.dot(g_score, s_embedding)
+        f_score = T.dot(f_score, s_embedding)
+        g_max = T.argmax(g_score, axis=-1)
+        next_g = get_output(self.target_input_embedding, g_max)
+        f_max = T.argmax(f_score)
+        return next_g, g_max, f_max
 
     def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
         """
@@ -587,10 +580,10 @@ def decode():
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/dev_idx_small.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
-    mini_batch = test_data[0:100]
+    mini_batch = test_data[:2000]
     mini_batch = sorted(mini_batch, key=lambda d: d[2])
     mini_batch = np.array(mini_batch)
-    mini_batchs = np.split(mini_batch, 10)
+    mini_batchs = np.split(mini_batch, 20)
     batch_size = mini_batch.shape[0]
     decode = model.decode_fn()
     for m in mini_batchs:
@@ -613,27 +606,28 @@ def decode():
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        best_idx, beam_idx, tops, read, write, loss, force_max = decode(source, target, l)
-        print("Loss : ")
-        print(loss)
-
+        read, write, force_max, greedy_max = decode(source, target, l)
         for n in range(10):
             s = source[n, 1:]
             t = target[n, 1:]
             p = force_max[n]
-
+            g = greedy_max[n]
             s_string = ""
             for s_idx in s:
                 s_string += (en_vocab[s_idx] + " ")
             t_string = ""
             for t_idx in t:
                 t_string += (de_vocab[t_idx] + " ")
-            p_string = ""
+            f_p_string = ""
             for p_idx in p:
-                p_string += (de_vocab[p_idx] + " ")
+                f_p_string += (de_vocab[p_idx] + " ")
+            g_p_string = ""
+            for g_idx in g:
+                g_p_string += (de_vocab[g_idx] + " ")
             print("Sour : " + s_string)
             print("Refe : " + t_string)
-            print("Pred : " + p_string)
+            print("Forc : " + f_p_string)
+            print("Geed : " + g_p_string)
             print("")
 
 
@@ -676,7 +670,7 @@ def run(out_dir):
         start = time.clock()
         source = None
         target = None
-        true_l = m[: , -1]
+        true_l = m[:, -1]
         for datapoint in m:
             s = np.array(datapoint[0])
             t = np.array(datapoint[1])

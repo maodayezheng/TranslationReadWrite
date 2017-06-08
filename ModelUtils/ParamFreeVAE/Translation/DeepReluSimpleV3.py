@@ -261,7 +261,7 @@ class DeepReluTransReadWrite(object):
         decode_mask = d_m[:, 1:]
 
         # Init decoding states
-        canvas_init = T.zeros((n, self.max_len, self.output_score_dim), dtype="float32")
+        canvas_init = T.zeros((n, self.max_len, self.hid_size), dtype="float32")
         canvas_init = canvas_init[:, :l]
 
         h_init = T.zeros((n, self.hid_size))
@@ -277,8 +277,8 @@ class DeepReluTransReadWrite(object):
         read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
         write_attention_init = T.nnet.relu(T.tanh(T.dot(start, write_attention_weight) + write_attention_bias))
         time_steps = T.ones((max_time_steps, n, 1, 1), "float32")
-        ([h_t_1, h_t_2, h_t_3, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[h_init, h_init, h_init,
+        ([h_t_1, h_t_2, canvases, read_attention, write_attention], update) \
+            = theano.scan(self.step, outputs_info=[h_init, h_init,
                                                    canvas_init, read_attention_init, write_attention_init],
                           non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
                                          read_attention_bias, write_attention_bias],
@@ -286,9 +286,14 @@ class DeepReluTransReadWrite(object):
 
         # Check the likelihood on full vocab
         final_canvas = canvases[-1]
+
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
         teacher = T.concatenate([output_embedding, final_canvas], axis=2)
+
+        teacher = get_output(self.rnn_decoding, teacher)
+        # Get sample embedding
+        teacher = T.concatenate([output_embedding, teacher], axis=2)
         n = teacher.shape[0]
         l = teacher.shape[1]
         d = teacher.shape[2]
@@ -318,6 +323,7 @@ class DeepReluTransReadWrite(object):
         loss = -T.mean(T.sum(loss, axis=1))
 
         # Pre-compute the first step
+        """
         canvas = canvases[-1]
         canvas = canvas.dimshuffle((1, 0, 2))
         c0 = canvas[0]
@@ -357,10 +363,9 @@ class DeepReluTransReadWrite(object):
         decodes = decodes[:, ::-1]
         first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), best_beam[-1]]
         best_idx = T.concatenate([first.reshape((1, n)), decodes], axis=0)
-
+        """
         decode_fn = theano.function(inputs=[source, target, max_time_steps],
-                                    outputs=[best_idx, best_beam, tops, read_attention,
-                                             write_attention, loss, forced_max])
+                                    outputs=[read_attention, write_attention, loss, forced_max])
         return decode_fn
 
     def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
@@ -561,14 +566,14 @@ def decode():
     with open("SentenceData/vocab_de", "r", encoding="utf8") as v:
         for line in v:
             de_vocab.append(line.strip("\n"))
-    with open("code_outputs/2017_05_28_19_51_47/model_params.save", "rb") as params:
+    with open("code_outputs/2017_06_01_20_29_14/final_model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/dev_idx_small.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
-    mini_batch = test_data[0:100]
+    mini_batch = test_data[:2000]
     mini_batch = sorted(mini_batch, key=lambda d: d[2])
     mini_batch = np.array(mini_batch)
-    mini_batchs = np.split(mini_batch, 10)
+    mini_batchs = np.split(mini_batch, 20)
     batch_size = mini_batch.shape[0]
     decode = model.decode_fn()
     for m in mini_batchs:
@@ -591,7 +596,7 @@ def decode():
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        best_idx, beam_idx, tops, read, write, loss, force_max = decode(source, target, l)
+        read, write, loss, force_max = decode(source, target, l)
         print("Loss : ")
         print(loss)
 
@@ -620,10 +625,10 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
-    pre_trained = False
+    pre_trained = True
     epoch = 10
     if pre_trained:
-        with open("code_outputs/2017_05_25_15_12_21/final_model_params.save", "rb") as params:
+        with open("code_outputs/2017_05_31_08_45_53/final_model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-5}
     draw_sample = False

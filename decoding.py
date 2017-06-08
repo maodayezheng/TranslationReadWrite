@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleV2 import decode
+from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleV3 import decode
 import sys
 import lasagne
 import numpy as np
