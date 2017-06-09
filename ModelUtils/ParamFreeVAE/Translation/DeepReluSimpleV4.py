@@ -53,6 +53,7 @@ class DeepReluTransReadWrite(object):
 
         # RNN output mapper
         self.out_mlp = self.mlp(self.hid_size * 2, self.hid_size+self.output_score_dim, activation=tanh)
+
         # attention parameters
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, self.max_len)).astype(theano.config.floatX)
         self.attention_weight = theano.shared(name="attention_weight", value=v)
