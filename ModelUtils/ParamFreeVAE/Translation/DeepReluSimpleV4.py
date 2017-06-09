@@ -11,8 +11,8 @@ import theano.tensor as T
 import theano
 from lasagne.layers import EmbeddingLayer, InputLayer, get_output
 import lasagne
-from lasagne.nonlinearities import linear, sigmoid, tanh, softmax
-from theano.gradient import zero_grad, grad_clip
+from lasagne.nonlinearities import linear, sigmoid, tanh
+from theano.gradient import zero_grad
 import numpy as np
 import json
 import time
@@ -34,11 +34,11 @@ class DeepReluTransReadWrite(object):
         self.output_score_dim = 500
         self.embedding_dim = embed_dim
 
-        # Init the word embeddings.
+        # Init the word embeddings
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
-        # init decoding RNNs
+        # Init decoding RNNs
         self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
@@ -47,8 +47,9 @@ class DeepReluTransReadWrite(object):
         self.gru_reset_2 = self.gru_reset(self.embedding_dim + self.hid_size * 2, self.hid_size)
         self.gru_candidate_2 = self.gru_candidate(self.embedding_dim + self.hid_size * 2, self.hid_size)
 
-        self.rnn_decoding = lasagne.layers.GRULayer(lasagne.layers.InputLayer((None, None, self.hid_size+embed_dim)),
-                                                    self.output_score_dim)
+        self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size * 2, self.hid_size)
+        self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size * 2, self.hid_size)
+        self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size * 2, self.hid_size)
 
         # RNN output mapper
         self.out_mlp = self.mlp(self.hid_size * 2, self.hid_size+self.output_score_dim, activation=tanh)
@@ -109,12 +110,13 @@ class DeepReluTransReadWrite(object):
         """
         Return a symbolic variable, representing the ELBO, for the given minibatch.
         :param num_samples: The number of samples to use to evaluate the ELBO.
-
         :return elbo: The symbolic variable representing the ELBO.
         """
+        # Get the batch size and computational time step
         n = source.shape[0]
         max_time_steps = true_l[-1]
         l = source[:, 1:].shape[1]
+
         # Get input embedding
         source_embedding = get_output(self.input_embedding, source[:, 1:])
 
@@ -125,50 +127,53 @@ class DeepReluTransReadWrite(object):
         d_m = T.cast(T.gt(target, -1), "float32")
         decode_mask = d_m[:, 1:]
 
-        # Init decoding states
+        # Init RNN states
         canvas_init = T.zeros((n, self.max_len, self.hid_size), dtype="float32")
         canvas_init = canvas_init[:, :l]
-
         h_init = T.zeros((n, self.hid_size))
         o_init = T.zeros((n, self.embedding_dim))
-        source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
 
-        read_attention_weight = self.content_attention
-        write_attention_weight = self.attention_weight
-        write_attention_bias = self.attention_bias
+        # Generate time steps
         time_steps = T.arange(T.cast(max_time_steps, "int8"))
         time_steps = - time_steps.reshape((max_time_steps, 1)) + true_l.reshape((1, n)) - 1
         time_steps = T.cast(T.ge(time_steps, 0), "float32")
         time_steps = time_steps.reshape((max_time_steps, n, 1, 1))
-        ([h_t_1, h_t_2, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[o_init, h_init, h_init,
-                                                   canvas_init],
-                          non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
-                                         write_attention_bias, encode_mask],
+
+        # Encoding RNN loop
+        ([out, h_t_1, h_t_2, canvases, read_attention, write_attention], update) \
+            = theano.scan(self.step, outputs_info=[o_init, h_init, h_init, canvas_init],
+                          non_sequences=[source_embedding, self.content_attention, self.attention_weight,
+                                         self.attention_bias, encode_mask],
                           sequences=[time_steps])
 
-        # Complementary Sum for softmax approximation
-        # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
+        # Get the final canvas
         final_canvas = canvases[-1]
 
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
         teacher = T.concatenate([output_embedding, final_canvas], axis=2)
 
-        teacher = get_output(self.rnn_decoding, teacher)
+        # Decoding RNN loop
+        teacher = teacher.dimshuffle((1, 0, 2))
+        ([teacher], update) = theano.scan(self.step, outputs_info=[h_init], sequences=[teacher])
+        teacher = teacher.dimshuffle((1, 0, 2))
+
         # Get sample embedding
         teacher = T.concatenate([output_embedding, teacher], axis=2)
+
         n = teacher.shape[0]
         l = teacher.shape[1]
         d = teacher.shape[2]
         teacher = teacher.reshape((n * l, d))
         teacher = get_output(self.score, teacher)
-        teacher = teacher.reshape((n * l, self.output_score_dim))
+
         sample_embed = None
         if samples is None:
             sample_embed = self.target_output_embedding.W
         else:
             sample_embed = get_output(self.target_output_embedding, samples)
+
+        # Calculate the output likelihood
         sample_score = T.dot(teacher, sample_embed.T)
         max_clip = T.max(sample_score, axis=-1)
         score_clip = zero_grad(max_clip)
@@ -217,7 +222,6 @@ class DeepReluTransReadWrite(object):
         h1 = (1.0 - u1) * h1 + u1 * c1
 
         # Decoding GRU layer 2
-
         h_in = T.concatenate([h1, h2, selection], axis=1)
         u2 = get_output(self.gru_update_2, h_in)
         r2 = get_output(self.gru_reset_2, h_in)
@@ -237,6 +241,16 @@ class DeepReluTransReadWrite(object):
 
         return c, h1, h2, canvas, r_score, pos
 
+    def decode_rnn_step(self, h, t):
+        i = T.concatenate([h, t], axis=-1)
+        u = get_output(self.gru_update_3, i)
+        r = get_output(self.gru_reset_3, i)
+        reset_h1 = h * r
+        c_in = T.concatenate([reset_h1, t], axis=1)
+        c = get_output(self.gru_candidate_3, c_in)
+        h = (1.0 - u) * h + u * c
+
+        return h
     """
 
 
@@ -499,13 +513,16 @@ class DeepReluTransReadWrite(object):
         gru_2_u_param = lasagne.layers.get_all_params(self.gru_update_2)
         gru_2_r_param = lasagne.layers.get_all_params(self.gru_reset_2)
         gru_2_c_param = lasagne.layers.get_all_params(self.gru_candidate_2)
-        gru_3_u_param = lasagne.layers.get_all_params(self.rnn_decoding)
+        gru_3_u_param = lasagne.layers.get_all_params(self.gru_update_2)
+        gru_3_r_param = lasagne.layers.get_all_params(self.gru_reset_2)
+        gru_3_c_param = lasagne.layers.get_all_params(self.gru_candidate_2)
         out_param = lasagne.layers.get_all_params(self.out_mlp)
         score_param = lasagne.layers.get_all_params(self.score)
+
         return target_input_embedding_param + target_output_embedding_param + \
                gru_1_c_param + gru_1_r_param + gru_1_u_param + \
                gru_2_c_param + gru_2_r_param + gru_2_u_param + \
-               gru_3_u_param + \
+               gru_3_u_param + gru_3_r_param + gru_3_c_param + \
                out_param + score_param + input_embedding_param + \
                [self.attention_weight, self.attention_bias, self.content_attention]
 
@@ -520,13 +537,15 @@ class DeepReluTransReadWrite(object):
         gru_2_u_param = lasagne.layers.get_all_param_values(self.gru_update_2)
         gru_2_r_param = lasagne.layers.get_all_param_values(self.gru_reset_2)
         gru_2_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_2)
-        gru_3_c_param = lasagne.layers.get_all_param_values(self.rnn_decoding)
+        gru_3_u_param = lasagne.layers.get_all_param_values(self.gru_update_2)
+        gru_3_r_param = lasagne.layers.get_all_param_values(self.gru_reset_2)
+        gru_3_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_2)
 
         out_param = lasagne.layers.get_all_param_values(self.out_mlp)
         score_param = lasagne.layers.get_all_param_values(self.score)
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
                 gru_1_u_param, gru_1_r_param, gru_1_c_param,
-                gru_2_u_param, gru_2_r_param, gru_2_c_param, gru_3_c_param,
+                gru_2_u_param, gru_2_r_param, gru_2_c_param, gru_3_u_param, gru_3_r_param, gru_3_c_param,
                 out_param, score_param, self.attention_weight.get_value(), self.attention_bias.get_value(),
                 self.content_attention.get_value()]
 
@@ -540,12 +559,14 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.gru_update_2, params[6])
         lasagne.layers.set_all_param_values(self.gru_reset_2, params[7])
         lasagne.layers.set_all_param_values(self.gru_candidate_2, params[8])
-        lasagne.layers.set_all_param_values(self.rnn_decoding, params[9])
-        lasagne.layers.set_all_param_values(self.out_mlp, params[10])
-        lasagne.layers.set_all_param_values(self.score, params[11])
-        self.attention_weight.set_value(params[12])
-        self.attention_bias.set_value(params[13])
-        self.content_attention.set_value(params[14])
+        lasagne.layers.set_all_param_values(self.gru_update_3, params[9])
+        lasagne.layers.set_all_param_values(self.gru_reset_3, params[10])
+        lasagne.layers.set_all_param_values(self.gru_candidate_3, params[11])
+        lasagne.layers.set_all_param_values(self.out_mlp, params[12])
+        lasagne.layers.set_all_param_values(self.score, params[13])
+        self.attention_weight.set_value(params[14])
+        self.attention_bias.set_value(params[15])
+        self.content_attention.set_value(params[16])
 
 
 """
