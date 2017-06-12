@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleV3 import run
+from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleV4 import run
 
 import sys
 import lasagne

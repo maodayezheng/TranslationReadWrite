@@ -65,7 +65,7 @@ class DeepReluTransReadWrite(object):
         self.content_attention = theano.shared(name="content_attention", value=v)
 
         # teacher mapper
-        self.score = self.mlp(self.output_score_dim + self.embedding_dim, self.output_score_dim, activation=linear)
+        self.score = self.mlp(self.hid_size + self.embedding_dim, self.output_score_dim, activation=linear)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -132,19 +132,20 @@ class DeepReluTransReadWrite(object):
         canvas_init = T.zeros((n, self.max_len, self.hid_size), dtype="float32")
         canvas_init = canvas_init[:, :l]
         h_init = T.zeros((n, self.hid_size))
-        o_init = T.zeros((n, self.embedding_dim))
+        o_init = T.zeros((n, self.hid_size))
 
         # Generate time steps
         time_steps = T.arange(T.cast(max_time_steps, "int8"))
         time_steps = - time_steps.reshape((max_time_steps, 1)) + true_l.reshape((1, n)) - 1
         time_steps = T.cast(T.ge(time_steps, 0), "float32")
         time_steps = time_steps.reshape((max_time_steps, n, 1, 1))
-
+        loc_attention_weight = self.attention_weight[:, :l]
+        loc_attention_bias = self.attention_bias[:l]
         # Encoding RNN loop
         ([out, h_t_1, h_t_2, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[o_init, h_init, h_init, canvas_init],
-                          non_sequences=[source_embedding, self.content_attention, self.attention_weight,
-                                         self.attention_bias, encode_mask],
+            = theano.scan(self.step, outputs_info=[o_init, h_init, h_init, canvas_init, None, None],
+                          non_sequences=[source_embedding, self.content_attention, loc_attention_weight,
+                                         loc_attention_bias, encode_mask],
                           sequences=[time_steps])
 
         # Get the final canvas
@@ -156,7 +157,7 @@ class DeepReluTransReadWrite(object):
 
         # Decoding RNN loop
         teacher = teacher.dimshuffle((1, 0, 2))
-        ([teacher], update) = theano.scan(self.step, outputs_info=[h_init], sequences=[teacher])
+        teacher, update = theano.scan(self.decode_rnn_step, outputs_info=[h_init], sequences=[teacher])
         teacher = teacher.dimshuffle((1, 0, 2))
 
         # Get sample embedding
@@ -191,8 +192,12 @@ class DeepReluTransReadWrite(object):
         # Loss per sentence
         loss = decode_mask * T.log(prob + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
-
-        return loss, read_attention * encode_mask.reshape((1, n, l)), write_attention * d_m[:, :-1].reshape((1, n, l))
+        t = read_attention.shape[0]
+        r_attention = read_attention.reshape((t, n, l)) * encode_mask.reshape((1, n, l))
+        t = write_attention.shape[0]
+        l = write_attention.shape[2]
+        w_attention = write_attention.reshape((t, n, l)) * d_m[:, :-1].reshape((1, n, l))
+        return loss, r_attention, w_attention
 
     def step(self, t_s, o, h1, h2, canvas, ref, r_a_w, w_a_w, w_a_b, mask):
         n = h1.shape[0]
@@ -206,7 +211,7 @@ class DeepReluTransReadWrite(object):
         max_clip = T.max(r_score, axis=-1)
         r_score = r_score - max_clip.reshape((n, 1))
         r_score = T.exp(r_score) * mask
-        r_score = T.true_div(r_score, T.sum(r_score, axis=-1))
+        r_score = T.true_div(r_score, T.sum(r_score, axis=-1).reshape((n, 1)))
 
         # Read from ref
         r_score = r_score.reshape((n, ref_l, 1))
@@ -235,14 +240,14 @@ class DeepReluTransReadWrite(object):
         o = get_output(self.out_mlp, h)
         a = o[:, :self.output_score_dim]
         c = o[:, self.output_score_dim:]
-        pos = T.dot(a, w_a_w) + w_a_b
+        pos = T.nnet.relu(T.tanh(T.dot(a, w_a_w) + w_a_b))
         pos = pos.reshape((n, l, 1))
         new_canvas = canvas * (1.0 - pos) + c.reshape((n, 1, self.hid_size)) * pos
         canvas = new_canvas * t_s + canvas * (1.0 - t_s)
 
         return c, h1, h2, canvas, r_score, pos
 
-    def decode_rnn_step(self, h, t):
+    def decode_rnn_step(self, t, h):
         i = T.concatenate([h, t], axis=-1)
         u = get_output(self.gru_update_3, i)
         r = get_output(self.gru_reset_3, i)
@@ -514,9 +519,9 @@ class DeepReluTransReadWrite(object):
         gru_2_u_param = lasagne.layers.get_all_params(self.gru_update_2)
         gru_2_r_param = lasagne.layers.get_all_params(self.gru_reset_2)
         gru_2_c_param = lasagne.layers.get_all_params(self.gru_candidate_2)
-        gru_3_u_param = lasagne.layers.get_all_params(self.gru_update_2)
-        gru_3_r_param = lasagne.layers.get_all_params(self.gru_reset_2)
-        gru_3_c_param = lasagne.layers.get_all_params(self.gru_candidate_2)
+        gru_3_u_param = lasagne.layers.get_all_params(self.gru_update_3)
+        gru_3_r_param = lasagne.layers.get_all_params(self.gru_reset_3)
+        gru_3_c_param = lasagne.layers.get_all_params(self.gru_candidate_3)
         out_param = lasagne.layers.get_all_params(self.out_mlp)
         score_param = lasagne.layers.get_all_params(self.score)
 
@@ -538,9 +543,9 @@ class DeepReluTransReadWrite(object):
         gru_2_u_param = lasagne.layers.get_all_param_values(self.gru_update_2)
         gru_2_r_param = lasagne.layers.get_all_param_values(self.gru_reset_2)
         gru_2_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_2)
-        gru_3_u_param = lasagne.layers.get_all_param_values(self.gru_update_2)
-        gru_3_r_param = lasagne.layers.get_all_param_values(self.gru_reset_2)
-        gru_3_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_2)
+        gru_3_u_param = lasagne.layers.get_all_param_values(self.gru_update_3)
+        gru_3_r_param = lasagne.layers.get_all_param_values(self.gru_reset_3)
+        gru_3_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_3)
 
         out_param = lasagne.layers.get_all_param_values(self.out_mlp)
         score_param = lasagne.layers.get_all_param_values(self.score)
@@ -708,7 +713,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 50
     sample_groups = 10
-    iters = 30000
+    iters = 90000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
