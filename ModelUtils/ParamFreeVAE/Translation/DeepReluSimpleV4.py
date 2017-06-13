@@ -1,6 +1,6 @@
 """
 Following problems are observed from version 3:
- 1. The reading mechanism seems ingoring the source language info because of unnecessary encoding mechanism
+ 1. The reading mechanism seems ignoring the source language info because of unnecessary encoding mechanism
 
 In this version:
  2. Replace location based attention with content based

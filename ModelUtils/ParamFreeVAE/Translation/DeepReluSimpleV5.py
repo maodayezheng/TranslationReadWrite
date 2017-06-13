@@ -1,11 +1,9 @@
 """
-Following problems are observed from version 2:
- 1. The decoding layer is too simple to act as a target language model
- 2. The reading mechanism seems ingoring the source language info because of unnecessary encoding mechanism 
+Following problems are observed from version 3:
 
 In this version:
- 1. An RNN is removed from encoding layer
- 2. An RNN is used for decoding 
+1. The read attention is constrained, the model can not pick same position as previous time step
+2. The learining rate is gradually reduced
 
 """
 
@@ -27,8 +25,8 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=40004, target_vocab_size=40004,
-                 embed_dim=620, hid_dim=1000, source_seq_len=50, target_seq_len=50):
-
+                 embed_dim=620, hid_dim=1000, source_seq_len=50,
+                 target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
@@ -50,11 +48,11 @@ class DeepReluTransReadWrite(object):
         self.gru_reset_2 = self.gru_reset(self.embedding_dim + self.hid_size * 2, self.hid_size)
         self.gru_candidate_2 = self.gru_candidate(self.embedding_dim + self.hid_size * 2, self.hid_size)
 
-        self.rnn_decoding = lasagne.layers.GRULayer(lasagne.layers.InputLayer((None, None, self.hid_size + embed_dim)),
+        self.rnn_decoding = lasagne.layers.GRULayer(lasagne.layers.InputLayer((None, None, self.hid_size+embed_dim)),
                                                     self.output_score_dim)
 
         # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size * 2, self.hid_size + self.output_score_dim, activation=tanh)
+        self.out_mlp = self.mlp(self.hid_size * 2, self.hid_size+self.output_score_dim, activation=tanh)
         # attention parameters
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, 2 * self.max_len)).astype(theano.config.floatX)
         self.attention_weight = theano.shared(name="attention_weight", value=v)
@@ -64,9 +62,6 @@ class DeepReluTransReadWrite(object):
 
         # teacher mapper
         self.score = self.mlp(self.output_score_dim + self.embedding_dim, self.output_score_dim, activation=linear)
-
-        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.embedding_dim)).astype(theano.config.floatX)
-        self.content_attention = theano.shared(name="content_attention", value=v)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -196,27 +191,15 @@ class DeepReluTransReadWrite(object):
 
         return loss, read_attention * encode_mask.reshape((1, n, l)), write_attention * d_m[:, :-1].reshape((1, n, l))
 
-    def step(self, t_s, o, h1, h2, canvas, gate, r_a, w_a, ref, r_a_w, w_a_w, r_a_b, w_a_b):
+    def step(self, t_s, h1, h2, canvas, r_a, w_a, ref, r_a_w, w_a_w, r_a_b, w_a_b):
         n = h1.shape[0]
         l = canvas.shape[1]
         # Reading position information
         read_attention = r_a
         write_attention = w_a
-
-        # Attention calculation
-        r_score = T.dot(o, r_a_w)
-        d = r_score.shape[-1]
-        r_score = r_score.reshape((n, 1, d))
-        r_score = T.sum(r_score * ref, axis=-1)
-        max_clip = T.max(r_score, axis=-1)
-        r_score = r_score - max_clip.reshape((n, 1))
-        pos = read_attention.reshape((n, l))
-        r_score = T.exp(r_score) * pos
-        r_score = T.true_div(r_score, T.sum(r_score, axis=-1).reshape((n, 1)))
-
         # Read from ref
-        r_score = r_score.reshape((n, l, 1))
-        selection = r_score * ref
+        pos = read_attention.reshape((n, l, 1))
+        selection = pos * ref
         selection = T.sum(selection, axis=1)
 
         # Decoding GRU layer 1
@@ -229,6 +212,7 @@ class DeepReluTransReadWrite(object):
         h1 = (1.0 - u1) * h1 + u1 * c1
 
         # Decoding GRU layer 2
+
         h_in = T.concatenate([h1, h2, selection], axis=1)
         u2 = get_output(self.gru_update_2, h_in)
         r2 = get_output(self.gru_reset_2, h_in)
@@ -245,14 +229,16 @@ class DeepReluTransReadWrite(object):
         new_canvas = canvas * (1.0 - pos) + c.reshape((n, 1, self.hid_size)) * pos
         canvas = new_canvas * t_s + canvas * (1.0 - t_s)
 
-        read_attention = T.nnet.relu(T.tanh(T.dot(a, r_a_w) + r_a_b))
+        read_attention = T.nnet.relu(T.tanh(T.dot(a, r_a_w) + r_a_b) - r_a)
         write_attention = T.nnet.relu(T.tanh(T.dot(a, w_a_w) + w_a_b))
 
         return h1, h2, canvas, read_attention, write_attention
 
     """
 
+
         The following functions are for decoding
+
 
     """
 
@@ -633,7 +619,7 @@ def decode():
 
 
 def run(out_dir):
-    print("Run the Relu read and  write v5 ")
+    print("Run the Relu read and  write v3 ")
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
@@ -703,6 +689,9 @@ def run(out_dir):
         mini_batch = [train_data[ind] for ind in batch_indices]
         mini_batch = sorted(mini_batch, key=lambda d: d[2])
         samples = None
+        if i %10000 is 0:
+            update_kwargs['learning_rate'] /=2
+
         if draw_sample:
             unique_target = []
             for m in mini_batch:
