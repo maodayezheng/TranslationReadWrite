@@ -564,7 +564,7 @@ def decode():
     with open("SentenceData/vocab_de", "r", encoding="utf8") as v:
         for line in v:
             de_vocab.append(line.strip("\n"))
-    with open("code_outputs/2017_06_01_20_29_14/final_model_params.save", "rb") as params:
+    with open("code_outputs/2017_06_14_18_56_49/final_model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/dev_idx_small.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
@@ -619,16 +619,16 @@ def decode():
 
 
 def run(out_dir):
-    print("Run the Relu read and  write v3 ")
+    print("Run the Relu read and  write v5 ")
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
     pre_trained = True
     epoch = 10
     if pre_trained:
-        with open("code_outputs/2017_05_31_08_45_53/final_model_params.save", "rb") as params:
+        with open("code_outputs/2017_06_14_09_09_13/model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
-    update_kwargs = {'learning_rate': 1e-4}
+    update_kwargs = {'learning_rate': 5e-5}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
     validation = model.elbo_fn()
@@ -681,7 +681,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 50
     sample_groups = 10
-    iters = 30000
+    iters = 15000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
@@ -689,8 +689,8 @@ def run(out_dir):
         mini_batch = [train_data[ind] for ind in batch_indices]
         mini_batch = sorted(mini_batch, key=lambda d: d[2])
         samples = None
-        if i %10000 is 0:
-            update_kwargs['learning_rate'] /=2
+        if i % 10000 is 0:
+            update_kwargs['learning_rate'] /= 2
 
         if draw_sample:
             unique_target = []
