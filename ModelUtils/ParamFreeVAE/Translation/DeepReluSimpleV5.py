@@ -25,8 +25,7 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=40004, target_vocab_size=40004,
-                 embed_dim=620, hid_dim=1000, source_seq_len=50,
-                 target_seq_len=50):
+                 embed_dim=620, hid_dim=1000, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
@@ -301,20 +300,8 @@ class DeepReluTransReadWrite(object):
         teacher = teacher.reshape((n, l, self.output_score_dim))
         sample_embed = self.target_output_embedding.W
 
-        def probs_step(t, t_idx, s_embedding):
-            n = t_idx.shape[0]
-            sample_score = T.dot(t, s_embedding.T)
-            forced_max = T.argmax(sample_score, axis=-1)
-            max_clip = T.max(sample_score, axis=-1)
-            score_clip = zero_grad(max_clip)
-            sample_score = T.exp(sample_score - score_clip.reshape((n, 1)))
-            score = sample_score[T.arange(n), t_idx]
-            sample_score = T.sum(sample_score, axis=-1)
-            prob = score / sample_score
-            return prob, forced_max
-
         target_idx = target[:, 1:]
-        ([probs, forced_max], update0) = theano.scan(probs_step, sequences=[teacher, target_idx],
+        ([probs, forced_max], update0) = theano.scan(self.greedy_step, sequences=[teacher, target_idx],
                                                      non_sequences=[sample_embed])
 
         loss = decode_mask * T.log(probs + 1e-5)
@@ -365,6 +352,29 @@ class DeepReluTransReadWrite(object):
         decode_fn = theano.function(inputs=[source, target, max_time_steps],
                                     outputs=[read_attention, write_attention, loss, forced_max])
         return decode_fn
+
+    def greedy_step(self, hid_info, teacher, pred_teacher, s_embedding):
+        input_info = T.concatenate([pred_teacher, hid_info], axis=-1)
+        # Add a single step RNN
+        n = input_info.shape[0]
+        d = input_info.shape[1]
+        input_info = input_info.reshape((n, 1, d))
+        hid_info = get_output(self.rnn_decoding, input_info)
+        hid_info = hid_info.reshape((n, d))
+        input_info = T.concatenate([teacher, hid_info])
+        input_info = get_output(self.score, input_info)
+        sample_score = T.dot(input_info, s_embedding.T)
+        pred_forced_max = T.argmax(sample_score, axis=-1)
+        pred_embed = get_output(self.target_input_embedding, pred_forced_max)
+
+        input_info = T.concatenate([teacher, hid_info], axis=-1)
+        input_info = get_output(self.score, input_info)
+        sample_score = T.dot(input_info, s_embedding.T)
+        forced_max = T.argmax(sample_score, axis=-1)
+        embed = get_output(self.target_input_embedding, forced_max)
+
+        prob = T.nnet.softmax(sample_score)
+        return embed, pred_embed, prob, forced_max, pred_forced_max
 
     def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
         """
