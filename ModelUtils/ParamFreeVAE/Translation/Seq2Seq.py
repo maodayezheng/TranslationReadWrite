@@ -23,7 +23,7 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams
 random = MRG_RandomStreams(seed=1234)
 
 
-class DeepReluTransReadWrite(object):
+class Seq2Seq(object):
     def __init__(self, training_batch_size=25, source_vocab_size=40004, target_vocab_size=40004,
                  embed_dim=620, hid_dim=1000, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
@@ -38,7 +38,7 @@ class DeepReluTransReadWrite(object):
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
-        # init decoding RNNs
+        # init encoding RNNs
         self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
@@ -47,18 +47,13 @@ class DeepReluTransReadWrite(object):
         self.gru_reset_2 = self.gru_reset(self.embedding_dim + self.hid_size * 2, self.hid_size)
         self.gru_candidate_2 = self.gru_candidate(self.embedding_dim + self.hid_size * 2, self.hid_size)
 
-        self.rnn_decoding = lasagne.layers.GRULayer(lasagne.layers.InputLayer((None, None, self.hid_size+embed_dim)),
-                                                    self.output_score_dim)
+        # init decoding RNNs
+        self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
+        self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
+        self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
         # RNN output mapper
         self.out_mlp = self.mlp(self.hid_size * 2, self.hid_size+self.output_score_dim, activation=tanh)
-        # attention parameters
-        v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, 2 * self.max_len)).astype(theano.config.floatX)
-        self.attention_weight = theano.shared(name="attention_weight", value=v)
-
-        v = np.ones((2 * self.max_len,)).astype(theano.config.floatX) * 0.05
-        self.attention_bias = theano.shared(name="attention_bias", value=v)
-
         # teacher mapper
         self.score = self.mlp(self.output_score_dim + self.embedding_dim, self.output_score_dim, activation=linear)
 
@@ -122,32 +117,13 @@ class DeepReluTransReadWrite(object):
         d_m = T.cast(T.gt(target, -1), "float32")
         decode_mask = d_m[:, 1:]
 
-        # Init decoding states
-        canvas_init = T.zeros((n, self.max_len, self.hid_size), dtype="float32")
-        canvas_init = canvas_init[:, :l]
-
         h_init = T.zeros((n, self.hid_size))
         source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
 
-        read_attention_weight = self.attention_weight[:, :l]
-        write_attention_weight = self.attention_weight[:, self.max_len:(self.max_len + l)]
-        read_attention_bias = self.attention_bias[:l]
-        read_attention_bias = read_attention_bias.reshape((1, l))
-        write_attention_bias = self.attention_bias[self.max_len:(self.max_len + l)]
-        write_attention_bias = write_attention_bias.reshape((1, l))
-        start = h_init[:, :self.output_score_dim]
-        read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
-        write_attention_init = T.nnet.relu(T.tanh(T.dot(start, write_attention_weight) + write_attention_bias))
-        time_steps = T.arange(T.cast(max_time_steps, "int8"))
-        time_steps = - time_steps.reshape((max_time_steps, 1)) + true_l.reshape((1, n)) - 1
-        time_steps = T.cast(T.ge(time_steps, 0), "float32")
-        time_steps = time_steps.reshape((max_time_steps, n, 1, 1))
-        ([h_t_1, h_t_2, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[h_init, h_init,
-                                                   canvas_init, read_attention_init, write_attention_init],
-                          non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
-                                         read_attention_bias, write_attention_bias],
-                          sequences=[time_steps])
+        # Encoding RNN
+        ([h_t_1, h_t_2], update) = theano.scan(self.source_encode_step,
+                                               outputs_info=[h_init, h_init],
+                                               sequences=[source_embedding])
 
         # Complementary Sum for softmax approximation
         # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
@@ -155,9 +131,7 @@ class DeepReluTransReadWrite(object):
 
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
-        teacher = T.concatenate([output_embedding, final_canvas], axis=2)
 
-        teacher = get_output(self.rnn_decoding, teacher)
         # Get sample embedding
         teacher = T.concatenate([output_embedding, teacher], axis=2)
         n = teacher.shape[0]
@@ -190,48 +164,44 @@ class DeepReluTransReadWrite(object):
 
         return loss, read_attention * encode_mask.reshape((1, n, l)), write_attention * d_m[:, :-1].reshape((1, n, l))
 
-    def step(self, t_s, h1, h2, canvas, r_a, w_a, ref, r_a_w, w_a_w, r_a_b, w_a_b):
+    def source_encode_step(self, source_embedding, h1, h2):
         n = h1.shape[0]
-        l = canvas.shape[1]
-        # Reading position information
-        read_attention = r_a
-        write_attention = w_a
         # Read from ref
-        pos = read_attention.reshape((n, l, 1))
-        selection = pos * ref
-        selection = T.sum(selection, axis=1)
 
         # Decoding GRU layer 1
-        h_in = T.concatenate([h1, selection], axis=1)
+        h_in = T.concatenate([h1, source_embedding], axis=1)
         u1 = get_output(self.gru_update_1, h_in)
         r1 = get_output(self.gru_reset_1, h_in)
         reset_h1 = h1 * r1
-        c_in = T.concatenate([reset_h1, selection], axis=1)
+        c_in = T.concatenate([reset_h1, source_embedding], axis=1)
         c1 = get_output(self.gru_candidate_1, c_in)
         h1 = (1.0 - u1) * h1 + u1 * c1
 
         # Decoding GRU layer 2
 
-        h_in = T.concatenate([h1, h2, selection], axis=1)
+        h_in = T.concatenate([h1, h2, source_embedding], axis=1)
         u2 = get_output(self.gru_update_2, h_in)
         r2 = get_output(self.gru_reset_2, h_in)
         reset_h2 = h2 * r2
-        c_in = T.concatenate([h1, reset_h2, selection], axis=1)
+        c_in = T.concatenate([h1, reset_h2, source_embedding], axis=1)
         c2 = get_output(self.gru_candidate_2, c_in)
         h2 = (1.0 - u2) * h2 + u2 * c2
+        return h1, h2
 
-        h = T.concatenate([h1, h2], axis=-1)
-        o = get_output(self.out_mlp, h)
-        a = o[:, :self.output_score_dim]
-        c = o[:, self.output_score_dim:]
-        pos = write_attention.reshape((n, l, 1))
-        new_canvas = canvas * (1.0 - pos) + c.reshape((n, 1, self.hid_size)) * pos
-        canvas = new_canvas * t_s + canvas * (1.0 - t_s)
+    def target_decode_step(self, target_embedding, h1):
+        n = h1.shape[0]
+        # Read from ref
 
-        read_attention = T.nnet.relu(T.tanh(T.dot(a, r_a_w) + r_a_b) - r_a)
-        write_attention = T.nnet.relu(T.tanh(T.dot(a, w_a_w) + w_a_b))
+        # Decoding GRU layer 1
+        h_in = T.concatenate([h1, target_embedding], axis=1)
+        u1 = get_output(self.gru_update_3, h_in)
+        r1 = get_output(self.gru_reset_3, h_in)
+        reset_h1 = h1 * r1
+        c_in = T.concatenate([reset_h1, target_embedding], axis=1)
+        c1 = get_output(self.gru_candidate_3, c_in)
+        h1 = (1.0 - u1) * h1 + u1 * c1
 
-        return h1, h2, canvas, read_attention, write_attention
+        return h1
 
     """
 
@@ -750,9 +720,8 @@ def run(out_dir):
             training_loss.append(loss)
 
             if i % 250 == 0:
-                print("training time " + str(iter_time)
-                      + " sec with sentence length " + str(l)
-                      + "training loss : " + str(loss))
+                print("training time " + str(iter_time) + " sec with sentence length " + str(l) + "training loss : " +
+                      str(loss))
 
         if i % 500 == 0:
             valid_loss = 0
