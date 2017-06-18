@@ -740,8 +740,9 @@ def run(out_dir):
             training_loss.append(loss)
 
             if i % 250 == 0:
-                print("training time " + str(iter_time) + " sec with sentence length " + str(l) + "training loss : " +
-                      str(loss))
+                print("training time " + str(iter_time)
+                      + " sec with sentence length " + str(l)
+                      + "training loss : " + str(loss))
 
         if i % 500 == 0:
             valid_loss = 0
