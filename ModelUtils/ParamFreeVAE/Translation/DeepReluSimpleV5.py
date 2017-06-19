@@ -283,21 +283,38 @@ class DeepReluTransReadWrite(object):
 
         # Check the likelihood on full vocab
         final_canvas = canvases[-1]
+        output_embedding = get_output(self.target_input_embedding, target)
+        output_embedding = output_embedding[:, :-1]
+        teacher = T.concatenate([output_embedding, final_canvas], axis=2)
 
+        teacher = get_output(self.rnn_decoding, teacher)
+        # Get sample embedding
+        teacher = T.concatenate([output_embedding, teacher], axis=2)
+        n = teacher.shape[0]
+        l = teacher.shape[1]
+        d = teacher.shape[2]
+        teacher = teacher.reshape((n * l, d))
+        teacher = get_output(self.score, teacher)
+        teacher = teacher.reshape((n * l, self.output_score_dim))
+        sample_embed = self.target_output_embedding.W
+        sample_score = T.dot(teacher, sample_embed.T)
+        k = sample_score.shape[-1]
+        sample_score = sample_score.reshape((n, l, k))
+        teacher_max = T.argmax(sample_score, axis=-1)
+        teacher_max = teacher_max.dimshuffle((1, 0))
+
+        final_canvas = final_canvas.dimshuffle((1, 0, 2))
         decode_input = get_output(self.target_input_embedding, target)
         decode_input = decode_input[:, :-1]
-        decode_input = decode_input.dim_shuffle((1, 0, 2))
-        sample_embed = self.target_output_embedding.W
-        h_init = T.zeros((n, self.hid_size))
+        decode_input = decode_input.dimshuffle((1, 0, 2))
+        h_init = T.zeros((n, self.output_score_dim))
 
         target_idx = target[:, 1:]
-        ([h, e, p_e, probs, forced_max, pred_forced_max], update0) = theano.scan(self.greedy_step,
-                                                                                 sequences=[decode_input],
-                                                                                 non_sequences=[sample_embed],
-                                                                                 outputs_info=[h_init, decode_input[0]])
-
-        loss = decode_mask * T.log(probs + 1e-5)
-        loss = -T.mean(T.sum(loss, axis=1))
+        ([p_h, h, p_e, probs, forced_max, pred_forced_max], update0) = theano.scan(self.greedy_step,
+                                                                                   sequences=[decode_input, final_canvas],
+                                                                                   non_sequences=[sample_embed],
+                                                                                   outputs_info=[h_init, h_init, decode_input[0],
+                                                                                                 None, None, None])
 
         # Pre-compute the first step
         """
@@ -342,36 +359,46 @@ class DeepReluTransReadWrite(object):
         best_idx = T.concatenate([first.reshape((1, n)), decodes], axis=0)
         """
         decode_fn = theano.function(inputs=[source, target, max_time_steps],
-                                    outputs=[read_attention, write_attention, loss, forced_max, pred_forced_max])
+                                    outputs=[read_attention, write_attention, forced_max, pred_forced_max, teacher_max])
         return decode_fn
 
-    def greedy_step(self, true_embed, hid_info, pred_embed, s_embedding):
-        input_info = T.concatenate([pred_embed, hid_info], axis=-1)
+    def greedy_step(self, true_embed, col, pre_hid_info, hid_info, pred_embed, s_embedding):
+        w_h_r = self.rnn_decoding.W_hid_to_resetgate
+        w_i_r = self.rnn_decoding.W_in_to_resetgate
+        w_h_u = self.rnn_decoding.W_hid_to_updategate
+        w_i_u = self.rnn_decoding.W_in_to_updategate
+        w_h_h = self.rnn_decoding.W_hid_to_hidden_update
+        w_i_h = self.rnn_decoding.W_in_to_hidden_update
+        b_r = self.rnn_decoding.b_resetgate
+        b_u = self.rnn_decoding.b_updategate
+        b_h = self.rnn_decoding.b_hidden_update
+
         # A single step RNN prediction
-        n = input_info.shape[0]
-        d = input_info.shape[1]
-        input_info = input_info.reshape((n, 1, d))
-        hid_info = get_output(self.rnn_decoding, input_info)
-        hid_info = hid_info.reshape((n, d))
-        input_info = T.concatenate([pred_embed, hid_info])
+        input_info = T.concatenate([pred_embed, col], axis=-1)
+        r = T.nnet.sigmoid(T.dot(input_info, w_i_r) + T.dot(pre_hid_info, w_h_r) + b_r)
+        u = T.nnet.sigmoid(T.dot(input_info, w_i_u) + T.dot(pre_hid_info, w_h_u) + b_u)
+        c = T.nnet.sigmoid(T.dot(input_info, w_i_h) + r*T.dot(pre_hid_info, w_h_h) + b_h)
+        pre_hid_info = (1-u) * pre_hid_info + u * c
+        input_info = T.concatenate([pred_embed, pre_hid_info], axis=-1)
         input_info = get_output(self.score, input_info)
         sample_score = T.dot(input_info, s_embedding.T)
         pred_forced_max = T.argmax(sample_score, axis=-1)
         pred_embed = get_output(self.target_input_embedding, pred_forced_max)
 
         # A forced step RNN prediction
+        input_info = T.concatenate([true_embed, col], axis=-1)
+        r = T.nnet.sigmoid(T.dot(input_info, w_i_r) + T.dot(hid_info, w_h_r) + b_r)
+        u = T.nnet.sigmoid(T.dot(input_info, w_i_u) + T.dot(hid_info, w_h_u) + b_u)
+        c = T.nnet.sigmoid(T.dot(input_info, w_i_h) + r * T.dot(hid_info, w_h_h) + b_h)
+        hid_info = (1 - u) * hid_info + u * c
         input_info = T.concatenate([true_embed, hid_info], axis=-1)
-        input_info = input_info.reshape((n, 1, d))
-        hid_info = get_output(self.rnn_decoding, input_info)
-        hid_info = hid_info.reshape((n, d))
-        input_info = T.concatenate([true_embed, hid_info])
         input_info = get_output(self.score, input_info)
         sample_score = T.dot(input_info, s_embedding.T)
         forced_max = T.argmax(sample_score, axis=-1)
-        embed = get_output(self.target_input_embedding, forced_max)
 
         prob = T.nnet.softmax(sample_score)
-        return hid_info, embed, pred_embed, prob, forced_max, pred_forced_max
+
+        return pre_hid_info, hid_info, pred_embed, prob, forced_max, pred_forced_max
 
     def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
         """
@@ -601,15 +628,13 @@ def decode():
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        read, write, loss, force_max, pred_force_max = decode(source, target, l)
-        print("Loss : ")
-        print(loss)
-
+        read, write, force_max, pred_force_max, teacher_max = decode(source, target, l)
         for n in range(10):
             s = source[n, 1:]
             t = target[n, 1:]
-            f = force_max[n]
-            p = pred_force_max[n]
+            f = force_max[:, n]
+            p = pred_force_max[:, n]
+            te = teacher_max[:, n]
 
             s_string = ""
             for s_idx in s:
@@ -623,8 +648,13 @@ def decode():
             p_string = ""
             for idx in p:
                 p_string +=(de_vocab[idx] + " ")
+            te_string = ""
+            for idx in te:
+                te_string +=(de_vocab[idx] + " ")
+
             print("Sour : " + s_string)
             print("Refe : " + t_string)
+            print("Teac : " + te_string)
             print("Forc : " + f_string)
             print("Pred : " + p_string)
             print("")
