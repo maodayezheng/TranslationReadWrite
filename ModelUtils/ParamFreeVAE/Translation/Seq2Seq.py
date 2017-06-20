@@ -38,24 +38,24 @@ class Seq2Seq(object):
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
+
         # init encoding RNNs
         self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
-        self.gru_update_2 = self.gru_update(self.embedding_dim + self.hid_size * 2, self.hid_size)
-        self.gru_reset_2 = self.gru_reset(self.embedding_dim + self.hid_size * 2, self.hid_size)
-        self.gru_candidate_2 = self.gru_candidate(self.embedding_dim + self.hid_size * 2, self.hid_size)
+        self.gru_update_2 = self.gru_update(self.hid_size * 2, self.hid_size)
+        self.gru_reset_2 = self.gru_reset(self.hid_size * 2, self.hid_size)
+        self.gru_candidate_2 = self.gru_candidate(self.hid_size * 2, self.hid_size)
 
         # init decoding RNNs
         self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
-        # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size * 2, self.hid_size+self.output_score_dim, activation=tanh)
-        # teacher mapper
-        self.score = self.mlp(self.output_score_dim + self.embedding_dim, self.output_score_dim, activation=linear)
+        self.gru_update_4 = self.gru_update(self.hid_size * 2, self.output_score_dim)
+        self.gru_reset_4 = self.gru_reset(self.hid_size * 2, self.output_score_dim)
+        self.gru_candidate_4 = self.gru_candidate(self.hid_size * 2, self.output_score_dim)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -187,219 +187,6 @@ class Seq2Seq(object):
         c2 = get_output(self.gru_candidate_2, c_in)
         h2 = (1.0 - u2) * h2 + u2 * c2
         return h1, h2
-
-    def target_decode_step(self, target_embedding, h1):
-        n = h1.shape[0]
-        # Read from ref
-
-        # Decoding GRU layer 1
-        h_in = T.concatenate([h1, target_embedding], axis=1)
-        u1 = get_output(self.gru_update_3, h_in)
-        r1 = get_output(self.gru_reset_3, h_in)
-        reset_h1 = h1 * r1
-        c_in = T.concatenate([reset_h1, target_embedding], axis=1)
-        c1 = get_output(self.gru_candidate_3, c_in)
-        h1 = (1.0 - u1) * h1 + u1 * c1
-
-        return h1
-
-    """
-
-
-        The following functions are for decoding
-
-
-    """
-
-    def decode_fn(self):
-        source = T.imatrix('source')
-        target = T.imatrix('target')
-        n = source.shape[0]
-        max_time_steps = T.iscalar('max_time_step')
-        l = source[:, 1:].shape[1]
-        # Get input embedding
-        source_embedding = get_output(self.input_embedding, source[:, 1:])
-
-        # Create input mask
-        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
-
-        # Create decoding mask
-        d_m = T.cast(T.gt(target, -1), "float32")
-        decode_mask = d_m[:, 1:]
-
-        # Init decoding states
-        canvas_init = T.zeros((n, self.max_len, self.hid_size), dtype="float32")
-        canvas_init = canvas_init[:, :l]
-
-        h_init = T.zeros((n, self.hid_size))
-        source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
-
-        read_attention_weight = self.attention_weight[:, :l]
-        write_attention_weight = self.attention_weight[:, self.max_len:(self.max_len + l)]
-        read_attention_bias = self.attention_bias[:l]
-        read_attention_bias = read_attention_bias.reshape((1, l))
-        write_attention_bias = self.attention_bias[self.max_len:(self.max_len + l)]
-        write_attention_bias = write_attention_bias.reshape((1, l))
-        start = h_init[:, :self.output_score_dim]
-        read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
-        write_attention_init = T.nnet.relu(T.tanh(T.dot(start, write_attention_weight) + write_attention_bias))
-        time_steps = T.ones((max_time_steps, n, 1, 1), "float32")
-        ([h_t_1, h_t_2, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[h_init, h_init,
-                                                   canvas_init, read_attention_init, write_attention_init],
-                          non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
-                                         read_attention_bias, write_attention_bias],
-                          sequences=[time_steps])
-
-        # Check the likelihood on full vocab
-        final_canvas = canvases[-1]
-
-        output_embedding = get_output(self.target_input_embedding, target)
-        output_embedding = output_embedding[:, :-1]
-        teacher = T.concatenate([output_embedding, final_canvas], axis=2)
-
-        teacher = get_output(self.rnn_decoding, teacher)
-        # Get sample embedding
-        teacher = T.concatenate([output_embedding, teacher], axis=2)
-        n = teacher.shape[0]
-        l = teacher.shape[1]
-        d = teacher.shape[2]
-        # Get sample embedding
-        teacher = teacher.reshape((n * l, d))
-        teacher = get_output(self.score, teacher)
-        teacher = teacher.reshape((n, l, self.output_score_dim))
-        sample_embed = self.target_output_embedding.W
-
-        target_idx = target[:, 1:]
-        ([probs, forced_max], update0) = theano.scan(self.greedy_step, sequences=[teacher, target_idx],
-                                                     non_sequences=[sample_embed])
-
-        loss = decode_mask * T.log(probs + 1e-5)
-        loss = -T.mean(T.sum(loss, axis=1))
-
-        # Pre-compute the first step
-        """
-        canvas = canvases[-1]
-        canvas = canvas.dimshuffle((1, 0, 2))
-        c0 = canvas[0]
-        first_token = T.zeros((n,), "int8")
-        first_embedding = get_output(self.target_input_embedding, first_token)
-        s0 = T.concatenate([first_embedding, c0], axis=1)
-        s0 = get_output(self.score, s0)
-
-        # Sample embedding => VxD
-        candidate_output_embedding = self.target_output_embedding.W
-
-        s0 = T.dot(s0, candidate_output_embedding.T)
-        max_clip = T.max(s0, axis=-1)
-        score_clip = zero_grad(max_clip)
-        s0 = s0 - score_clip.reshape((n, 1))
-        prob0 = T.nnet.softmax(s0)
-        orders = T.argsort(prob0, axis=1)
-        top_k = T.cast(orders[:, :5], "int8")
-        prob0 = prob0[T.arange(n).reshape((n, 1)), top_k]
-        top_k = top_k.reshape((n * 5,))
-        prev_embed_init = get_output(self.target_input_embedding, top_k)
-        prev_embed_init = prev_embed_init.reshape((n, 5, self.embedding_dim))
-
-        # Forward path
-        ([prob, embed, best_idx, beam_idx, tops], update1) = theano.scan(self.forward_step, sequences=[canvas[1:]],
-                                                                         outputs_info=[prob0, prev_embed_init,
-                                                                                       None, None, None],
-                                                                         non_sequences=[candidate_output_embedding])
-        last_prob = prob[-1]
-        last_idx_best = T.cast(T.argmax(last_prob, axis=-1), "int32")
-        # Backward
-
-        ([best_beam, decodes], update2) = theano.scan(self.backward_step, sequences=[best_idx, beam_idx],
-                                                      outputs_info=[last_idx_best, None],
-                                                      go_backwards=True)
-
-        decodes = decodes[:, ::-1]
-        first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), best_beam[-1]]
-        best_idx = T.concatenate([first.reshape((1, n)), decodes], axis=0)
-        """
-        decode_fn = theano.function(inputs=[source, target, max_time_steps],
-                                    outputs=[read_attention, write_attention, loss, forced_max])
-        return decode_fn
-
-    def greedy_step(self, hid_info, teacher, pred_teacher, s_embedding):
-        input_info = T.concatenate([pred_teacher, hid_info], axis=-1)
-        # Add a single step RNN
-        n = input_info.shape[0]
-        d = input_info.shape[1]
-        input_info = input_info.reshape((n, 1, d))
-        hid_info = get_output(self.rnn_decoding, input_info)
-        hid_info = hid_info.reshape((n, d))
-        input_info = T.concatenate([teacher, hid_info])
-        input_info = get_output(self.score, input_info)
-        sample_score = T.dot(input_info, s_embedding.T)
-        pred_forced_max = T.argmax(sample_score, axis=-1)
-        pred_embed = get_output(self.target_input_embedding, pred_forced_max)
-
-        input_info = T.concatenate([teacher, hid_info], axis=-1)
-        input_info = get_output(self.score, input_info)
-        sample_score = T.dot(input_info, s_embedding.T)
-        forced_max = T.argmax(sample_score, axis=-1)
-        embed = get_output(self.target_input_embedding, forced_max)
-
-        prob = T.nnet.softmax(sample_score)
-        return embed, pred_embed, prob, forced_max, pred_forced_max
-
-    def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
-        """
-        c: A column of canvas => NxD
-        prob: Max prob from previous step => NxK
-        prev: The state from previous => NxKxD
-        candidate: All possible candidate
-
-        :return pair: first element is previous state idx, second element is the idx of content
-        :return prob: All the intermediate probabilities
-        """
-
-        # Compute the trans prob
-        n = canvas_info.shape[0]
-        d = canvas_info.shape[-1]
-        k = prev_embed.shape[1]
-        v = candate_embed.shape[0]
-        c = T.tile(canvas_info.reshape((n, 1, d)), (1, k, 1))
-        info = T.concatenate([prev_embed, c], axis=-1)
-        d = info.shape[-1]
-        info = info.reshape((n * k, d))
-        teacher = get_output(self.score, info)
-        score = T.dot(teacher, candate_embed.T)
-        max_clip = T.max(score, axis=-1).reshape((n * k, 1))
-        score = score - max_clip
-        score = score.reshape((n * k, v))
-        trans_prob = T.nnet.softmax(score)
-
-        # Find the top k candidate
-        prob = prob.reshape((n * k, 1))
-        prob = prob * trans_prob
-        prob = prob.reshape((n, k * v))
-        orders = T.argsort(prob, axis=-1)
-        top_k = orders[:, :5]
-        prob = prob[T.arange(n).reshape((n, 1)), top_k]
-
-        # Get the best idx
-        best_idx = (top_k % self.target_vocab_size)
-        # Get the beam idx
-        beam_idx = T.cast(T.floor(T.true_div(top_k, self.target_vocab_size)), "int32")
-        embedding = get_output(self.target_input_embedding, best_idx)
-        best_idx = best_idx.reshape((n, k))
-        return prob, embedding, best_idx, beam_idx, top_k
-
-    def backward_step(self, prev_idx, beam_idx, best_idx):
-        n = beam_idx.shape[0]
-        idx = prev_idx[T.arange(n, dtype="int8"), best_idx]
-        best_beam = T.cast(beam_idx[T.arange(n, dtype="int8"), best_idx], "int32")
-        return best_beam, idx
-
-    """
-
-    The following functions are for creating computational graphs
-
-    """
 
     def elbo_fn(self):
         """
