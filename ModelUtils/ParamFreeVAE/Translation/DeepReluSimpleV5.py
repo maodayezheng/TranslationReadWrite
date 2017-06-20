@@ -63,7 +63,7 @@ class DeepReluTransReadWrite(object):
         self.attention_bias = theano.shared(name="attention_bias", value=v)
 
         # teacher mapper
-        self.score = self.mlp(self.output_score_dim + self.embedding_dim, self.output_score_dim, activation=linear)
+        self.score = self.mlp(self.output_score_dim*2, self.output_score_dim, activation=linear)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -164,7 +164,8 @@ class DeepReluTransReadWrite(object):
         sample_embed = self.target_output_embedding.W
         true_embed = get_output(self.target_output_embedding, target[:, 1:])
         true_embed = true_embed.dimshuffle((1, 0, 2))
-        ([h, sample_score], update) = theano.scan(self.step, outputs_info=[h_init, None], non_sequences=[sample_embed],
+        h_init = T.zeros((n, self.output_score_dim))
+        ([h, sample_score], update) = theano.scan(self.decoding_step, outputs_info=[h_init, None], non_sequences=[sample_embed],
                                                   sequences=[output_embedding, true_embed, final_canvas])
 
         # Get sample embedding
@@ -180,7 +181,7 @@ class DeepReluTransReadWrite(object):
         true_embed = true_embed.reshape((n * l, self.output_score_dim))
         d = h.shape[-1]
         h = h.reshape((n*l, d))
-        score = T.exp(T.sum(h * true_embed, axis=-1) - score_clip)
+        score = T.exp(T.sum(h * true_embed, axis=-1).reshape((l, n)) - score_clip)
         score = score.reshape((l, n))
         prob = score / sample_score
         prob = prob.dimshuffle((1, 0))
@@ -235,11 +236,11 @@ class DeepReluTransReadWrite(object):
 
     def decoding_step(self, embedding, true_embed, col, pre_hid_info, s_embedding):
         input_info = T.concatenate([embedding, col, pre_hid_info], axis=-1)
-        u1 = get_output(self.gru_update_1, input_info)
-        r1 = get_output(self.gru_reset_1, input_info)
+        u1 = get_output(self.gru_update_3, input_info)
+        r1 = get_output(self.gru_reset_3, input_info)
         reset_h1 = pre_hid_info * r1
         c_in = T.concatenate([embedding, col, reset_h1], axis=1)
-        c1 = get_output(self.gru_candidate_1, c_in)
+        c1 = get_output(self.gru_candidate_3, c_in)
         h1 = (1.0 - u1) * pre_hid_info + u1 * c1
 
         input_info = T.concatenate([true_embed, h1], axis=-1)
@@ -380,34 +381,6 @@ class DeepReluTransReadWrite(object):
         decode_fn = theano.function(inputs=[source, target, max_time_steps],
                                     outputs=[read_attention, write_attention, forced_max, pred_forced_max, teacher_max])
         return decode_fn
-
-    def greedy_step(self, true_embed, col, pre_hid_info, hid_info, pred_embed, s_embedding):
-        # A single step RNN prediction
-        input_info = T.concatenate([pred_embed, col], axis=-1)
-        r = T.nnet.sigmoid(T.dot(input_info, w_i_r) + T.dot(pre_hid_info, w_h_r) + b_r)
-        u = T.nnet.sigmoid(T.dot(input_info, w_i_u) + T.dot(pre_hid_info, w_h_u) + b_u)
-        c = T.nnet.sigmoid(T.dot(input_info, w_i_h) + r*T.dot(pre_hid_info, w_h_h) + b_h)
-        pre_hid_info = (1-u) * pre_hid_info + u * c
-        input_info = T.concatenate([pred_embed, pre_hid_info], axis=-1)
-        input_info = get_output(self.score, input_info)
-        sample_score = T.dot(input_info, s_embedding.T)
-        pred_forced_max = T.argmax(sample_score, axis=-1)
-        pred_embed = get_output(self.target_input_embedding, pred_forced_max)
-
-        # A forced step RNN prediction
-        input_info = T.concatenate([true_embed, col], axis=-1)
-        r = T.nnet.sigmoid(T.dot(input_info, w_i_r) + T.dot(hid_info, w_h_r) + b_r)
-        u = T.nnet.sigmoid(T.dot(input_info, w_i_u) + T.dot(hid_info, w_h_u) + b_u)
-        c = T.nnet.sigmoid(T.dot(input_info, w_i_h) + r * T.dot(hid_info, w_h_h) + b_h)
-        hid_info = (1 - u) * hid_info + u * c
-        input_info = T.concatenate([true_embed, hid_info], axis=-1)
-        input_info = get_output(self.score, input_info)
-        sample_score = T.dot(input_info, s_embedding.T)
-        forced_max = T.argmax(sample_score, axis=-1)
-
-        prob = T.nnet.softmax(sample_score)
-
-        return pre_hid_info, hid_info, pred_embed, prob, forced_max, pred_forced_max
 
     def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
         """
@@ -586,9 +559,9 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.gru_update_2, params[6])
         lasagne.layers.set_all_param_values(self.gru_reset_2, params[7])
         lasagne.layers.set_all_param_values(self.gru_candidate_2, params[8])
-        lasagne.layers.set_all_param_values(self.gru_update_2, params[9])
-        lasagne.layers.set_all_param_values(self.gru_reset_2, params[10])
-        lasagne.layers.set_all_param_values(self.gru_candidate_2, params[11])
+        lasagne.layers.set_all_param_values(self.gru_update_3, params[9])
+        lasagne.layers.set_all_param_values(self.gru_reset_3, params[10])
+        lasagne.layers.set_all_param_values(self.gru_candidate_3, params[11])
         lasagne.layers.set_all_param_values(self.out_mlp, params[12])
         lasagne.layers.set_all_param_values(self.score, params[13])
         self.attention_weight.set_value(params[14])
@@ -683,7 +656,7 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
-    pre_trained = True
+    pre_trained = False
     epoch = 10
     if pre_trained:
         with open("code_outputs/2017_06_14_09_09_13/model_params.save", "rb") as params:
