@@ -99,7 +99,7 @@ class Seq2Seq(object):
                                       b=lasagne.init.Constant(0.0))
         return h
 
-    def symbolic_elbo(self, source, target, samples, true_l):
+    def symbolic_elbo(self, source, target):
 
         """
         Return a symbolic variable, representing the ELBO, for the given minibatch.
@@ -216,10 +216,9 @@ class Seq2Seq(object):
         """
         source = T.imatrix('source')
         target = T.imatrix('target')
-        true_l = T.ivector('true_l')
-        reconstruction_loss, read_attention, write_attention = self.symbolic_elbo(source, target, None, true_l)
-        elbo_fn = theano.function(inputs=[source, target, true_l],
-                                  outputs=[reconstruction_loss, read_attention, write_attention],
+        reconstruction_loss = self.symbolic_elbo(source, target)
+        elbo_fn = theano.function(inputs=[source, target],
+                                  outputs=[reconstruction_loss],
                                   allow_input_downcast=True)
         return elbo_fn
 
@@ -240,11 +239,10 @@ class Seq2Seq(object):
 
         source = T.imatrix('source')
         target = T.imatrix('target')
-        true_l = T.ivector('true_l')
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
-        reconstruction_loss, read_attention, write_attetion = self.symbolic_elbo(source, target, samples, true_l)
+        reconstruction_loss = self.symbolic_elbo(source, target)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         scaled_grads = lasagne.updates.total_norm_constraint(grads, 5)
@@ -255,15 +253,15 @@ class Seq2Seq(object):
             for u, v in zip(updates, saved_update.keys()):
                 u.set_value(v.get_value())
         if draw_sample:
-            optimiser = theano.function(inputs=[source, target, samples, true_l],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+            optimiser = theano.function(inputs=[source, target, samples],
+                                        outputs=[reconstruction_loss],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
             return optimiser, updates
         else:
-            optimiser = theano.function(inputs=[source, target, true_l],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+            optimiser = theano.function(inputs=[source, target],
+                                        outputs=[reconstruction_loss],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
@@ -533,9 +531,9 @@ def run(out_dir):
                     target = np.concatenate([target, t.reshape((1, t.shape[0]))])
             output = None
             if draw_sample:
-                output = optimiser(source, target, samples, true_l)
+                output = optimiser(source, target)
             else:
-                output = optimiser(source, target, true_l)
+                output = optimiser(source, target)
             iter_time = time.clock() - start
             loss = output[0]
             training_loss.append(loss)
@@ -551,18 +549,11 @@ def run(out_dir):
             v_w = None
             for pair in validation_pair:
                 p += 1
-                v_l, v_r, v_w = validation(pair[0], pair[1], pair[2])
-                valid_loss += v_l
+                v_l = validation(pair[0], pair[1])
+                valid_loss += v_l[0]
 
             print("The loss on testing set is : " + str(valid_loss / p))
             validation_loss.append(valid_loss / p)
-            if i % 2000 == 0:
-                for n in range(1):
-                    for t in range(v_r.shape[0]):
-                        print("======")
-                        print(" Source " + str(v_r[t, n]))
-                        print(" Target " + str(v_w[t, n]))
-                        print("")
 
         if i % 2000 == 0 and iters is not 0:
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
