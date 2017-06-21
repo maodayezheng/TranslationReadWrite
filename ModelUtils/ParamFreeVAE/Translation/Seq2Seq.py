@@ -39,7 +39,7 @@ class Seq2Seq(object):
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
 
-        # init encoding RNNs
+        # Init encoding RNNs
         self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
@@ -48,7 +48,7 @@ class Seq2Seq(object):
         self.gru_reset_2 = self.gru_reset(self.hid_size * 2, self.hid_size)
         self.gru_candidate_2 = self.gru_candidate(self.hid_size * 2, self.hid_size)
 
-        # init decoding RNNs
+        # Init decoding RNNs
         self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
@@ -56,6 +56,9 @@ class Seq2Seq(object):
         self.gru_update_4 = self.gru_update(self.hid_size * 2, self.hid_size)
         self.gru_reset_4 = self.gru_reset(self.hid_size * 2, self.hid_size)
         self.gru_candidate_4 = self.gru_candidate(self.hid_size * 2, self.hid_size)
+
+        # Init output layer
+        self.out_mlp = self.mlp(self.hid_size*2, self.output_score_dim)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -108,7 +111,6 @@ class Seq2Seq(object):
         max_time_steps = true_l[-1]
         l = source[:, 1:].shape[1]
         # Get input embedding
-        source_embedding = get_output(self.input_embedding, source[:, 1:])
 
         # Create input mask
         encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
@@ -118,43 +120,35 @@ class Seq2Seq(object):
         decode_mask = d_m[:, 1:]
 
         h_init = T.zeros((n, self.hid_size))
-        source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
-
-        # Encoding RNN
+        # Source Language Encoding RNN
+        source_embedding = get_output(self.input_embedding, source[:, 1:])
         ([h_t_1, h_t_2], update) = theano.scan(self.source_encode_step,
                                                outputs_info=[h_init, h_init],
                                                sequences=[source_embedding])
 
-        # Complementary Sum for softmax approximation
-        # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
-        final_canvas = canvases[-1]
+        # Target Language Decoding RNN
+        target_embedding = get_output(self.target_input_embedding, target)
+        target_embedding = target_embedding.dimshuffle((1, 0, 2))
+        ([h_t_3, h_t_4], update) = theano.scan(self.target_decode_step,
+                                               outputs_info=[h_t_1[-1], h_t_2[-1]],
+                                               sequences=[target_embedding[:-1]])
 
-        output_embedding = get_output(self.target_input_embedding, target)
-        output_embedding = output_embedding[:, :-1]
+        h = T.concatenate([h_t_3, h_t_4], axis=-1)
+        ([h, score], update) = theano.scan(self.target_decode_step,
+                                           sequences=[h],
+                                           non_sequences=[self.target_output_embedding.W],
+                                           outputs_info=[None, None])
 
-        # Get sample embedding
-        teacher = T.concatenate([output_embedding, teacher], axis=2)
-        n = teacher.shape[0]
-        l = teacher.shape[1]
-        d = teacher.shape[2]
-        teacher = teacher.reshape((n * l, d))
-        teacher = get_output(self.score, teacher)
-        teacher = teacher.reshape((n * l, self.output_score_dim))
-        sample_embed = None
-        if samples is None:
-            sample_embed = self.target_output_embedding.W
-        else:
-            sample_embed = get_output(self.target_output_embedding, samples)
-        sample_score = T.dot(teacher, sample_embed.T)
-        max_clip = T.max(sample_score, axis=-1)
+        max_clip = T.max(score, axis=-1)
         score_clip = zero_grad(max_clip)
-        sample_score = T.exp(sample_score - score_clip.reshape((n * l, 1)))
+        sample_score = T.exp(score - score_clip.reshape((n * l, 1)))
         sample_score = T.sum(sample_score, axis=-1)
 
         # Get true embedding
         true_embed = get_output(self.target_output_embedding, target[:, 1:])
         true_embed = true_embed.reshape((n * l, self.output_score_dim))
-        score = T.exp(T.sum(teacher * true_embed, axis=-1) - score_clip)
+        h = h.reshape((n*l, self.output_score_dim))
+        score = T.exp(T.sum(h * true_embed, axis=-1) - score_clip)
 
         prob = score / sample_score
         prob = prob.reshape((n, l))
@@ -162,13 +156,11 @@ class Seq2Seq(object):
         loss = decode_mask * T.log(prob + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
 
-        return loss, read_attention * encode_mask.reshape((1, n, l)), write_attention * d_m[:, :-1].reshape((1, n, l))
+        return loss
 
     def source_encode_step(self, source_embedding, h1, h2):
         n = h1.shape[0]
-        # Read from ref
-
-        # Decoding GRU layer 1
+        # GRU layer 1
         h_in = T.concatenate([h1, source_embedding], axis=1)
         u1 = get_output(self.gru_update_1, h_in)
         r1 = get_output(self.gru_reset_1, h_in)
@@ -177,19 +169,42 @@ class Seq2Seq(object):
         c1 = get_output(self.gru_candidate_1, c_in)
         h1 = (1.0 - u1) * h1 + u1 * c1
 
-        # Decoding GRU layer 2
-
-        h_in = T.concatenate([h1, h2], axis=1)
+        # GRU layer 2
+        h_in = T.concatenate([h1, h2, source_embedding], axis=1)
         u2 = get_output(self.gru_update_2, h_in)
         r2 = get_output(self.gru_reset_2, h_in)
         reset_h2 = h2 * r2
-        c_in = T.concatenate([h1, reset_h2], axis=1)
+        c_in = T.concatenate([h1, reset_h2, source_embedding], axis=1)
         c2 = get_output(self.gru_candidate_2, c_in)
         h2 = (1.0 - u2) * h2 + u2 * c2
         return h1, h2
 
-    def target_decoding_step(self, target_embedding, h1, h2):
-        print("Decoding")
+    def target_decode_step(self, target_embedding, h3, h4):
+        n = h3.shape[0]
+        # Decoding GRU layer 1
+        h_in = T.concatenate([h3, target_embedding], axis=1)
+        u3 = get_output(self.gru_update_3, h_in)
+        r3 = get_output(self.gru_reset_3, h_in)
+        reset_h3 = h3 * r3
+        c_in = T.concatenate([reset_h3, target_embedding], axis=1)
+        c3 = get_output(self.gru_candidate_3, c_in)
+        h3 = (1.0 - u3) * h3 + u3 * c3
+
+        # Decoding GRU layer 2
+
+        h_in = T.concatenate([h3, h4, target_embedding], axis=1)
+        u4 = get_output(self.gru_update_4, h_in)
+        r4 = get_output(self.gru_reset_4, h_in)
+        reset_h4 = h4 * r4
+        c_in = T.concatenate([h3, reset_h4, target_embedding], axis=1)
+        c4 = get_output(self.gru_candidate_4, c_in)
+        h4 = (1.0 - u4) * h4 + u4 * c4
+        return h3, h4
+
+    def score_eval_step(self, h, embeddings):
+        h = get_output(self.out_mlp, h)
+        score = T.dot(h, embeddings.T)
+        return h, score
 
     def elbo_fn(self):
         """
@@ -323,7 +338,7 @@ The following functions are for training and testing
 def decode():
     print("Decoding the sequence")
     test_data = None
-    model = DeepReluTransReadWrite()
+    model = Seq2Seq()
     de_vocab = []
     en_vocab = []
 
@@ -392,7 +407,7 @@ def run(out_dir):
     print("Run the Relu read and  write v5 ")
     training_loss = []
     validation_loss = []
-    model = DeepReluTransReadWrite()
+    model = Seq2Seq()
     pre_trained = True
     epoch = 10
     if pre_trained:
