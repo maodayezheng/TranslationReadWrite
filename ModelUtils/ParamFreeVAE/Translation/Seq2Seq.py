@@ -34,7 +34,7 @@ class Seq2Seq(object):
         self.output_score_dim = 500
         self.embedding_dim = embed_dim
 
-        # Init the word embeddings.
+        # Init the word embedding
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
@@ -108,7 +108,6 @@ class Seq2Seq(object):
         :return elbo: The symbolic variable representing the ELBO.
         """
         n = source.shape[0]
-        max_time_steps = true_l[-1]
         l = source[:, 1:].shape[1]
         # Get input embedding
 
@@ -129,9 +128,10 @@ class Seq2Seq(object):
         # Target Language Decoding RNN
         target_embedding = get_output(self.target_input_embedding, target)
         target_embedding = target_embedding.dimshuffle((1, 0, 2))
+        encode_mask = encode_mask.dimshuffle((1, 0))
         ([h_t_3, h_t_4], update) = theano.scan(self.target_decode_step,
                                                outputs_info=[h_t_1[-1], h_t_2[-1]],
-                                               sequences=[target_embedding[:-1]])
+                                               sequences=[target_embedding[:-1], encode_mask])
 
         h = T.concatenate([h_t_3, h_t_4], axis=-1)
         ([h, score], update) = theano.scan(self.target_decode_step,
@@ -141,7 +141,7 @@ class Seq2Seq(object):
 
         max_clip = T.max(score, axis=-1)
         score_clip = zero_grad(max_clip)
-        sample_score = T.exp(score - score_clip.reshape((n * l, 1)))
+        sample_score = T.exp(score - score_clip.reshape((l, n, 1)))
         sample_score = T.sum(sample_score, axis=-1)
 
         # Get true embedding
@@ -149,17 +149,17 @@ class Seq2Seq(object):
         true_embed = true_embed.reshape((n * l, self.output_score_dim))
         h = h.reshape((n*l, self.output_score_dim))
         score = T.exp(T.sum(h * true_embed, axis=-1) - score_clip)
-
+        score = score.reshape((n, l))
+        score = score.dimshuffle((1, 0))
         prob = score / sample_score
-        prob = prob.reshape((n, l))
+        prob = prob.dimshuffle((1, 0))
         # Loss per sentence
         loss = decode_mask * T.log(prob + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
 
         return loss
 
-    def source_encode_step(self, source_embedding, h1, h2):
-        n = h1.shape[0]
+    def source_encode_step(self, source_embedding, mask, h1, h2):
         # GRU layer 1
         h_in = T.concatenate([h1, source_embedding], axis=1)
         u1 = get_output(self.gru_update_1, h_in)
@@ -167,7 +167,7 @@ class Seq2Seq(object):
         reset_h1 = h1 * r1
         c_in = T.concatenate([reset_h1, source_embedding], axis=1)
         c1 = get_output(self.gru_candidate_1, c_in)
-        h1 = (1.0 - u1) * h1 + u1 * c1
+        h1 = mask * ((1.0 - u1) * h1 + u1 * c1) + (1.0 - mask) * h1
 
         # GRU layer 2
         h_in = T.concatenate([h1, h2, source_embedding], axis=1)
@@ -176,11 +176,10 @@ class Seq2Seq(object):
         reset_h2 = h2 * r2
         c_in = T.concatenate([h1, reset_h2, source_embedding], axis=1)
         c2 = get_output(self.gru_candidate_2, c_in)
-        h2 = (1.0 - u2) * h2 + u2 * c2
+        h2 = mask * ((1.0 - u2) * h2 + u2 * c2) + (1.0 - mask) * h2
         return h1, h2
 
     def target_decode_step(self, target_embedding, h3, h4):
-        n = h3.shape[0]
         # Decoding GRU layer 1
         h_in = T.concatenate([h3, target_embedding], axis=1)
         u3 = get_output(self.gru_update_3, h_in)
@@ -281,15 +280,21 @@ class Seq2Seq(object):
         gru_2_u_param = lasagne.layers.get_all_params(self.gru_update_2)
         gru_2_r_param = lasagne.layers.get_all_params(self.gru_reset_2)
         gru_2_c_param = lasagne.layers.get_all_params(self.gru_candidate_2)
-        gru_3_u_param = lasagne.layers.get_all_params(self.rnn_decoding)
+
+        gru_3_u_param = lasagne.layers.get_all_params(self.gru_update_3)
+        gru_3_r_param = lasagne.layers.get_all_params(self.gru_reset_3)
+        gru_3_c_param = lasagne.layers.get_all_params(self.gru_candidate_3)
+        gru_4_u_param = lasagne.layers.get_all_params(self.gru_update_4)
+        gru_4_r_param = lasagne.layers.get_all_params(self.gru_reset_4)
+        gru_4_c_param = lasagne.layers.get_all_params(self.gru_candidate_4)
+
         out_param = lasagne.layers.get_all_params(self.out_mlp)
-        score_param = lasagne.layers.get_all_params(self.score)
         return target_input_embedding_param + target_output_embedding_param + \
                gru_1_c_param + gru_1_r_param + gru_1_u_param + \
                gru_2_c_param + gru_2_r_param + gru_2_u_param + \
-               gru_3_u_param + \
-               out_param + score_param + input_embedding_param + \
-               [self.attention_weight, self.attention_bias]
+               gru_3_u_param + gru_3_r_param, gru_3_c_param + \
+               gru_4_u_param + gru_4_r_param, gru_4_c_param + \
+               out_param  + input_embedding_param
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
@@ -302,14 +307,21 @@ class Seq2Seq(object):
         gru_2_u_param = lasagne.layers.get_all_param_values(self.gru_update_2)
         gru_2_r_param = lasagne.layers.get_all_param_values(self.gru_reset_2)
         gru_2_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_2)
-        gru_3_c_param = lasagne.layers.get_all_param_values(self.rnn_decoding)
+
+        gru_3_u_param = lasagne.layers.get_all_param_values(self.gru_update_3)
+        gru_3_r_param = lasagne.layers.get_all_param_values(self.gru_reset_3)
+        gru_3_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_3)
+        gru_4_u_param = lasagne.layers.get_all_param_values(self.gru_update_4)
+        gru_4_r_param = lasagne.layers.get_all_param_values(self.gru_reset_4)
+        gru_4_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_4)
 
         out_param = lasagne.layers.get_all_param_values(self.out_mlp)
-        score_param = lasagne.layers.get_all_param_values(self.score)
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
                 gru_1_u_param, gru_1_r_param, gru_1_c_param,
-                gru_2_u_param, gru_2_r_param, gru_2_c_param, gru_3_c_param,
-                out_param, score_param, self.attention_weight.get_value(), self.attention_bias.get_value()]
+                gru_2_u_param, gru_2_r_param, gru_2_c_param,
+                gru_3_u_param, gru_3_r_param, gru_3_c_param,
+                gru_4_u_param, gru_4_r_param, gru_4_c_param,
+                out_param]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -321,11 +333,15 @@ class Seq2Seq(object):
         lasagne.layers.set_all_param_values(self.gru_update_2, params[6])
         lasagne.layers.set_all_param_values(self.gru_reset_2, params[7])
         lasagne.layers.set_all_param_values(self.gru_candidate_2, params[8])
-        lasagne.layers.set_all_param_values(self.rnn_decoding, params[9])
-        lasagne.layers.set_all_param_values(self.out_mlp, params[10])
-        lasagne.layers.set_all_param_values(self.score, params[11])
-        self.attention_weight.set_value(params[12])
-        self.attention_bias.set_value(params[13])
+
+        lasagne.layers.set_all_param_values(self.gru_update_3, params[9])
+        lasagne.layers.set_all_param_values(self.gru_reset_3, params[10])
+        lasagne.layers.set_all_param_values(self.gru_candidate_3, params[11])
+        lasagne.layers.set_all_param_values(self.gru_update_4, params[12])
+        lasagne.layers.set_all_param_values(self.gru_reset_4, params[13])
+        lasagne.layers.set_all_param_values(self.gru_candidate_4, params[14])
+
+        lasagne.layers.set_all_param_values(self.out_mlp, params[15])
 
 
 """
