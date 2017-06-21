@@ -162,10 +162,8 @@ class DeepReluTransReadWrite(object):
         output_embedding = output_embedding.dimshuffle((1, 0, 2))
         # Get sample embedding
         sample_embed = self.target_output_embedding.W
-        true_embed = get_output(self.target_output_embedding, target[:, 1:])
-        true_embed = true_embed.dimshuffle((1, 0, 2))
         h_init = T.zeros((n, self.output_score_dim))
-        ([h, sample_score], update) = theano.scan(self.decoding_step, outputs_info=[h_init, None], non_sequences=[sample_embed],
+        ([h, s, sample_score], update) = theano.scan(self.decoding_step, outputs_info=[h_init, None, None], non_sequences=[sample_embed],
                                                   sequences=[output_embedding, final_canvas])
 
         # Get sample embedding
@@ -178,10 +176,12 @@ class DeepReluTransReadWrite(object):
         sample_score = T.sum(sample_score, axis=-1)
 
         # Get true embedding
+        true_embed = get_output(self.target_output_embedding, target[:, 1:])
+        true_embed = true_embed.dimshuffle((1, 0, 2))
         true_embed = true_embed.reshape((n * l, self.output_score_dim))
-        d = h.shape[-1]
-        h = h.reshape((n*l, d))
-        score = T.exp(T.sum(h * true_embed, axis=-1).reshape((l, n)) - score_clip)
+        d = s.shape[-1]
+        s = s.reshape((n*l, d))
+        score = T.exp(T.sum(s * true_embed, axis=-1).reshape((l, n)) - score_clip)
         score = score.reshape((l, n))
         prob = score / sample_score
         prob = prob.dimshuffle((1, 0))
@@ -243,10 +243,10 @@ class DeepReluTransReadWrite(object):
         c1 = get_output(self.gru_candidate_3, c_in)
         h1 = (1.0 - u1) * pre_hid_info + u1 * c1
 
-        input_info = get_output(self.score, h1)
-        sample_score = T.dot(input_info, s_embedding.T)
+        s = get_output(self.score, h1)
+        sample_score = T.dot(s, s_embedding.T)
 
-        return h1, sample_score
+        return h1, s, sample_score
 
     """
 
