@@ -1,17 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-train_loss = np.load('training_loss.npy')
-print(train_loss.shape)
-
-#train_loss = np.mean(train_loss[:-10].reshape((200, 500)), axis=-1)
+ae_loss = np.load('ae_loss.npy')
+ae_loss = np.mean(ae_loss[:-10].reshape((2800, 100)), axis=-1)
+rnn_loss = np.load('rnn_loss.npy')
+rnn_loss = np.mean(rnn_loss[:-10].reshape((2800, 100)), axis=-1)
 
 #attn_loss = np.load(folder+'2017_05_06_12_47_56/training_loss.npy')
 #attn_loss = np.mean(attn_loss[:-1].reshape((6, 25000)), axis=-1)
 
 
-plt.plot(-train_loss, label='training', zorder=2)
-#plt.plot(-attn_loss, label='attn', zorder=1)
+plt.plot(-ae_loss, label='ae_loss', zorder=2)
+plt.plot(-rnn_loss, label='rnn_loss', zorder=1)
 plt.xlabel('Negative log likelihood (Averaged over 1000 iterations)')
 plt.ylabel('L(X))')
 plt.legend(loc=4)
