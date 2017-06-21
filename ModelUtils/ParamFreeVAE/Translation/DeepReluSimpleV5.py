@@ -63,7 +63,7 @@ class DeepReluTransReadWrite(object):
         self.attention_bias = theano.shared(name="attention_bias", value=v)
 
         # teacher mapper
-        self.score = self.mlp(self.output_score_dim*2, self.output_score_dim, activation=linear)
+        self.score = self.mlp(self.output_score_dim, self.output_score_dim, activation=linear)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -166,7 +166,7 @@ class DeepReluTransReadWrite(object):
         true_embed = true_embed.dimshuffle((1, 0, 2))
         h_init = T.zeros((n, self.output_score_dim))
         ([h, sample_score], update) = theano.scan(self.decoding_step, outputs_info=[h_init, None], non_sequences=[sample_embed],
-                                                  sequences=[output_embedding, true_embed, final_canvas])
+                                                  sequences=[output_embedding, final_canvas])
 
         # Get sample embedding
         l = sample_score.shape[0]
@@ -234,7 +234,7 @@ class DeepReluTransReadWrite(object):
 
         return h1, h2, canvas, read_attention, write_attention
 
-    def decoding_step(self, embedding, true_embed, col, pre_hid_info, s_embedding):
+    def decoding_step(self, embedding, col, pre_hid_info, s_embedding):
         input_info = T.concatenate([embedding, col, pre_hid_info], axis=-1)
         u1 = get_output(self.gru_update_3, input_info)
         r1 = get_output(self.gru_reset_3, input_info)
@@ -243,8 +243,7 @@ class DeepReluTransReadWrite(object):
         c1 = get_output(self.gru_candidate_3, c_in)
         h1 = (1.0 - u1) * pre_hid_info + u1 * c1
 
-        input_info = T.concatenate([true_embed, h1], axis=-1)
-        input_info = get_output(self.score, input_info)
+        input_info = get_output(self.score, h1)
         sample_score = T.dot(input_info, s_embedding.T)
 
         return h1, sample_score
