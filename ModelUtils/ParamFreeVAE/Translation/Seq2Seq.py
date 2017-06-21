@@ -53,9 +53,9 @@ class Seq2Seq(object):
         self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
-        self.gru_update_4 = self.gru_update(self.hid_size * 2, self.output_score_dim)
-        self.gru_reset_4 = self.gru_reset(self.hid_size * 2, self.output_score_dim)
-        self.gru_candidate_4 = self.gru_candidate(self.hid_size * 2, self.output_score_dim)
+        self.gru_update_4 = self.gru_update(self.hid_size * 2, self.hid_size)
+        self.gru_reset_4 = self.gru_reset(self.hid_size * 2, self.hid_size)
+        self.gru_candidate_4 = self.gru_candidate(self.hid_size * 2, self.hid_size)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -179,14 +179,17 @@ class Seq2Seq(object):
 
         # Decoding GRU layer 2
 
-        h_in = T.concatenate([h1, h2, source_embedding], axis=1)
+        h_in = T.concatenate([h1, h2], axis=1)
         u2 = get_output(self.gru_update_2, h_in)
         r2 = get_output(self.gru_reset_2, h_in)
         reset_h2 = h2 * r2
-        c_in = T.concatenate([h1, reset_h2, source_embedding], axis=1)
+        c_in = T.concatenate([h1, reset_h2], axis=1)
         c2 = get_output(self.gru_candidate_2, c_in)
         h2 = (1.0 - u2) * h2 + u2 * c2
         return h1, h2
+
+    def target_decoding_step(self, target_embedding, h1, h2):
+        print("Decoding")
 
     def elbo_fn(self):
         """
