@@ -58,10 +58,6 @@ class DeepReluTransReadWrite(object):
         v = np.random.uniform(-0.05, 0.05, (self.hid_size, ))
         self.attention_3 = theano.shared(value=v.astype(theano.config.floatX), name="attention_3")
 
-        # init output mapper
-        self.out_mlp = DenseLayer(InputLayer((None, self.hid_size * 3 + self.embedding_dim)),
-                                  num_units=self.output_score_dim * 2, nonlinearity=linear, b=Constant(0.0))
-
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
         w = theano.shared(value=words.astype(theano.config.floatX))
@@ -261,14 +257,10 @@ class DeepReluTransReadWrite(object):
         atn_2_param = lasagne.layers.get_all_params(self.attention_2)
         atn_3_param = [self.attention_3]
 
-        # Output layer
-        out_param = lasagne.layers.get_all_params(self.out_mlp)
-
         return target_input_embedding_param + target_output_embedding_param + input_embedding_param + \
                forward_rnn_param + backward_rnn_param +\
                gru_1_c_param + gru_1_r_param + gru_1_u_param + \
-               hidden_init_param + atn_1_param + atn_2_param + atn_3_param + \
-               out_param
+               hidden_init_param + atn_1_param + atn_2_param + atn_3_param
 
     def get_param_values(self):
         # Embeddings
@@ -289,15 +281,11 @@ class DeepReluTransReadWrite(object):
         atn_2_param = lasagne.layers.get_all_param_values(self.attention_2)
         atn_3_param = self.attention_3.get_value()
 
-        # Output layer
-        out_param = lasagne.layers.get_all_param_values(self.out_mlp)
-
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
                 forward_rnn_param, backward_rnn_param,
                 hidden_init_param,
                 gru_1_u_param, gru_1_r_param, gru_1_c_param,
-                atn_1_param, atn_2_param, atn_3_param,
-                out_param]
+                atn_1_param, atn_2_param, atn_3_param]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -312,8 +300,6 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.attention_1, params[9])
         lasagne.layers.set_all_param_values(self.attention_2, params[10])
         self.attention_3.set_value(params[11])
-        lasagne.layers.set_all_param_values(self.out_mlp, params[12])
-
 
 
 def run(out_dir):
