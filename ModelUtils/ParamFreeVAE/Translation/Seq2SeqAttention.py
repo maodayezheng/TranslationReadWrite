@@ -16,7 +16,7 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class DeepReluTransReadWrite(object):
-    def __init__(self, source_vocab_size=30004, target_vocab_size=30004,
+    def __init__(self, source_vocab_size=40004, target_vocab_size=40004,
                  embed_dim=620, hid_dim=1000, source_seq_len=50,
                  target_seq_len=50, sample_size=301, sample_candi=None):
         self.source_vocab_size = source_vocab_size
@@ -57,6 +57,10 @@ class DeepReluTransReadWrite(object):
 
         v = np.random.uniform(-0.05, 0.05, (self.hid_size, ))
         self.attention_3 = theano.shared(value=v.astype(theano.config.floatX), name="attention_3")
+
+        # init output mlp
+        o_in = lasagne.layers.InputLayer(shape=(None, hid_dim*2 + embed_dim))
+        self.output_mlp = lasagne.layers.DenseLayer(o_in, num_units=self.output_score_dim, nonlinearity=linear)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -114,7 +118,7 @@ class DeepReluTransReadWrite(object):
         encode_info = T.concatenate([forward_info, backward_info], axis=-1)
 
         # Init the decoding RNN
-        h_init = get_output(self.hidden_init, backward_info[:, 0])
+        s_init = get_output(self.hidden_init, backward_info[:, 0])
 
         # Get the decoding input
         decoding_in = get_output(self.target_input_embedding, target)
@@ -123,21 +127,18 @@ class DeepReluTransReadWrite(object):
 
         hidden_score = get_output(self.attention_2, encode_info.reshape((n*l, self.hid_size*2)))
         hidden_score = hidden_score.reshape((n, l, self.hid_size))
-        ([h_t_1, read_info], update) = theano.scan(self.decode_step, sequences=[decoding_in],
-                                                   outputs_info=[h_init, None],
+        ([s_t_1, read_info], update) = theano.scan(self.decode_step, sequences=[decoding_in],
+                                                   outputs_info=[s_init, None],
                                                    non_sequences=[encode_info, hidden_score, encode_mask])
 
         # Complementary sum for softmax approximation
         # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
-        hiddens = T.concatenate([h_init.reshape((1, n, self.hid_size)), h_t_1[:-1]], axis=0)
+        hiddens = T.concatenate([s_init.reshape((1, n, self.hid_size)), s_t_1[:-1]], axis=0)
         o = T.concatenate([hiddens, read_info, decoding_in], axis=-1)
-        d = o.shape[-1]
-        o = o.reshape((l*n, d))
-        l = h_t_1.shape[0]
 
         # Calculate the sample score
         sample_embed = self.target_output_embedding.W
-        sample_score = T.dot(o, sample_embed.T)
+        (sample_score, update) = theano.scan(self.score_eval_step, sequences=[o], non_sequences=[sample_embed])
 
         # Clip the score
         max_clip = T.max(sample_score, axis=-1)
@@ -180,6 +181,11 @@ class DeepReluTransReadWrite(object):
         h1 = (1.0 - u1) * h1 + u1 * c1
 
         return h1, read_info
+
+    def score_eval_step(self, o, embedding):
+        o = get_output(self.output_mlp, o)
+        sample_score = T.dot(o, embedding.T)
+        return sample_score
 
     def elbo_fn(self, num_samples):
         """
@@ -257,10 +263,13 @@ class DeepReluTransReadWrite(object):
         atn_2_param = lasagne.layers.get_all_params(self.attention_2)
         atn_3_param = [self.attention_3]
 
+        # Output layer Param
+        out_param = lasagne.layers.get_all_params(self.output_mlp)
+
         return target_input_embedding_param + target_output_embedding_param + input_embedding_param + \
                forward_rnn_param + backward_rnn_param +\
                gru_1_c_param + gru_1_r_param + gru_1_u_param + \
-               hidden_init_param + atn_1_param + atn_2_param + atn_3_param
+               hidden_init_param + atn_1_param + atn_2_param + atn_3_param + out_param
 
     def get_param_values(self):
         # Embeddings
@@ -281,11 +290,13 @@ class DeepReluTransReadWrite(object):
         atn_2_param = lasagne.layers.get_all_param_values(self.attention_2)
         atn_3_param = self.attention_3.get_value()
 
+        out_param = lasagne.layers.get_all_param_values(self.output_mlp)
+
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
                 forward_rnn_param, backward_rnn_param,
                 hidden_init_param,
                 gru_1_u_param, gru_1_r_param, gru_1_c_param,
-                atn_1_param, atn_2_param, atn_3_param]
+                atn_1_param, atn_2_param, atn_3_param, out_param]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -300,6 +311,7 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.attention_1, params[9])
         lasagne.layers.set_all_param_values(self.attention_2, params[10])
         self.attention_3.set_value(params[11])
+        lasagne.layers.set_all_param_values(self.output_mlp, params[12])
 
 
 def run(out_dir):
