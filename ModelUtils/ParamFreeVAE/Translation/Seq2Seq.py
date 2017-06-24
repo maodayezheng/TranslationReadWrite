@@ -44,18 +44,18 @@ class Seq2Seq(object):
         self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
-        self.gru_update_2 = self.gru_update(self.hid_size * 2, self.hid_size)
-        self.gru_reset_2 = self.gru_reset(self.hid_size * 2, self.hid_size)
-        self.gru_candidate_2 = self.gru_candidate(self.hid_size * 2, self.hid_size)
+        self.gru_update_2 = self.gru_update(self.hid_size * 2 + self.embedding_dim, self.hid_size)
+        self.gru_reset_2 = self.gru_reset(self.hid_size * 2 + self.embedding_dim, self.hid_size)
+        self.gru_candidate_2 = self.gru_candidate(self.hid_size * 2 + self.embedding_dim, self.hid_size)
 
         # Init decoding RNNs
         self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
-        self.gru_update_4 = self.gru_update(self.hid_size * 2, self.hid_size)
-        self.gru_reset_4 = self.gru_reset(self.hid_size * 2, self.hid_size)
-        self.gru_candidate_4 = self.gru_candidate(self.hid_size * 2, self.hid_size)
+        self.gru_update_4 = self.gru_update(self.hid_size * 2 + self.embedding_dim, self.hid_size)
+        self.gru_reset_4 = self.gru_reset(self.hid_size * 2 + self.embedding_dim, self.hid_size)
+        self.gru_candidate_4 = self.gru_candidate(self.hid_size * 2 + self.embedding_dim, self.hid_size)
 
         # Init output layer
         self.out_mlp = self.mlp(self.hid_size*2, self.output_score_dim)
@@ -123,7 +123,7 @@ class Seq2Seq(object):
         source_embedding = get_output(self.input_embedding, source[:, 1:])
         ([h_t_1, h_t_2], update) = theano.scan(self.source_encode_step,
                                                outputs_info=[h_init, h_init],
-                                               sequences=[source_embedding])
+                                               sequences=[source_embedding, encode_mask])
 
         # Target Language Decoding RNN
         target_embedding = get_output(self.target_input_embedding, target)
@@ -131,10 +131,10 @@ class Seq2Seq(object):
         encode_mask = encode_mask.dimshuffle((1, 0))
         ([h_t_3, h_t_4], update) = theano.scan(self.target_decode_step,
                                                outputs_info=[h_t_1[-1], h_t_2[-1]],
-                                               sequences=[target_embedding[:-1], encode_mask])
+                                               sequences=[target_embedding[:-1]])
 
         h = T.concatenate([h_t_3, h_t_4], axis=-1)
-        ([h, score], update) = theano.scan(self.target_decode_step,
+        ([h, score], update) = theano.scan(self.score_eval_step,
                                            sequences=[h],
                                            non_sequences=[self.target_output_embedding.W],
                                            outputs_info=[None, None])
@@ -422,7 +422,7 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = Seq2Seq()
-    pre_trained = True
+    pre_trained = False
     epoch = 10
     if pre_trained:
         with open("code_outputs/2017_06_14_09_09_13/model_params.save", "rb") as params:
