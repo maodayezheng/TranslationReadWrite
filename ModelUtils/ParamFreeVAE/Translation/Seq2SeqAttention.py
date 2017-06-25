@@ -375,8 +375,7 @@ def run(out_dir):
             loss = output[0]
             training_loss.append(loss)
         if iters % 500 == 0:
-            print(" At " + str(iters) + " The training time per iter : "
-                  + str(iter_time) + " The training loss " + str(loss))
+            print(" At " + str(iters) + " The training time per iter : " + str(iter_time) + " The training loss " + str(loss))
 
         if iters % 2000 == 0 and iters is not 0:
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
