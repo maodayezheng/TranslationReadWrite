@@ -1,874 +1,972 @@
 Decoding the sequence
-Sour : espresso fan <\s> <pad> <pad> <pad> <pad> <pad> 
-Refe : Atlas Lehren <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : Espresso @-@ für der der im . <\s> 
-Forc : auch Modell auch auch ebenfalls Hügeln Hügeln Hügeln 
-Pred : auch wer begeistert auch wer Besitz schwerlich Diversifizierung 
 
-Sour : built by experts <\s> <pad> <pad> <pad> <pad> 
-Refe : von Experten konstruiert <\s> <pad> <pad> <pad> <pad> 
-Teac : die Experten aus und Experten Experten . <\s> 
-Forc : Grundlage denen gestützt gestützt gestützt Hügeln Hügeln Hügeln 
-Pred : Grundlage wer gestützt supranationale Instituten Kontinent schwerlich 190 
-
-Sour : July . <\s> <pad> <pad> <pad> <pad> <pad> 
-Refe : <unk> feiern . <\s> <pad> <pad> <pad> <pad> 
-Teac : Juli Juli wir Juli ist . <\s> <\s> 
-Forc : ich Weise wir hoffentlich Höhe Höhe Hügeln Hügeln 
-Pred : ich hoffe ich hoffe ich hoffe ich beabsichtigtes 
-
-Sour : distant worlds . <\s> <pad> <pad> <pad> <pad> 
-Refe : Ferne Welten . <\s> <pad> <pad> <pad> <pad> 
-Teac : die : in Sie <unk> <unk> . <\s> 
-Forc : wer size Kontinent Teilen Kontinent Kontinent Kontinent Kontinent 
-Pred : wer Kontinent hoffentlich Kontinent ebenso wenig überraschend Kontinent 
-
-Sour : killing . <\s> <pad> <pad> <pad> <pad> <pad> 
-Refe : das Töten . <\s> <pad> <pad> <pad> <pad> 
-Teac : ein Töten von - ist . <\s> <\s> 
-Forc : ich Verschwinden hoffentlich hoffentlich hoffentlich Hügeln Hügeln Hügeln 
-Pred : ich hoffe ich hoffe ich hoffe ich beabsichtigtes 
-
-Sour : airport building evacuated <\s> <pad> <pad> <pad> <pad> 
-Refe : Flughafen @-@ Gebäude evakuiert <\s> <pad> <pad> <pad> 
-Teac : Ausbau @-@ Gebäude aus sich in . . 
-Forc : Grundlage ebenso basierende basierende wollten Hügeln Hügeln Hügeln 
-Pred : Grundlage des Mittelstands Grundlage strategischer Konsens 2025 desgleichen 
-
-Sour : revolutionary Sacred Music Factory <\s> <pad> <pad> <pad> 
+Sour : revolutionary Sacred Music Factory <\s> <pad> <pad> <pad>
 Refe : <unk> Werk der <unk> <\s> <pad> <pad> <pad> 
-Teac : <unk> <unk> &quot; <unk> Factory Factory . <\s> 
-Forc : wer Weg hoffentlich hoffentlich Suche Hügeln Hügeln Hügeln 
-Pred : wer angeblich hoffentlich auch Suche nach Ansicht Hügeln 
+Forc : Music Music <unk> Oper . <\s> <\s> <\s> 
+Pred : Music <unk> Music Factory . <\s> <\s> <\s> 
 
 Sour : the vehicles <unk> . <\s> <pad> <pad> <pad> 
 Refe : die <unk> <unk> . <\s> <pad> <pad> <pad> 
-Teac : die Fahrzeuge Fahrzeuge Fahrzeuge das <unk> . <\s> 
-Forc : auch Höhe Weise Weise Teilen Höhe Höhe Hügeln 
-Pred : auch ich glaube ich hoffe ich glaube ich 
+Forc : die Fahrzeuge Fahrzeuge Fahrzeuge <\s> <\s> <\s> <\s> 
+Pred : die Fahrzeuge sind <unk> . <\s> <\s> <\s> 
 
 Sour : <unk> in New York <\s> <pad> <pad> <pad> 
 Refe : <unk> in New York <\s> <pad> <pad> <pad> 
-Teac : <unk> in New York ( in . <\s> 
-Forc : wer Weg denen York Hügeln Kontinent Hügeln Hügeln 
-Pred : wer Kontinent ebenso wenig überraschend Kontinent desgleichen Höhe 
+Forc : in in New York : <\s> <\s> <\s> 
+Pred : in New York New York <\s> <\s> <\s> 
 
 Sour : <unk> <unk> @-@ <unk> <\s> <pad> <pad> <pad> 
 Refe : <unk> <unk> @-@ <unk> <\s> <pad> <pad> <pad> 
-Teac : <unk> <unk> @-@ <unk> @-@ <unk> . <\s> 
-Forc : auch Weg Weg basierende Höhe Kontinent Hügeln Hügeln 
-Pred : auch ich hoffe ich hoffe ich hoffe schwerlich 
+Forc : <unk> @-@ @-@ <unk> <unk> <\s> <\s> <\s> 
+Pred : <unk> @-@ <unk> @-@ <unk> <\s> <\s> <\s> 
 
 Sour : Egypt <unk> in first freely elected president <\s> <pad> <pad> 
 Refe : beseitigen <unk> zu zwischen 1000 strategischen Anlass <\s> <pad> <pad> 
-Teac : Ägypten <unk> in ersten den und Mitgliedern zum Präsident <\s> 
-Forc : auch Weg Weg erwartenden denen Populismus Populismus hoffentlich Populismus Populismus 
-Pred : auch Syriens Weg zu erwartenden Populismus hoffentlich Weltkulturerbe 2025 desgleichen 
+Forc : ï¿½gypten <unk> in einem <unk> Prï¿½sidenten Prï¿½sidenten <\s> <\s> <\s> 
+Pred : ï¿½gypten zum ersten Prï¿½sidenten des freien Prï¿½sidenten <\s> <\s> <\s> 
 
 Sour : worker falls from ladder : seriously injured <\s> <pad> <pad> 
-Refe : Arbeiter stürzte von Leiter : schwer verletzt <\s> <pad> <pad> 
-Teac : der fallen von der : schwere verletzte werden . <\s> 
-Forc : wer des Höhe denen Hügeln Umgehung 2025 Hügeln Hügeln Hügeln 
-Pred : wer Besitz des Mittelstands schwerlich Deckung schwerlich Deckung schwerlich Deckung 
+Refe : Arbeiter stï¿½rzte von Leiter : schwer verletzt <\s> <pad> <pad> 
+Forc : Arbeitnehmer <unk> von <unk> : <unk> verletzt <\s> <\s> <\s> 
+Pred : Arbeitnehmer <unk> <unk> : schwer verletzt <\s> <\s> <\s> <\s> 
 
 Sour : this was reported by broadcaster <unk> . <\s> <pad> <pad> 
 Refe : dies berichtete der Sender <unk> . <\s> <pad> <pad> <pad> 
-Teac : dies wurde von von von ( ( <unk> . <\s> 
-Forc : auch ebenfalls auch ebenfalls auch Kontinent Teilen Hügeln desgleichen desgleichen 
-Pred : auch ich hoffe ich ebenfalls Bowe angeblich Bowe Hügeln desgleichen 
+Forc : dies wurde von <unk> <unk> <unk> <\s> <\s> <\s> <\s> 
+Pred : dies wurde von <unk> <unk> gemeldet . <\s> <\s> <\s> 
 
 Sour : the crime had caused nationwide horror . <\s> <pad> <pad> 
-Refe : die Tat hatte landesweit Entsetzen ausgelöst . <\s> <pad> <pad> 
-Teac : das Kriminalität hatte den zu über und <unk> . . 
-Forc : auch Höhe Weltkulturerbe Mitleid Bowe gelenkt hat Teilen Kontinent Kontinent 
-Pred : auch ich fürchte ich fürchte ich Schrecken Hügeln Erwartung Syriens 
+Refe : die Tat hatte landesweit Entsetzen ausgelï¿½st . <\s> <pad> <pad> 
+Forc : das Kriminalitï¿½t hatte <unk> <unk> <unk> . <\s> <\s> <\s> 
+Pred : das Verbrechen hatte <unk> <unk> hervorgerufen . <\s> <\s> <\s> 
 
 Sour : nonetheless , it is worth watching . <\s> <pad> <pad> 
 Refe : aber das <unk> lohnt sich trotzdem . <\s> <pad> <pad> 
-Teac : dennoch es ist ist sich auf sehr <unk> . <\s> 
-Forc : ich auch Streben Ziel es hoffentlich hoffentlich hoffentlich Hügeln desgleichen 
-Pred : ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe 
+Forc : dennoch es ist lohnt sich . . <\s> <\s> <\s> 
+Pred : dennoch lohnt es sich . <\s> . <\s> <\s> <\s> 
 
 Sour : the speaker will be Johanna <unk> . <\s> <pad> <pad> 
 Refe : <unk> ist <unk> Johanna <unk> . <\s> <pad> <pad> <pad> 
-Teac : der wird ein , <unk> mit diese <unk> . <\s> 
-Forc : ich ich hoffentlich Annahme Konsens Annahme hoffentlich Konsens Konsens Konsens 
-Pred : ich hoffe ich glaube ich hoffe ich hoffe ich beabsichtigtes 
+Forc : der wird das <unk> <unk> . <\s> <\s> <\s> <\s> 
+Pred : der Sprecher wird Johanna <unk> sein . <\s> <\s> <\s> 
 
 Sour : there are a lot of patients . <\s> <pad> <pad> 
 Refe : es gibt sehr viele Patienten . <\s> <pad> <pad> <pad> 
-Teac : es gibt viele viele Patienten mit es sind . <\s> 
-Forc : ich gibt es geehrte ebenfalls hoffen Teilen Hügeln Erwartung Erwartung 
-Pred : ich hoffe ich glaube ich hoffe ich hoffe ich hoffe 
+Forc : es gibt viele viele Patienten . <\s> <\s> <\s> <\s> 
+Pred : es gibt viele Patienten . <\s> . <\s> <\s> <\s> 
 
 Sour : and I think about my father . <\s> <pad> <pad> 
 Refe : und ich denke an meinen Vater . <\s> <pad> <pad> 
-Teac : und ich denke an meinen Vater zu ) . <\s> 
-Forc : ich ich hoffe ich wen Vater desgleichen hoffentlich Vater Vater 
-Pred : ich hoffe ich glaube ich hoffe ich hoffe ich hoffe 
+Forc : und ich denke an meinen Vater . <\s> <\s> <\s> 
+Pred : und ich denke an meinen Vater . <\s> <\s> <\s> 
 
 Sour : the technology is there to do it . <\s> <pad> 
-Refe : die Technologie dafür ist da . <\s> <pad> <pad> <pad> 
-Teac : die Technik ist ist die , es ist . <\s> 
-Forc : auch Höhe hoffentlich hoffentlich es hoffentlich hoffentlich hoffentlich desgleichen desgleichen 
-Pred : auch ich hoffe ich glaube ich hoffe ich hoffe ich 
+Refe : die Technologie dafï¿½r ist da . <\s> <pad> <pad> <pad> 
+Forc : die Technologie ist ist es . <\s> . <\s> <\s> 
+Pred : die Technologie ist es , zu tun . <\s> <\s> 
 
 Sour : new York City is looking into one . <\s> <pad> 
-Refe : New York City erwägt ebenfalls ein solches . <\s> <pad> 
-Teac : New York City is , eine in Projekt <\s> <\s> 
-Forc : hoffentlich York Hügeln Hügeln Hügeln blicken Weg Ziel hoffentlich Kontinent 
-Pred : hoffentlich auch Hügeln wer s Suche nach Ansicht hinaus Erwartung 
+Refe : New York City erwï¿½gt ebenfalls ein solches . <\s> <pad> 
+Forc : New York City sucht eine . . . <\s> <\s> 
+Pred : New York City sucht nach einem . <\s> <\s> <\s> 
 
 Sour : we see customers from all walks of life . <\s> <pad> 
-Refe : werden denen derzeit sich um verabschiedeten der führen . <\s> <pad> 
-Teac : wir wir Kunden von alle alle <unk> ganzen <unk> <\s> <\s> 
-Forc : wir wir auch hoffentlich hoffentlich ökologischen Weise ganzen hoffentlich hoffentlich Hügeln 
-Pred : wir hoffen wir hoffen wir hoffen wir hoffen wir hoffen wir 
+Refe : werden denen derzeit sich um verabschiedeten der fï¿½hren . <\s> <pad> 
+Forc : wir wir Kunden Kunden Kunden Kunden <unk> <unk> . <\s> <\s> 
+Pred : wir sehen Kunden aus allen <unk> . <\s> . <\s> <\s> 
 
 Sour : $ <unk> rescue package for <unk> health <\s> <pad> <pad> <pad> 
-Refe : Rettungspaket über 325 Millionen australische Dollar für <unk> Gesundheitswesen <\s> <pad> 
-Teac : <unk> für das € Euro <unk> für die @-@ € <\s> 
-Forc : Höhe Höhe 190 Weg Unterentwicklung Unterentwicklung Development Glauben Weise Hügeln Hügeln 
-Pred : Höhe Milliarde size Paket hoffentlich Weltkulturerbe Development 190 Hügeln Höhe Woods 
+Refe : Rettungspaket ï¿½ber 325 Millionen australische Dollar fï¿½r <unk> Gesundheitswesen <\s> <pad> 
+Forc : <unk> fï¿½r die <unk> Euro Gesundheit fï¿½r Gesundheit <unk> <\s> <\s> 
+Pred : <unk> fï¿½r die Rettung von <unk> fï¿½r <unk> EUR <\s> <\s> 
 
 Sour : <unk> may yet appeal his sentence . <\s> <pad> <pad> <pad> 
 Refe : <unk> kann gegen sein Urteil noch Berufung einlegen . <\s> <pad> 
-Teac : <unk> kann sich seinen Urteil Berufung nicht einlegen können <\s> <\s> 
-Forc : wer Weise ich wen hoffentlich hoffentlich Mitleid Höhe Populismus hoffentlich Höhe 
-Pred : wer glaubt vielleicht auch Mitleid schwerlich Erwartung derer Höhe abzulehnen desgleichen 
+Forc : <unk> kann seinen seinen Urteil aber nicht einlegen . <\s> <\s> 
+Pred : <unk> kann seinen Aufruf jedoch noch nicht <unk> . <\s> <\s> 
 
 Sour : China plea paper &apos; to be <unk> <\s> <pad> <pad> <pad> 
 Refe : chinesische Zeitung soll nach Aufruf &quot; reformiert &quot; werden <\s> <pad> 
-Teac : das <unk> &quot; auf meinem von <unk> werden werden . <\s> 
-Forc : auch Suche hoffentlich hoffentlich Ansicht derer hoffentlich size Kontinent size Hügeln 
-Pred : auch ich hoffe ich hoffe ich hoffe ich beabsichtigtes Stimmverhalten Hügeln 
+Forc : China <unk> &quot; &quot; dem zur <unk> werden werden <\s> <\s> 
+Pred : China : &quot; <unk> &quot; zu sein <unk> <unk> <\s> <\s> 
 
 Sour : Orlando Bloom and Miranda Kerr still love each other <\s> <pad> 
 Refe : Orlando <unk> und Miranda <unk> lieben sich noch immer <\s> <pad> 
-Teac : Orlando <unk> und Miranda <unk> einander immer immer immer . <\s> 
-Forc : auch hoffentlich Kontinent hoffentlich Mitleid Liebe Kontinent hoffentlich Liebe Liebe Liebe 
-Pred : auch Niger und hoffentlich Mitleid lieben Kontinent Liebe hoffentlich Bowe ebenso 
+Forc : Orlando <unk> und Miranda <unk> immer noch noch <\s> <\s> <\s> 
+Pred : Orlando <unk> und Miranda <unk> immer noch Liebe <\s> <\s> <\s> 
 
 Sour : converting has had a positive effect for me . <\s> <pad> 
-Refe : für mich hatte die Umstellung einen positiven Aspekt . <\s> <pad> 
-Teac : die mich hat ich <unk> von positiven Effekt positiv <\s> <\s> 
-Forc : ich Wachstum ebenfalls ich Höhe ebenfalls glaubten Willen desgleichen hoffentlich desgleichen 
-Pred : ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Refe : fï¿½r mich hatte die Umstellung einen positiven Aspekt . <\s> <pad> 
+Forc : die die hat ich <unk> eine positiven Effekt . <\s> <\s> 
+Pred : die Umwandlung hat mich positiv beeinflusst . <\s> . <\s> <\s> 
 
 Sour : I only purchase special items now and again . <\s> <pad> 
 Refe : nur ab und an kaufe ich etwas <unk> . <\s> <pad> 
-Teac : ich ich sofort jetzt <unk> ich jetzt <unk> <unk> <\s> <\s> 
-Forc : ich ich 2000 hoffentlich denen ich hoffe Glück Weise hoffentlich Erwartung 
-Pred : ich hoffe ich ebenfalls abhängig auch wer ebenfalls begeistert ebenfalls abzulehnen 
+Forc : ich <unk> <unk> jetzt <unk> ich . . . <\s> <\s> 
+Pred : ich <unk> nur spezielle Gegenstï¿½nde und jetzt . <\s> <\s> <\s> 
 
 Sour : the vegan adds new spice to family parties . <\s> <pad> 
 Refe : <unk> verleiht der <unk> eine neue <unk> . <\s> <pad> <pad> 
-Teac : der fügt der <unk> eine neue <unk> @-@ <\s> . <\s> 
-Forc : auch Kontinent Kontinent morgigen Weise Höhe Größe Weise hoffentlich desgleichen desgleichen 
-Pred : auch wer begeistert auch wer begeistert auch schwerlich Erwartung desgleichen hoffen 
+Forc : der macht der Familie neue neue Familie . <\s> <\s> <\s> 
+Pred : der <unk> fï¿½gt seinen <unk> wieder neue <unk> . <\s> <\s> 
 
 Sour : of course he has already met with scepticism . <\s> <pad> 
-Refe : natürlich wurde ihm aber auch schon Skepsis entgegengebracht . <\s> <pad> 
-Teac : natürlich hat er auch auch schon mit begegnet worden <\s> <\s> 
-Forc : auch auch hoffentlich ebenfalls auch Erwartung steigenden hinaus wird hoffentlich Erwartung 
-Pred : auch ich hoffe ich hoffe ich ebenfalls begeistert schwerlich Erwartung desgleichen 
+Refe : natï¿½rlich wurde ihm aber auch schon Skepsis entgegengebracht . <\s> <pad> 
+Forc : er hat er die auch Skepsis Skepsis geï¿½uï¿½ert . <\s> <\s> 
+Pred : er hat natï¿½rlich auch Skepsis mit Skepsis gemacht . <\s> <\s> 
 
 Sour : do you not like my food any more ? <\s> <pad> 
 Refe : schmeckt dir mein Essen nicht mehr ? <\s> <pad> <pad> <pad> 
-Teac : Sie es nicht Essen nicht mehr als mehr mehr ? ? 
-Forc : ich ich gefällt Weg ebenso allzu überraschend n hoffentlich hoffentlich desgleichen 
-Pred : ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Forc : <unk> man mein Lebensmittel nicht mehr ? <\s> ? <\s> <\s> 
+Pred : <unk> du nicht mein Lebensmittel mehr ? <\s> ? <\s> <\s> 
 
 Sour : I hope he sees what I am doing . <\s> <pad> <pad> <pad> 
 Refe : ein du Ihnen Fristen sehr ein daher Umgebung . <\s> <pad> <pad> <pad> 
-Teac : ich hoffe <unk> , , , , , , das <unk> . . 
-Forc : ich hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich desgleichen 
-Pred : ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Forc : ich solches <unk> <unk> fï¿½r , <unk> <unk> sehe <\s> <\s> <\s> <\s> 
+Pred : ich hoffe , er sieht das , was ich . <\s> <\s> <\s> 
 
 Sour : as such , the pair complement one another superbly . <\s> <pad> <pad> 
-Refe : so ergänzen sich die beiden einfach großartig . <\s> <pad> <pad> <pad> <pad> 
-Teac : als stellt sich das beiden <unk> <unk> , eine <unk> <unk> . <\s> 
-Forc : auch ähnlich wollen hoffentlich Höhe inspiriert begeistert zu hoffentlich ebenfalls ebenfalls desgleichen desgleichen 
-Pred : auch ich hoffe ich hoffe ich hoffe ich ebenfalls begeistert ebenfalls überraschend desgleichen 
+Refe : so ergï¿½nzen sich die beiden einfach groï¿½artig . <\s> <pad> <pad> <pad> <pad> 
+Forc : so ergï¿½nzen das die <unk> <unk> eine . <\s> . <\s> <\s> <\s> 
+Pred : so ergï¿½nzen das Paar eine andere . <\s> . <\s> <\s> <\s> <\s> 
 
 Sour : anyone visiting Cologne cannot miss the cathedral . <\s> <pad> <pad> <pad> <pad> 
-Refe : wer Köln besucht , kommt am Dom nicht vorbei . <\s> <pad> <pad> 
-Teac : wer einen besucht hat kann nicht Dom nicht in zu ) . <\s> 
-Forc : wer s hoffentlich leider hoffentlich man wenigsten s Weltkulturerbe hinaus hoffentlich weigerte Erwartung 
-Pred : wer s hoffentlich Weltkulturerbe wer s Weltkulturerbe weigerte man weigerte man glaubt desgleichen 
+Refe : wer Kï¿½ln besucht , kommt am Dom nicht vorbei . <\s> <pad> <pad> 
+Forc : jeder den besucht , kann nicht Freitag nicht vorbei . <\s> <\s> <\s> 
+Pred : jeder , der Kï¿½ln besucht , darf nicht fehlen . <\s> <\s> <\s> 
 
 Sour : there are three sets of lights per direction of travel . <\s> <pad> 
 Refe : pro <unk> gibt es drei <unk> . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : es Zug gibt es drei <unk> , <unk> <unk> <unk> <unk> . . 
-Forc : Höhe Weg Höhe es hoffentlich Weg Weg Teilen Weg Höhe Höhe Höhe Höhe 
-Pred : Höhe des Mittelstands Höhe size size Höhe s Höhe Diversifizierung Höhe Diversifizierung Höhe 
+Forc : es Nacht gibt es drei <unk> . <\s> . . . <\s> <\s> 
+Pred : es gibt drei Lichter pro Richtung auf die <unk> . <\s> <\s> <\s> 
 
 Sour : people are paying more directly into what they are getting . <\s> <pad> 
-Refe : die Leute bezahlen direkt für das , was sie bekommen . <\s> <pad> 
-Teac : die Menschen bezahlen mehr in das , was sie zu werden <\s> <\s> 
-Forc : wer Höhe wollen wollen wovon wen hoffen wovon hoffentlich hoffentlich wen hoffentlich hoffentlich 
-Pred : wer Höhe wer Höhe wer Höhe derer Größe wer angeblich Erwartung derer Grundlage 
+Refe : die Leute bezahlen direkt fï¿½r das , was sie bekommen . <\s> <pad> 
+Forc : die Menschen zahlen mehr mehr ihre , was sie bekommen . <\s> <\s> 
+Pred : die Menschen zahlen mehr direkt in das sie . <\s> . <\s> <\s> 
 
 Sour : Illinois is trying it on a limited basis with trucks . <\s> <pad> 
-Refe : Illinois testet es in <unk> Maße mit Lkws . <\s> <pad> <pad> <pad> 
-Teac : Illinois versucht mit mit einer mit mit <unk> und <\s> <unk> . <\s> 
-Forc : auch Hügeln ebenso hoffentlich Erwartung Maße 2025 denen 2025 hoffentlich 2025 2025 2025 
-Pred : auch ich hoffe ich hoffe ich ebenfalls abzulehnen Größe 190 Erwartung derer Größe 
+Refe : Illinois testet es in <unk> Maï¿½e mit Lkws . <\s> <pad> <pad> <pad> 
+Forc : Illinois arbeitet sie auf einer mit auf Lastwagen . <\s> . <\s> <\s> 
+Pred : Illinois arbeitet mit einer begrenzten <unk> . <\s> . <\s> . <\s> <\s> 
 
 Sour : only three attempts could be made to extinguish the blaze . <\s> <pad> 
 Refe : nun konnten drei <unk> gestaltet werden . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : nur kann nur Versuche Versuche werden , die <unk> die <unk> . . 
-Forc : hoffentlich hoffentlich hoffentlich hoffentlich Weise man hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich Erwartung Erwartung 
-Pred : hoffentlich auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Forc : es konnten nur Versuche <unk> werden . <\s> . . . <\s> <\s> 
+Pred : es konnten nur drei Versuche gemacht werden , die <unk> . <\s> <\s> 
 
 Sour : the Commander expressed his satisfaction following the exercise . <\s> <pad> <pad> <pad> 
-Refe : der Kommandant zeigte sich mit dem Ablauf der Übung zufrieden . <\s> <pad> 
-Teac : der <unk> brachte sich , seiner Rat des folgenden sehr . <\s> <\s> 
-Forc : auch hoffentlich des jedoch hoffentlich denen geschätzten des Erwartung hoffentlich Erwartung hoffentlich Erwartung 
-Pred : auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe 
+Refe : der Kommandant zeigte sich mit dem Ablauf der ï¿½bung zufrieden . <\s> <pad> 
+Forc : der Befehlshaber brachte sich , seiner <unk> der <unk> <unk> . <\s> <\s> 
+Pred : der Befehlshaber der <unk> <unk> sich nach seiner <unk> aus . <\s> <\s> 
 
 Sour : they can expect prison terms of up to ten years . <\s> <pad> 
-Refe : Sie müssen mit Haftstrafen bis zu zehn Jahren rechnen . <\s> <pad> <pad> 
-Teac : Sie können bis zehn rechnen zu zehn Jahren eine können <\s> . <\s> 
-Forc : hoffentlich wollen hoffentlich denen bis 2025 erwartenden bis hoffentlich hoffentlich hoffentlich Erwartung Erwartung 
-Pred : hoffentlich 190 Erwartung Erwartung derer Grundlage schwerlich Erwartung Erwartung Erwartung Erwartung Erwartung Erwartung 
+Refe : Sie mï¿½ssen mit Haftstrafen bis zu zehn Jahren rechnen . <\s> <pad> <pad> 
+Forc : Sie kï¿½nnen bis zehn rechnen zu zehn Jahren rechnen . <\s> <\s> <\s> 
+Pred : Sie kï¿½nnen bis zu zehn Jahren von <unk> rechnen . <\s> <\s> <\s> 
 
 Sour : the Town Councils have decided that the answer is yes . <\s> <pad> 
 Refe : ja , haben die <unk> beschlossen . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : die , die die <unk> beschlossen , die ist Ja Ja . <\s> 
-Forc : hoffentlich auch hoffentlich hoffentlich Höhe hoffentlich hat hoffentlich hoffentlich hoffentlich hoffentlich Erwartung Erwartung 
-Pred : hoffentlich auch Teilen Syriens hoffentlich schwerlich abzulehnen wen hoffentlich lehnen Grundlage size size 
+Forc : die , die die Beschlï¿½sse entschieden . <\s> Ja . . <\s> <\s> 
+Pred : die <unk> haben beschlossen , die Antwort lautet Ja . <\s> <\s> <\s> 
 
 Sour : the two friendly owners are motivated by their love of coffee . <\s> <pad> 
-Refe : , &apos; Anzahl Red im genetisch es sie führte der Mann . <\s> <pad> 
-Teac : die die s der , <unk> veränderten , , , <unk> aus <\s> <\s> 
-Forc : wer aber s derer Hat Stich desgleichen hoffen hoffen s Höhe schwerlich hoffentlich size 
-Pred : wer auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe 
+Refe : , &apos; Anzahl Red im genetisch es sie fï¿½hrte der Mann . <\s> <pad> 
+Forc : die die s der <unk> <unk> <unk> <unk> <unk> . <unk> . <\s> <\s> 
+Pred : die beiden Besitzer sind motiviert von ihrer Liebe zum Kaffee . <\s> <\s> <\s> 
 
-Sour : that is to say : déjà <unk> also stands for reliability . <\s> <pad> 
-Refe : soll heißen : <unk> <unk> steht auch für Verlässlichkeit . <\s> <pad> <pad> <pad> 
-Teac : das das : <unk> <unk> steht für für Zuverlässigkeit bei <\s> steht . . 
-Forc : ... man wir Teilen size size ebenfalls Teilen schuldig ebenfalls hoffentlich ebenfalls ebenfalls Erwartung 
-Pred : ... hoffentlich auch Engineering basierende Lösung auch Teilen derer Grundlage derer Größe hinaus Erwartung 
+Sour : that is to say : dï¿½jï¿½ <unk> also stands for reliability . <\s> <pad> 
+Refe : soll heiï¿½en : <unk> <unk> steht auch fï¿½r Verlï¿½sslichkeit . <\s> <pad> <pad> <pad> 
+Forc : das das : <unk> <unk> steht auch fï¿½r Zuverlï¿½ssigkeit . <\s> . <\s> <\s> 
+Pred : das heiï¿½t : <unk> <unk> steht auch fï¿½r Zuverlï¿½ssigkeit . <\s> . <\s> <\s> 
 
 Sour : the team &apos;s eye for the goal must be considerably improved . <\s> <pad> 
 Refe : auch die <unk> muss definitiv besser werden . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : das das <unk> des das das werden , das muss werden werden . . 
-Forc : auch ich Höhe Suche hoffentlich hoffentlich Erwartung hoffentlich hoffentlich Erwartung Erwartung Erwartung Erwartung Erwartung 
-Pred : auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Forc : das das <unk> des das verbessert sein . <\s> . . . <\s> <\s> 
+Pred : das <unk> muss das Ziel erheblich verbessert werden . <\s> . <\s> <\s> <\s> 
 
 Sour : after a 1992 peace deal , it became an opposition party . <\s> <pad> 
 Refe : nach dem Friedensvertrag von 1992 wurde sie zu einer Oppositionspartei . <\s> <pad> <pad> 
-Teac : nach einem Friedensabkommen von 1992 wurde es eine einer Oppositionspartei geworden <\s> . . 
-Forc : nach Ansicht Ersten Kontinent Kontinent glaubten 2025 2025 distanzieren glaubten Kontinent hoffentlich Erwartung Erwartung 
-Pred : nach Ansicht des Ersten Weltkrieg Kontinent desgleichen distanzieren wir distanzieren wir hoffen wir hoffen 
+Forc : nach einem Staatsstreich von 1992 wurde er eine einer Oppositionspartei . <\s> <\s> <\s> 
+Pred : nach einem Staatsstreich von 1992 wurde er eine <unk> . <\s> . <\s> <\s> 
 
 Sour : President Armando <unk> has sought to play down concerns about instability . <\s> <pad> 
-Refe : Präsident <unk> <unk> hat versucht , Bedenken über eine Instabilität <unk> . <\s> <pad> 
-Teac : Präsident <unk> <unk> hat versucht , Bedenken wegen Instabilität Instabilität zu zu <\s> <\s> 
-Forc : auch Sarkozy Kontinent Kontinent Mitleid schwerlich hoffentlich gestützt Syriens Schande Unterentwicklung Ausmaß Teilen Instabilität 
-Pred : auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Refe : Prï¿½sident <unk> <unk> hat versucht , Bedenken ï¿½ber eine Instabilitï¿½t <unk> . <\s> <pad> 
+Forc : <unk> <unk> <unk> hat versucht , Sorgen hinsichtlich Instabilitï¿½t Instabilitï¿½t anzugehen . <\s> <\s> 
+Pred : <unk> <unk> hat versucht , sich Sorgen um Instabilitï¿½t zu kï¿½mmern . <\s> <\s> 
 
 Sour : I have been advocating it as a plan for twenty years . <\s> <pad> 
 Refe : ich habe das schon seit zwanzig Jahren als Plan vorgeschlagen . <\s> <pad> <pad> 
-Teac : ich bin ihn Jahr seit Jahren Jahren als zwanzig für und <\s> . <\s> 
-Forc : ich hoffe ich Verschwinden 1820 ich Jahren hoffentlich Grundlage size wollten hoffentlich Erwartung Erwartung 
-Pred : ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich glaube 
+Forc : ich habe seit seit seit Jahren Jahren fï¿½r <unk> befï¿½rwortet . <\s> <\s> <\s> 
+Pred : ich habe seit Jahren fï¿½r einen <unk> gestimmt . <\s> <\s> <\s> <\s> <\s> 
 
 Sour : the large audience was inspired by the extremely amusing role play . <\s> <pad> 
-Refe : die vielen Zuschauer waren vom äußerst <unk> <unk> begeistert . <\s> <pad> <pad> <pad> 
-Teac : das große großen waren begeistert <unk> <unk> Publikum begeistert von <\s> spielen . <\s> 
-Forc : auch Höhe inspiriert inspiriert begeistert geschätzten geschätzten Maße Maße ebenfalls hoffentlich schwerlich schwerlich schwerlich 
-Pred : auch ich hoffe ich hoffe ich hoffe ich ebenfalls begeistert schwerlich überraschend schwerlich Erwartung 
+Refe : die vielen Zuschauer waren vom ï¿½uï¿½erst <unk> <unk> begeistert . <\s> <pad> <pad> <pad> 
+Forc : das groï¿½e <unk> waren von <unk> <unk> <unk> inspiriert . <\s> . <\s> <\s> 
+Pred : das groï¿½e Publikum wurde von der <unk> <unk> inspiriert . <\s> . <\s> <\s> 
 
 Sour : six teams battled to become champion at the club tennis tournament . <\s> <pad> 
-Refe : sechs <unk> kämpften beim <unk> der Vereine um den <unk> . <\s> <pad> <pad> 
-Teac : sechs Teams Teams um Turnier zum Champion . den <unk> zu <\s> ! <\s> 
-Forc : wer Generationen Weg wofür 1. Weg hoffentlich hoffen 190 Weg Weg hoffentlich hoffentlich Development 
-Pred : wer ebenfalls begeistert auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe 
+Refe : sechs <unk> kï¿½mpften beim <unk> der Vereine um den <unk> . <\s> <pad> <pad> 
+Forc : sechs Teams Teams um <unk> im <unk> . . <unk> . <\s> <\s> <\s> 
+Pred : sechs Teams <unk> sich im Klub fï¿½r den <unk> . <\s> . <\s> <\s> 
 
 Sour : bronze went to Rainer and Bernd Maier of the <unk> team . <\s> <pad> 
 Refe : das <unk> erreichten Rainer und Bernd <unk> des Teams <unk> . <\s> <pad> <pad> 
-Teac : Bronze <unk> war die und Bernd <unk> des <unk> von @-@ <\s> . <\s> 
-Forc : s Wachstum Wachstum Wachstum Konsens hoffentlich Konsens Woods Mittelstands Hügeln Woods hoffentlich Hügeln Hügeln 
-Pred : s auch Hügeln wer hoffentlich ebenso begeistert auch Teilen des Mittelstands Konsens Woods Development 
+Forc : Bronze <unk> wurde <unk> und Bernd <unk> des <unk> <unk> . <\s> <\s> <\s> 
+Pred : Bronze ging nach Rainer und Bernd <unk> des <unk> @-@ Teams . <\s> <\s> 
 
 Sour : the film will be followed by coffee , tea and cake . <\s> <pad> 
 Refe : nach dem Film gibt es Kaffee , Tee und Kuchen . <\s> <pad> <pad> 
-Teac : der dem Film wird es Kaffee , Tee und Kuchen und <\s> . <\s> 
-Forc : wer Ansicht Weg ebenso es ebenso ebenso aber ebenso hoffentlich ebenso hoffentlich size Erwartung 
-Pred : wer auch ich hoffe ich hoffe ich ebenso begeistert auch wer ebenfalls schwerlich Erwartung 
+Forc : der dem Film wird es Kaffee , Tee und Kuchen . <\s> <\s> <\s> 
+Pred : der Film wird mit Kaffee , Tee und Kuchen serviert . <\s> <\s> <\s> 
 
 Sour : fifth place went to <unk> <unk> , responsible for organising music copies . <\s> <pad> 
-Refe : verabschieden mich Bereitstellung in <unk> <unk> die Wachstum für worauf Punkte Vertragsparteien . <\s> <pad> 
-Teac : 5. Sie in von <unk> <unk> , für , die die <unk> übertragen <\s> <\s> 
-Forc : 5. wir hinaus strategischer Höhe Weise Weise Höhe ebenso marquis basierende basierende basierende hoffentlich basierende 
-Pred : 5. Weg zu denen hoffentlich auch verantworten wollten wir hoffen wir distanzieren wir wollten wir 
+Refe : verabschieden mich Bereitstellung in <unk> <unk> die Wachstum fï¿½r worauf Punkte Vertragsparteien . <\s> <pad> 
+Forc : fï¿½nftens wurde <unk> von <unk> <unk> , Organisation der die <unk> . . <\s> <\s> 
+Pred : fï¿½nftens wurde <unk> <unk> , <unk> fï¿½r die <unk> von <unk> . <\s> <\s> <\s> 
 
 Sour : that said , I do hope that we finally start winning again . <\s> <pad> 
 Refe : dennoch hoffe ich , dass wir endlich auch mal wieder gewinnen . <\s> <pad> <pad> 
-Teac : ich hoffe ich , dass wir hoffen wieder wieder wieder in können <\s> ! <\s> 
-Forc : ich hoffentlich ich hoffe hoffentlich hoffentlich hoffen hoffen hoffen hoffentlich hoffen hoffen hoffentlich hoffentlich hoffen 
-Pred : ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Forc : ich hoffe ich , dass wir endlich wieder wieder wieder anfangen . <\s> <\s> <\s> 
+Pred : ich hoffe , ich hoffe , dass endlich wieder <unk> . <\s> . <\s> <\s> 
 
 Sour : I trained many of the players myself in the A @-@ Youth . <\s> <pad> 
 Refe : viele Spieler habe ich selber noch in der A @-@ Jugend trainiert . <\s> <pad> 
-Teac : ich der haben ich selbst in in den <unk> @-@ 20 @-@ . <\s> <\s> 
-Forc : ich wer hoffentlich ich hoffe hoffentlich Teilen denen hoffentlich hoffentlich hoffentlich ebenso ebenfalls hoffentlich hoffentlich 
-Pred : ich hoffe ich hoffe ich ebenfalls begeistert auch ich hoffe ich hoffe ich hoffe ich 
+Forc : ich Leute <unk> ich selbst in in den <unk> @-@ Jugend verbracht . <\s> <\s> 
+Pred : ich habe viele der Spieler in der A @-@ Jugend aufgewachsen . <\s> <\s> <\s> 
 
 Sour : however , the Rhineland team have already been refused the licence twice . <\s> <pad> 
 Refe : bisher wurde den <unk> die Lizenz aber zweimal verweigert . <\s> <pad> <pad> <pad> <pad> 
-Teac : das jedoch jedoch <unk> @-@ Genehmigung jedoch auch im und das war <unk> . <\s> 
-Forc : allerdings jedoch jedoch ich Kontinent Höhe weigerte auch weigern size hoffentlich weigerte weigerte weigerte weigerte 
-Pred : allerdings auch ich hoffe ich hoffe ich weigerte man weigerte man weigerte wollten wir hoffen 
+Forc : das wurde das <unk> jedoch beiden jedoch schon erteilt . <\s> . . <\s> <\s> 
+Pred : das <unk> wurde jedoch bereits zweimal die Lizenz erteilt . <\s> . <\s> <\s> <\s> 
 
 Sour : tickets are available from the ticket office at the Nuclear <unk> Museum . <\s> <pad> 
 Refe : Karten gibt es an der Kasse des <unk> . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : Tickets sind es im der <unk> im <unk> <unk> das im im <unk> . <\s> 
-Forc : auch auch es auch denen Weltkulturerbe hinaus Weiteren Weltkulturerbe hoffentlich Weltkulturerbe Höhe Höhe Höhe Höhe 
-Pred : auch wer Höhe des Weiteren 190 Höhe s Weltkulturerbe 2025 Höhe s Weltkulturerbe 2025 Höhe 
+Forc : Eintrittskarten sind es im der <unk> im <unk> <unk> <\s> . . . <\s> <\s> 
+Pred : Eintrittskarten sind im <unk> an der <unk> <unk> erhï¿½ltlich . <\s> . <\s> <\s> <\s> 
 
 Sour : the focus of the tournament was on the fun of playing tennis . <\s> <pad> 
-Refe : der Spaß am <unk> stand im Vordergrund des Turniers . <\s> <pad> <pad> <pad> <pad> 
-Teac : der <unk> beim Turnier war auf Spiel , <unk> von das spielen spielen . <\s> 
-Forc : wer Höhe auch wenigsten Wachstum hoffentlich Gegensatz zu Weiteren hoffentlich hoffentlich hoffentlich Erwartung Erwartung Erwartung 
-Pred : wer auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Refe : der Spaï¿½ am <unk> stand im Vordergrund des Turniers . <\s> <pad> <pad> <pad> <pad> 
+Forc : das Fokus des Turnier war auf <unk> . Spiels . <\s> . . <\s> <\s> 
+Pred : das <unk> des Turniers war auf dem Spiel des <unk> . <\s> . <\s> <\s> 
 
 Sour : second place was taken by the Michael <unk> / <unk> <unk> partnership . <\s> <pad> 
 Refe : den zweiten Platz belegte das Doppel Michael <unk> / <unk> <unk> . <\s> <pad> <pad> 
-Teac : der zweiten Platz findet der <unk> @-@ <unk> / <unk> <unk> Partnerschaft Partnerschaft . <\s> 
-Forc : wer Weg Weg 190 Brasiliens Verhältnis @-@ Watson Kontinent dev Kontinent Kontinent hoffentlich Kontinent Kontinent 
-Pred : wer auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Forc : der zweiten Platz fand die <unk> @-@ <unk> / <unk> <unk> . <\s> <\s> <\s> 
+Pred : der zweite fand von Michael <unk> / <unk> <unk> statt . <\s> . <\s> <\s> 
 
 Sour : as the festival has expanded , so has the world of comedy . <\s> <pad> 
 Refe : mit dem Festival ist auch die Welt der Comedy gewachsen . <\s> <pad> <pad> <pad> 
-Teac : als dem Festival der das so Welt so <unk> @-@ zu <\s> <unk> . <\s> 
-Forc : wie Ausnahme Weg Kontinent ebenso Hügeln Höhe ebenso hoffentlich Development Richtung hoffentlich Hügeln Hügeln Hügeln 
-Pred : wie auch ich hoffe ich hoffe ich hoffe ich hoffe ich ebenfalls begeistert ebenfalls lehnt 
+Forc : da dem Festival hat das die Welt von Comedy @-@ . <\s> . <\s> <\s> 
+Pred : da das Festival erweitert wurde , hat die Welt die Comedy . <\s> <\s> <\s> 
 
 Sour : ample supplies of crude have weighed on the price in recent weeks . <\s> <pad> 
-Refe : das große <unk> hat die Preise in den vergangenen Wochen belastet . <\s> <pad> <pad> 
-Teac : in Angebot Angebot hat in Menge in den letzten Wochen in zu <\s> . <\s> 
-Forc : auch Ausmaß Schande Ausmaß Umfang Höhe abhängig Erwartung wenigsten 2000 2025 Kontinent Teilen Kontinent Erwartung 
-Pred : auch reichen Höhe s Höhe wollten wir hoffen wir ebenfalls geschätzten Umfang abzulehnen Hügeln hinaus 
+Refe : das groï¿½e <unk> hat die Preise in den vergangenen Wochen belastet . <\s> <pad> <pad> 
+Forc : in Angebot Angebot hat sich <unk> in den letzten Wochen <unk> . <\s> <\s> <\s> 
+Pred : in den letzten Tagen haben viele <unk> genï¿½gend <unk> . <\s> . <\s> <\s> <\s> 
 
 Sour : Court blocks ruling on <unk> stop @-@ and @-@ <unk> policy <\s> <pad> <pad> <pad> 
 Refe : Gericht blockiert Entscheidung zur Stop @-@ and @-@ <unk> @-@ Richtlinie des <unk> <\s> <pad> 
-Teac : <unk> <unk> das über <unk> @-@ <unk> @-@ <unk> @-@ Politik ( <unk> @-@ <\s> 
-Forc : Höhe Höhe Ausmaß über Verfügung @-@ Plath Weise Plath Weise Plath 2025 Mittelstands Kontinent Kontinent 
-Pred : Höhe des Höhe abzulehnen Teilen Syriens Weg lehnen Grundlage derer Grundlage derer Grundlage derer Grundlage 
+Forc : <unk> stellt die zur <unk> @-@ <unk> @-@ @-@ @-@ Politik @-@ <unk> <\s> <\s> 
+Pred : <unk> : Entscheidung zur <unk> @-@ <unk> @-@ Politik und der <unk> <unk> <\s> <\s> 
 
 Sour : 50 grams of soya yoghurt or <unk> <unk> can also fulfil this purpose . <\s> <pad> 
-Refe : ganze Uhren der enormes betrügerische - <unk> <unk> hat bei Nachhaltigkeit mit Fonds . <\s> <pad> 
-Teac : auch 50 mit Soja Soja Soja <unk> oder können auch <unk> oder <unk> <unk> <\s> . 
-Forc : auch Größenordnung ebenso Größenordnung ökologischen Absicht Auch 2025 Ziel Mitleid weitem ebenfalls denen desgleichen hoffentlich desgleichen 
-Pred : auch ich hoffe ich ebenso geschätzten ökologischen Erwartung schwerlich Erwartung ökologischen Erwartung desgleichen Erwartung desgleichen Erwartung 
+Refe : ganze Uhren der enormes betrï¿½gerische - <unk> <unk> hat bei Nachhaltigkeit mit Fonds . <\s> <pad> 
+Forc : 50 50 oder Joghurt Soja Soja <unk> oder oder <unk> <unk> <unk> <unk> . <\s> <\s> 
+Pred : 50 Gramm <unk> oder <unk> <unk> kï¿½nnen diesem Zweck erfï¿½llen . <\s> . <\s> <\s> <\s> 
 
 Sour : they themselves enjoy the fragrant , hot brew in a <unk> of formats . <\s> <pad> 
-Refe : genießt das <unk> heiße <unk> in den verschiedensten Variationen selbst . <\s> <pad> <pad> <pad> <pad> 
-Teac : Sie man <unk> <unk> , , den heißen <unk> , , <\s> <unk> <unk> . . 
-Forc : wer man Streben Stil ich Weise denen ganzen Teilen s Größe Teilen Größe Größe Größe Größe 
-Pred : wer s hoffentlich auch lieben Weise begeistert auch ich hoffe ich hoffe ich hoffe ich hoffe 
+Refe : genieï¿½t das <unk> heiï¿½e <unk> in den verschiedensten Variationen selbst . <\s> <pad> <pad> <pad> <pad> 
+Forc : Sie sie <unk> <unk> <unk> , den <unk> <unk> . . <\s> . . <\s> <\s> 
+Pred : Sie <unk> sich den <unk> , <unk> , <unk> in einem <unk> . <\s> <\s> <\s> 
 
 Sour : a day of thanks with the <unk> ( Male <unk> Society ) in <unk> <\s> <pad> 
 Refe : ein Tag des <unk> beim <unk> in <unk> <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : ein Tag mit <unk> ( <unk> ( <unk> ( ( ( ( ( <unk> . <\s> 
-Forc : wer Weg 2000 Weiteren Kontinent Bau Kontinent denen Weise Kontinent Kontinent Hügeln Hügeln Hügeln Hügeln Hügeln 
-Pred : wer auch ich hoffe ich hoffe ich hoffe ich ebenfalls Teilen wer ebenfalls Mitleid schwerlich 190 
+Forc : ein Tag dank <unk> der <unk> ( <unk> ( ( in in . <\s> <\s> <\s> 
+Pred : ein Tag dank der <unk> ( <unk> <unk> Society ) in <unk> <\s> <\s> <\s> <\s> 
 
 Sour : trainer <unk> <unk> will not let there be any doubt of this fact . <\s> <pad> 
-Refe : daran lässt Trainer <unk> <unk> überhaupt keine Zweifel . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : <unk> wird sich <unk> <unk> werden nicht Zweifel aufkommen dieser dieser dieser dieser <unk> . . 
-Forc : wer hinaus man hoffen Weise Weise hoffen hoffen hoffen hoffentlich hoffentlich hoffentlich schwerlich schwerlich schwerlich Erwartung 
-Pred : wer auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe 
+Refe : daran lï¿½sst Trainer <unk> <unk> ï¿½berhaupt keine Zweifel . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : Trainer wird sich <unk> <unk> werden keine Zweifel aufkommen <\s> dieser . . . <\s> <\s> 
+Pred : Trainer <unk> <unk> wird es nicht geben , dass es Zweifel gibt . <\s> <\s> <\s> 
 
 Sour : both <unk> and <unk> insist they want to avoid war . <\s> <pad> <pad> <pad> <pad> 
-Refe : sowohl <unk> als auch <unk> betonen , dass sie einen Krieg vermeiden möchten . <\s> <pad> 
-Teac : beide <unk> als auch <unk> bestehen , dass sie den Krieg vermeiden wollen sollten <\s> <\s> 
-Forc : ebenso Teilen Maße auch hoffen Kontinent wollen dass ich wollen wollen schwerlich wollen schwerlich hoffentlich schwerlich 
-Pred : ebenso wenig überraschend hoffen wir hoffen wir wollen wir hoffen schwerlich abzulehnen wollen schwerlich Erwartung schwerlich 
+Refe : sowohl <unk> als auch <unk> betonen , dass sie einen Krieg vermeiden mï¿½chten . <\s> <pad> 
+Forc : sowohl <unk> als auch <unk> bestehen , dass sie den Krieg vermeiden wollen . <\s> <\s> 
+Pred : sowohl <unk> als auch <unk> bestehen darauf , dass sie Krieg vermeiden wollen . <\s> <\s> 
 
 Sour : Mr <unk> was <unk> when asked about whether <unk> would repeat this threat . <\s> <pad> 
-Refe : <unk> antwortete zurückhaltend auf die Frage , ob <unk> diese Drohung wiederholen werde . <\s> <pad> 
-Teac : Herr <unk> <unk> , der Frage , ob <unk> diese Bedrohung erneut würde . <\s> <\s> 
-Forc : hoffentlich Kontinent ich glaubten Grund Höhe hoffentlich hoffentlich hoffentlich Kontinent Erwartung hoffentlich wollen ich hoffentlich Bedrohung 
-Pred : hoffentlich auch wer Höhe wollten wen auch wer hoffen wir hoffen wir hoffen wir hoffen obgleich 
+Refe : <unk> antwortete zurï¿½ckhaltend auf die Frage , ob <unk> diese Drohung wiederholen werde . <\s> <pad> 
+Forc : Herr <unk> <unk> , , Frage , ob <unk> diese Bedrohung <unk> wï¿½rde . <\s> <\s> 
+Pred : Herr <unk> war <unk> , wenn man <unk> , ob diese Bedrohung wï¿½rde . <\s> <\s> 
 
 Sour : the performance received great applause and many words of praise from the audience . <\s> <pad> 
-Refe : viel Applaus und viele <unk> Worten gab es vom Publikum für die Aufführung . <\s> <pad> 
-Teac : die Leistung und <unk> großartige haben von es auch <unk> <unk> die <unk> <unk> <\s> <\s> 
-Forc : wer Liebe hoffentlich hoffentlich geschätzten Weise hoffentlich es hoffentlich geschätzten begeistert allemal Höhe hoffentlich hoffentlich hoffentlich 
-Pred : wer begeistert auch begeistert auch begeistert auch ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Refe : viel Applaus und viele <unk> Worten gab es vom Publikum fï¿½r die Auffï¿½hrung . <\s> <pad> 
+Forc : die Erfolg und <unk> <unk> haben , es auch <unk> . die <unk> . <\s> <\s> 
+Pred : die Leistung erhielt zahlreiche Beifall und viele Worte von der Referenten . <\s> . <\s> <\s> 
 
 Sour : basketball : hopes are growing for the Neckar <unk> ( Neckar Giants ) . <\s> <pad> 
-Refe : Basketball : die Hoffnung der <unk> Riesen wächst <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : Basketball : Hoffnung Hoffnung wächst <unk> wächst <unk> am am in auf in <unk> . . 
-Forc : wer ... hoffentlich Höhe size wachsenden size size leider size Teilen Teilen Hügeln Hügeln Hügeln Hügeln 
-Pred : wer hoffen wir hoffen wir hoffen wir hoffen wir hoffen Teilen derer hoffen Teilen derer hoffen 
+Refe : Basketball : die Hoffnung der <unk> Riesen wï¿½chst <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : Basketball : Hoffnung Hoffnungen fï¿½r <unk> ( ( . . . . . . <\s> <\s> 
+Pred : Basketball : Hoffnung auf die <unk> ( <unk> ) . <\s> . <\s> . <\s> <\s> 
 
 Sour : however , there was no sigh of relief to be heard from <unk> . <\s> <pad> 
 Refe : ein erstes <unk> war aus <unk> dennoch nicht zu vernehmen . <\s> <pad> <pad> <pad> <pad> 
-Teac : es <unk> <unk> der jedoch der , <unk> <unk> hören , <\s> war <unk> . . 
-Forc : wer Weg Ziel Ausmaß hoffentlich denen Weise hoffentlich allzu distanzieren wollten hoffentlich hoffentlich ebenfalls Konsens schwerlich 
-Pred : wer jedoch auch schwerlich distanzieren wir wollten wir hoffen wir hoffen wir hoffen wir hoffen obgleich 
+Forc : es <unk> <unk> von jedoch dem nicht nicht <unk> hï¿½ren . <\s> . . <\s> <\s> 
+Pred : es gab jedoch keine <unk> von <unk> . <\s> gehï¿½rt zu den <unk> . <\s> <\s> 
 
 Sour : meanwhile , a cosy and magical alternative will be provided by Hermann <unk> . <\s> <pad> 
-Refe : gemütlich und <unk> geht es unterdessen bei Hermann <unk> zu . <\s> <pad> <pad> <pad> <pad> 
-Teac : in , eine werden es mit um der <unk> und den <\s> <unk> <unk> . . 
-Forc : wer gestalteten hoffentlich Weise ebenso hoffentlich hoffentlich weitem hoffentlich Weise erwartenden hoffentlich hoffentlich Erwartung Erwartung Erwartung 
-Pred : wer ebenfalls hoffen wir hoffen wir hoffen wir hoffen wir hoffen wir ebenfalls schwerlich fürchten Vater 
+Refe : gemï¿½tlich und <unk> geht es unterdessen bei Hermann <unk> zu . <\s> <pad> <pad> <pad> <pad> 
+Forc : unterdessen und eine werden es um um <unk> <unk> . . <\s> . . <\s> <\s> 
+Pred : unterdessen wird eine gemï¿½tliche und <unk> Alternative zu <unk> Hermann . <\s> . <\s> <\s> <\s> 
 
 Sour : with the support of the Sparkasse <unk> , Bauhaus will be providing the materials . <\s> <pad> 
 Refe : auf , keine der , proche <unk> die Medizintechnik Sie des Familie , entspricht . <\s> <pad> 
-Teac : mit der die Unterstützung <unk> der des , <unk> , , <unk> <unk> werden <unk> <\s> <\s> 
-Forc : wer Basis hoffentlich Weise Grundlage hoffentlich des 2000 Höhe schwerlich wollen Mittelstands hoffentlich 2000 2000 Teilen Hügeln 
-Pred : wer s hoffentlich auch hoffen wir hoffen wir hoffen wir hoffen wir ebenfalls schwerlich abzulehnen Teilen derer 
+Forc : mit der unterstï¿½tzt <unk> <unk> sondern des , <unk> . sich <unk> <unk> unterstï¿½tzen . <\s> <\s> 
+Pred : mit der <unk> <unk> wird das Bauhaus Bauhaus <unk> . <\s> der <unk> . <\s> <\s> <\s> 
 
 Sour : in total , EUR 15,000 of material damage was caused , announced the police . <\s> <pad> 
 Refe : insgesamt entstand rund <unk> <unk> , teilte die Polizei mit . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : insgesamt wurden in 15 15 , die mit <unk> mit , die wurde , <unk> . . 
-Forc : wer geschätzten 2000 2000 Ausmaß Ausmaß 2000 man Höhe basierende denen Teilen Schande Schande Schande Schande Schande 
-Pred : wer 2000 bis 2025 Ausmaß 2000 Mitleid Mehrheiten 2025 glaubten desgleichen leider auch glaubten desgleichen glaubten desgleichen 
+Forc : insgesamt wurden ein 15.000 der von <unk> mit Polizei . . <\s> . . . <\s> <\s> 
+Pred : insgesamt wurden <unk> von 15.000 <unk> verursacht , die Polizei gemeldet . <\s> . <\s> <\s> <\s> 
 
 Sour : on Saturday 7 September , the Highland Games will start at 1 : 30 p.m. <\s> <pad> 
 Refe : am Samstag , 7. September , starten um 13.30 Uhr die <unk> @-@ Games . <\s> <pad> 
-Teac : am Samstag 7. 7. September werden werden die <unk> Uhr <unk> <unk> . <unk> . <\s> <\s> 
-Forc : wer wenigsten hoffentlich hoffentlich November 2000 Höhe wir 1500 2000 hoffentlich Höhe Weise 74513 Höhe hoffentlich Höhe 
-Pred : wer s hoffentlich auch hoffen wir hoffen wir hoffen wir hoffen wir hoffen wir hoffen wir hoffen 
+Forc : am Samstag , den September , wird die <unk> Uhr die <unk> <unk> <unk> . <\s> <\s> 
+Pred : am Samstag , den 7. September , wird die <unk> um 1 : <unk> <\s> <\s> <\s> 
 
 Sour : &quot; it isn &apos;t about the distance , &quot; explains organiser Peter <unk> . <\s> <pad> <pad> 
-Refe : &quot; es kommt nicht auf die Weite an &quot; , erklärt Organisator Peter <unk> . <\s> <pad> 
-Teac : &quot; es ist nicht zu die Distanz , , , erklärt Peter Peter <unk> <unk> <\s> <\s> 
-Forc : wer s lieben man allzu Grund Höhe des denen Verschwinden hoffentlich gelinde Populismus Konsens Weise Teilen desgleichen 
-Pred : wer es lieben Weg zu denen hoffentlich distanzieren wir hoffen wir distanzieren wir hoffen wir hoffen wir 
+Refe : &quot; es kommt nicht auf die Weite an &quot; , erklï¿½rt Organisator Peter <unk> . <\s> <pad> 
+Forc : &quot; es ist nicht zum die Distanz &quot; , , sagt Peter Peter <unk> . <\s> <\s> 
+Pred : &quot; es ist nicht weit ï¿½ber die Distanz , erlï¿½utert Peter <unk> als <unk> . <\s> <\s> 
 
 Sour : the judging panel will also award a few bonus points for &quot; outfits . &quot; <\s> <pad> 
-Refe : fürs &quot; Outfit &quot; vergibt die Jury noch ein paar <unk> . <\s> <pad> <pad> <pad> <pad> 
-Teac : die <unk> <unk> &quot; wird auch Jury auch ein paar <unk> für <unk> <unk> <unk> . . 
-Forc : auch Ziel Modell hoffentlich hoffentlich 2000 Höhe 2025 steigenden wollten geschätzten size hoffentlich size size size size 
-Pred : auch ich hoffe ich hoffe ich ebenfalls geschätzten Erwartung wer ebenfalls geschätzten ökologischen Erwartung derer Größe schwerlich 
+Refe : fï¿½rs &quot; Outfit &quot; vergibt die Jury noch ein paar <unk> . <\s> <pad> <pad> <pad> <pad> 
+Forc : die <unk> <unk> &quot; wird auch <unk> ein ein paar Sï¿½tze fï¿½r <\s> . . <\s> <\s> 
+Pred : die <unk> wird auch ein paar <unk> fï¿½r &quot; <unk> &quot; <unk> . <\s> . <\s> <\s> 
 
 Sour : registration is open until a few hours prior to the beginning of the competition . <\s> <pad> 
 Refe : anmelden kann man sich bis eine Stunde vor <unk> . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : die ist bis bis bis zu <unk> vor Beginn des Sie ist am am statt . . 
-Forc : wer Weg man bis hoffentlich zu Milliarde Entfernung Ort Weise hoffentlich Erwartung Erwartung Erwartung Erwartung Erwartung Erwartung 
-Pred : wer s Weg wer bis zu denen hoffentlich 2000 Erwartung wer Erwartung wer Erwartung hinaus schwerlich Erwartung 
+Forc : die bis bis bis bis zum <unk> vor Beginn <unk> <\s> der . . . <\s> <\s> 
+Pred : die Anmeldung ist bis zum Beginn des <unk> offen . <\s> . <\s> . <\s> <\s> <\s> 
 
 Sour : the Vegetarian Association will provide further examples on World <unk> Day on 1 November . <\s> <pad> 
 Refe : weitere nennt der <unk> zum <unk> am 1. November . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : am Informationen sich <unk> <unk> <unk> @-@ <unk> November 2011 November am <unk> <unk> <unk> . . 
-Forc : wer Schande man morgigen Weise Beispiel Kontinent wenigsten November 2000 November hoffentlich hoffentlich hoffentlich hoffentlich hoffen hoffen 
-Pred : wer auch wer Kontinent hoffentlich auch wer ebenfalls hoffen wir hoffen wir ebenfalls hoffen wir hoffen obgleich 
+Forc : der <unk> man <unk> @-@ <unk> . 1. November . <\s> am . . . <\s> <\s> 
+Pred : der <unk> Verband wird weitere <unk> am 1. November am 1. November anbieten . <\s> <\s> <\s> 
 
 Sour : the solemn mass is to take place on Sunday 3 November at 11.30 a.m. <\s> <pad> <pad> 
 Refe : die feierliche Messe findet statt am Sonntag , 3. November , um 11.30 Uhr . <\s> <pad> 
-Teac : die feierliche Ausstellung findet am , Sonntag um um November um um 11.30 Uhr statt <\s> <\s> 
-Forc : wer Höhe Annahme morgigen man hoffen wenigsten hoffentlich Höhe November 2000 Höhe 1500 Erwartung Erwartung Feb Höhe 
-Pred : wer hoffentlich auch kosten Umfang wer Höhe Feb 49 Erwartung wer Höhe Feb 49 Erwartung Erwartung Erwartung 
+Forc : die feierliche feierliche findet am am Sonntag um dem November um um 11.30 Uhr . <\s> <\s> 
+Pred : die feierliche feierliche Sitzung findet am Sonntag um 11.30 Uhr am <unk> statt . <\s> <\s> <\s> 
 
 Sour : &quot; we don &apos;t have a specific target group , &quot; emphasises Daniel <unk> . <\s> <pad> 
 Refe : &quot; wobei wir keine bestimmte Zielgruppe haben &quot; , betont Daniel <unk> . <\s> <pad> <pad> <pad> 
-Teac : &quot; wir wir keine spezielle Zielgruppe haben , , sagt Daniel <unk> &quot; Daniel <unk> . . 
-Forc : wir hoffentlich ich hoffen wollen supranationale hoffentlich wir hoffentlich hoffentlich desgleichen Konsens Wachstum hoffentlich hoffentlich hoffentlich desgleichen 
-Pred : wir hoffen wir wollen wir hoffen wir hoffen wir hoffen wir hoffen wir hoffen wir hoffen obgleich 
+Forc : &quot; wir wir keine spezifische Zielgruppe haben &quot; , betont Daniel <unk> . <\s> . <\s> <\s> 
+Pred : &quot; wir haben keine spezielle Zielgruppe &quot; , betont Daniel <unk> . <\s> . <\s> <\s> <\s> 
 
 Sour : &quot; we want to cause as little disruption as possible to normal business . &quot; <\s> <pad> 
-Refe : &quot; wir möchten den ganz normalen Betrieb so wenig wie möglich stören &quot; . <\s> <pad> <pad> 
-Teac : &quot; wir wollen , kleinen kleinen Betrieb so gering wie möglich in &quot; . <\s> . . 
-Forc : wir hoffentlich wollen wir Weg ähnlich Weg schwerlich ähnlich geschätzten kaum Weise wollen Verschwinden hoffentlich size schwerlich 
-Pred : wir wollen wir hoffen wir schwerlich wollen wir hoffen wir hoffen wir schwerlich wollen wir hoffen wir 
+Refe : &quot; wir mï¿½chten den ganz normalen Betrieb so wenig wie mï¿½glich stï¿½ren &quot; . <\s> <pad> <pad> 
+Forc : &quot; wir wollen so <unk> geringen <unk> zu etwas wie mï¿½glich &quot; &quot; . <\s> <\s> <\s> 
+Pred : &quot; wir wollen so wenig wie mï¿½glich ein <unk> fï¿½r das Unternehmen &quot; . <\s> <\s> <\s> 
 
 Sour : airlines began charging for the first and second checked bags in 2008 . <\s> <pad> <pad> <pad> <pad> 
-Refe : Positionen geltenden Wiederaufnahme für , zwischen und allerdings typischen Diversifizierung zu Wettbewerb . <\s> <pad> <pad> <pad> <pad> 
-Teac : die der <unk> der die die den den ersten <unk> der <unk> , 2008 <unk> 2008 . <\s> 
-Forc : wer hinaus Höhe des Syriens aber denen denen auch denen derer erwartenden Hügeln Teilen Hügeln Hügeln Hügeln Erwartung 
-Pred : wer s auch ich hoffe ich übrigens auch wer s auch ich hoffe ich hoffe ich hoffe ich 
+Refe : Positionen geltenden Wiederaufnahme fï¿½r , zwischen und allerdings typischen Diversifizierung zu Wettbewerb . <\s> <pad> <pad> <pad> <pad> 
+Forc : die der <unk> der die die den <unk> <unk> <unk> der den im <unk> 2008 . <\s> <\s> 
+Pred : die Fluggesellschaften begannen die ersten <unk> und die <unk> im zweiten Stock 2008 zu ï¿½berprï¿½fen . <\s> <\s> 
 
 Sour : passengers who buy their tickets on the airline &apos;s website won &apos;t have to pay . <\s> <pad> 
-Refe : Passagiere , die Ihre Tickets auf der Website der Fluggesellschaft kaufen , müssen nicht bezahlen . <\s> <pad> 
-Teac : Passagiere , die ihre Tickets kaufen der <unk> kaufen Fluggesellschaft kaufen , müssen nicht bezahlen müssen <\s> <\s> 
-Forc : wer wer wer Höhe Höhe Höhe denen Höhe hoffentlich Höhe hoffentlich wollten Höhe leider allzu müssen Teilen wer 
-Pred : wer s auch wer Besitz des Weiteren abhängig vom Umfang derer Größe Brasiliens Erwartung derer Größe schwerlich Erwartung 
+Refe : Passagiere , die Ihre Tickets auf der Website der Fluggesellschaft kaufen , mï¿½ssen nicht bezahlen . <\s> <pad> 
+Forc : die , die ihre Flugtickets fï¿½r der Karte der Fluggesellschaft bezahlen , zahlen nicht bezahlen . <\s> <\s> 
+Pred : die Flugtickets , die ihre Tickets fï¿½r die Fluggesellschaft kaufen , haben nicht bezahlen . <\s> <\s> <\s> 
 
 Sour : passengers often <unk> about baggage charges and other fees , but airlines love them . <\s> <pad> <pad> 
-Refe : Passagiere <unk> häufig über <unk> und andere Gebühren , doch Fluggesellschaften greifen gern darauf zurück . <\s> <pad> 
-Teac : Fluggäste , oft über Gebühren und andere Gebühren , aber die , diese Ihre hin zu <\s> . 
-Forc : wer bevorzugen Ausmaß Höhe Umfang Höhe Höhe Weise hinaus aber Höhe abgesehen wir auch hinaus Mitleid Teilen Mitleid 
-Pred : wer abhängig vom Umfang abhängig Entfernung steigenden Höhe derer Größe wer ebenfalls Mitleid lieben wen abhängig man weigerte 
+Refe : Passagiere <unk> hï¿½ufig ï¿½ber <unk> und andere Gebï¿½hren , doch Fluggesellschaften greifen gern darauf zurï¿½ck . <\s> <pad> 
+Forc : die <unk> oft <unk> <unk> und andere Gebï¿½hren , sondern die , die auf an . <\s> <\s> 
+Pred : die Passagiere <unk> sich oft <unk> und andere Gebï¿½hren , sondern die Fluggesellschaften ihre Liebe . <\s> <\s> 
 
 Sour : aerospace revenue fell 13 percent to $ 2 billion . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
 Refe : der Umsatz in der Luft- und <unk> fiel um 13 Prozent auf zwei Milliarden Dollar . <\s> <pad> 
-Teac : die Umsatz der den Höhe und <unk> betrug auf 2 Prozent auf 2 Milliarden Dollar zurück <\s> <\s> 
-Forc : auch Höhe Höhe Höhe Höhe und Höhe Höhe Kontinent Kontinent Milliarden Höhe Grund Milliarden Dollar Höhe hoffentlich Kontinent 
-Pred : auch ich hoffe ich hoffe ich hoffe ich Höhe Milliarde Dollar Höhe Milliarde Dollar Höhe Woods 2000 Erwartung 
+Forc : die Umsatz der den <unk> und <unk> lag auf 2 Milliarden auf 2 Milliarden Dollar . <\s> <\s> 
+Pred : die <unk> lag bei 13 Prozent auf den Umsatz von 2 Milliarden Dollar im Jahr . <\s> <\s> 
 
 Sour : the transportation division &apos;s margins were affected by execution issues in a few large contracts . <\s> <pad> 
-Refe : die <unk> im Bereich Transport wurde durch <unk> bei einigen <unk> beeinträchtigt . <\s> <pad> <pad> <pad> <pad> 
-Teac : der <unk> der Bereich der waren von die in einigen wenigen in und <\s> waren <unk> . <\s> 
-Forc : ebenso Höhe Ausmaß Gegensatz Privatisierung Ausmaß ebenso wen Ausmaß weitem Teilen Ausmaß Umfang Teilen Privatisierung Umfang Privatisierung Privatisierung 
-Pred : ebenso wenig überraschend Ausmaß Privatisierung ebenso wenig überraschend Ausmaß Privatisierung Umfang Privatisierung schwerlich allzu langer Größenordnung Woods basierende 
+Refe : die <unk> im Bereich Transport wurde durch <unk> bei einigen <unk> beeintrï¿½chtigt . <\s> <pad> <pad> <pad> <pad> 
+Forc : die <unk> der Bereich <unk> wurden von die in einigen groï¿½en beeintrï¿½chtigt . <\s> . . <\s> <\s> 
+Pred : die <unk> der <unk> wurden von einigen <unk> in wenigen Fï¿½llen behindert . <\s> . <\s> <\s> <\s> 
 
 Sour : one traveller told the broadcaster CNN about how many people had sought protection in panic . <\s> <pad> 
-Refe : ein <unk> erzählte dem Sender CNN , viele Menschen hätten in Panik Schutz gesucht . <\s> <pad> <pad> 
-Teac : ein <unk> sagte dem Sender CNN , wie Menschen wie sich Panik einen vor hatten <\s> . <\s> 
-Forc : wer Weg Kontinent man Weg Kontinent Kontinent wovon wollten glaubten übrigens Erwartung Weise wollten leider Teilen Kontinent glaubten 
-Pred : wer Kontinent hoffentlich auch wer ebenfalls weigerte man schwerlich Erwartung wer Kontinent angeblich wollten wen angeblich wollten wen 
+Refe : ein <unk> erzï¿½hlte dem Sender CNN , viele Menschen hï¿½tten in Panik Schutz gesucht . <\s> <pad> <pad> 
+Forc : ein <unk> <unk> den Sender , , wie Menschen haben <unk> Panik gesucht gesucht . <\s> <\s> <\s> 
+Pred : ein <unk> <unk> in Macau , wie viele Menschen in Not <unk> . <\s> . <\s> <\s> <\s> 
 
 Sour : panic broke out among those waiting , with many hiding behind seats in fear . <\s> <pad> <pad> 
-Refe : unter den <unk> sei Panik ausgebrochen , viele hätten sich aus Angst hinter Stühlen versteckt . <\s> <pad> 
-Teac : Panik den Panik Panik Panik , , mit <unk> sich hinter Angst vor den versteckt . <\s> <\s> 
-Forc : wer anderem Hügeln Hügeln Erwartung Hügeln auch aber Unterentwicklung leider schwerlich denen lehnen denen schwerlich Hügeln hoffentlich Erwartung 
-Pred : wer Kontinent Unterentwicklung ebenso wenig Unterentwicklung ebenso wenig Wohlstand leider auch lehnen Grundlage schwerlich Erwartung schwerlich Erwartung abzulehnen 
+Refe : unter den <unk> sei Panik ausgebrochen , viele hï¿½tten sich aus Angst hinter Stï¿½hlen versteckt . <\s> <pad> 
+Forc : Panik diesen <unk> <unk> Panik <unk> , mit versteckt sich hinter Angst vor sich versteckt . <\s> <\s> 
+Pred : Panik brach unter diesen <unk> , und viele verstecken sich hinter sich verstecken in Angst . <\s> <\s> 
 
 Sour : television footage revealed how numerous ambulances and police cars arrived at a terminal . <\s> <pad> <pad> <pad> 
 Refe : auf <unk> war zu sehen , wie zahlreiche <unk> und <unk> vor einem Terminal <unk> . <\s> <pad> 
-Teac : im dem wurde bekannt sehen , wie viele <unk> und <unk> in einem <unk> angekommen sind <\s> <\s> 
-Forc : auch Grund Weise ebenso denen wie ebenso auch ebenfalls Kontinent Weise Weise allem Kontinent Kontinent Kontinent Teilen Kontinent 
-Pred : auch ich hoffe ich glaube ich ebenso überraschend schwerlich überraschend Kontinent Marín Höhe s Erwartung überraschend Kontinent Erwartung 
+Forc : Fernsehen <unk> gab <unk> sehen , wie viele <unk> und <unk> auf einem Terminal <unk> . <\s> <\s> 
+Pred : Fernsehen zeigt , wie viele <unk> und <unk> auf einem Terminal in einem Terminal angekommen . <\s> <\s> 
 
 Sour : some of his communications will undoubtedly have been legitimate ones because he was their lawyer . <\s> <pad> 
 Refe : ein Teil seiner Mitteilungen war zweifellos legitim , denn er war der Anwalt dieser Personen . <\s> <pad> 
-Teac : einige paar seiner Kommunikation ist zweifellos legitim , denn er war , Anwalt , <unk> . <\s> <\s> 
-Forc : auch Weg des hoffentlich hoffentlich hoffentlich auch auch obgleich auch weigerte desgleichen hoffentlich ebenfalls Erwartung desgleichen hoffentlich desgleichen 
-Pred : auch ich hoffe ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich 
+Forc : einige paar seiner Kommunikation ist zweifellos legitim , weil er war der Anwalt . Art. . <\s> <\s> 
+Pred : einige seiner Mitteilungen wurden zweifellos legitime , aber auch weil er <unk> war . <\s> . <\s> <\s> 
 
 Sour : but this went way beyond the ordinary confines of a lawyer @-@ client relationship . <\s> <pad> <pad> 
-Refe : doch das ging weit über die Grenzen einer normalen Beziehung zwischen Anwalt und <unk> hinaus . <\s> <pad> 
-Teac : aber das ging über über die Grenzen eines einfachen <unk> zwischen einem und <unk> hin . <\s> <\s> 
-Forc : aber auch Ausmaß es hinaus Umfang Höhe hinaus Weise Kontinent hoffentlich wenigsten Kontinent Weise Weise Erwartung hoffentlich Kontinent 
-Pred : aber auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe 
+Refe : doch das ging weit ï¿½ber die Grenzen einer normalen Beziehung zwischen Anwalt und <unk> hinaus . <\s> <pad> 
+Forc : aber dies ging ï¿½ber ï¿½ber die normalen der normalen <unk> zwischen <unk> und <unk> zurï¿½ck . <\s> <\s> 
+Pred : aber dies war jenseits der normalen <unk> einer <unk> @-@ <unk> @-@ Verbindung zu verstehen . <\s> <\s> 
 
 Sour : fees are one way to get passengers to bring less on board . <\s> <pad> <pad> <pad> <pad> 
 Refe : erheben im durch unserer in welche Rezeption in per ihrem @-@ Management . <\s> <pad> <pad> <pad> <pad> 
-Teac : die können Falle die Fluggäste die Weise die die SMS Zug Boot @-@ <unk> ist werden . . 
-Forc : wer wir Gegensatz wen Kontinent Höhe Weise schwerlich Höhe Fanatismus Weg Verschwinden Weise Weise Höhe Höhe Höhe Höhe 
-Pred : wer Höhe derer Weg wer auch wer schwerlich Deckung des Mittelstands Weise schwerlich Erwartung desgleichen abhängig Höhe derer 
+Forc : die ist <unk> die <unk> den Weise <unk> der Bahn Kunden <unk> @-@ die zu ist . <\s> 
+Pred : die Gebï¿½hren sind die Mï¿½glichkeit , sich an Bord zu bewegen , die Passagiere zu erhï¿½hen . <\s> 
 
 Sour : I was expecting to see <unk> of teeth and a fight breaking out at the gate . <\s> 
 Refe : ich erwartete , <unk> und <unk> Diskussionen am <unk> zu sehen . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : ich hatte es dass <unk> <unk> Zähne über <unk> . sehen . <\s> . . . . . 
-Forc : ich hoffe Erwartung hoffentlich Erwartung hoffentlich Erwartung ebenso wenigsten Kontinent erwartenden wen hoffentlich Hügeln Hügeln Hügeln Erwartung Erwartung 
-Pred : ich hoffe ich hoffe ich hoffe ich glaube ich hoffe ich hoffe ich glaube ich hoffe ich hoffe 
+Forc : ich hatte , dass <unk> <unk> zu zu <unk> zu erkennen . <\s> am . . . <\s> 
+Pred : ich hatte erwartet , dass <unk> Zï¿½hne und ein <unk> am Tor <unk> . <\s> . <\s> <\s> 
 
 Sour : on Wednesday it slashed the mileage award to 25 percent of the miles of the trip . <\s> 
-Refe : am Mittwoch wurden die Meilen noch einmal auf 25 Prozent der <unk> gekürzt . <\s> <pad> <pad> <pad> 
-Teac : am Mittwoch , die <unk> für 25 25 25 Prozent der Meilen gutgeschrieben . <\s> . . . 
-Forc : wer wenigsten hoffentlich hoffentlich Höhe Höhe Teilen geschätzten Grund Weg Höhe Höhe Höhe wollten Teilen Höhe Höhe Höhe 
-Pred : wer Höhe wollten wir hoffen wir wollten wir hoffen wir wollten wer Höhe derer Höhe derer Höhe derer 
+Refe : am Mittwoch wurden die Meilen noch einmal auf 25 Prozent der <unk> gekï¿½rzt . <\s> <pad> <pad> <pad> 
+Forc : am Mittwoch <unk> die <unk> 25 25 auf 25 Prozent der Meilen gesenkt . <\s> . . <\s> 
+Pred : am Mittwoch <unk> die <unk> auf 25 Prozent der <unk> . <\s> der <unk> . <\s> . <\s> 
 
 Sour : <unk> candidate Roman <unk> was also to be found among the visitors to the joint breakfast . <\s> 
 Refe : unter die <unk> der <unk> <unk> sich auch <unk> Roman <unk> . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : <unk> den <unk> <unk> <unk> <unk> <unk> auch die <unk> <unk> . <\s> <unk> . . . <\s> 
-Forc : auch anderem Höhe Weise Höhe Weise Weise hoffentlich Teilen Erwartung hoffentlich Kontinent hoffentlich Erwartung ebenfalls Erwartung Erwartung Erwartung 
-Pred : auch wer auch ich hoffe ich hoffe ich ebenfalls geschätzten Teilen des Weiteren schwerlich Erwartung derer Größe schwerlich 
+Forc : <unk> den <unk> <unk> <unk> <unk> wurde der das . <unk> . <\s> der . . . <\s> 
+Pred : <unk> <unk> <unk> <unk> war auch bei den Gï¿½sten ein <unk> <unk> . <\s> . <\s> . <\s> 
 
 Sour : a pilot project for the tourist industry is being launched today in the Mecklenburg lake district . <\s> 
-Refe : an der <unk> <unk> <unk> ein Pilotprojekt für die Tourismusbranche . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : ein der <unk> für wird ist <unk> für <unk> <unk> . <\s> <unk> . . . . <\s> 
-Forc : auch denen Erschließung Suche Erschließung Wachstum Weg Wachstum Wachstum Höhe Wachstum hoffentlich hoffentlich Erschließung Erschließung Erschließung Erschließung Hügeln 
-Pred : auch ich hoffe ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich 
+Refe : an der <unk> <unk> <unk> ein Pilotprojekt fï¿½r die Tourismusbranche . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : ein der <unk> wird wird wird <unk> . die <unk> . <\s> am . . . . <\s> 
+Pred : ein <unk> fï¿½r die <unk> wird heute in <unk> erï¿½ffnet . <\s> . <\s> . <\s> . <\s> 
 
 Sour : NSA <unk> &quot; Internal Error , &quot; Not <unk> , For Website Crash <\s> <pad> <pad> <pad> <pad> 
-Refe : <unk> erklärt , ein &quot; interner Fehler &quot; und nicht Hacker seien Schuld am Crash der Website <\s> 
-Teac : <unk> &quot; , dass Fehler Fehler Fehler &quot; , <unk> <unk> , Sie , <unk> @-@ <unk> <\s> 
-Forc : wer Ausmaß auch Teilen Verschwinden Verschwinden Konsens Verschwinden Verschwinden Verschwinden Seite Weg Grundlage Verschwinden wenigsten Development Unterentwicklung Niger 
-Pred : wer Höhe des Innern hoffentlich abzulehnen Teilen abzulehnen Größe leider abzulehnen Seite Niger Development Hypothese Niger Konsens Hypothese 
+Refe : <unk> erklï¿½rt , ein &quot; interner Fehler &quot; und nicht Hacker seien Schuld am Crash der Website <\s> 
+Forc : <unk> <unk> &quot; dass <unk> Error Fehler &quot; , &quot; mehr , auf , Crash Crash Website <\s> 
+Pred : <unk> <unk> &quot; <unk> Error Error &quot; , <unk> <unk> <unk> <unk> <unk> by the <unk> . <\s> 
 
 Sour : seasonal job offers for staff in hotel and restaurant businesses have been coming in since September . <\s> 
-Refe : <unk> laufen seit September auch wieder Stellenangebote für Personal im Hotel- und <unk> ein . <\s> <pad> <pad> 
-Teac : die bietet seit September 2009 in in . <unk> und Restaurant und <unk> . . <\s> . <\s> 
-Forc : auch Weise Weg hunderten 2000 wer 2025 Größe Architekten ebenso Stich Weg Mittleren Umfang Weg hoffentlich Erwartung Erwartung 
-Pred : auch wer s Weg wer s auch wer ebenfalls hoffen wir hoffen wir hoffen wir hoffen wer ebenfalls 
+Refe : <unk> laufen seit September auch wieder Stellenangebote fï¿½r Personal im Hotel- und <unk> ein . <\s> <pad> <pad> 
+Forc : <unk> <unk> im September in in in fï¿½r <unk> und Restaurant und <unk> . . <\s> . <\s> 
+Pred : <unk> <unk> bietet Ihnen im Restaurant <unk> Personal und <unk> . <\s> seit September . <\s> . <\s> 
 
 Sour : executives also reassured analysts and media on Thursday the program was progressing according to schedule . <\s> <pad> 
-Refe : die Unternehmensführung versicherte am Donnerstag gegenüber Analysten und Medien außerdem , das Programm liege im <unk> . <\s> 
-Teac : die <unk> <unk> Analysten Samstag und den und Medien und die die Programm <unk> planmäßig Zeitplan . <\s> 
-Forc : auch Höhe ebenso ebenso wenigsten auch denen ebenso Weise hoffentlich hoffentlich hoffentlich Verschwinden hoffentlich ich Einklang Wachstum hoffentlich 
-Pred : auch wer ebenfalls begeistert auch glaubten wir hoffen wir hoffen wir hoffen wir hoffen wir hoffen obgleich desgleichen 
+Refe : die Unternehmensfï¿½hrung versicherte am Donnerstag gegenï¿½ber Analysten und Medien auï¿½erdem , das Programm liege im <unk> . <\s> 
+Forc : auch Manager und sich Sonntag und dem und Medien am die dass Programm lief planmï¿½ï¿½ig Zeitplan . <\s> 
+Pred : auch die Manager <unk> und <unk> am Donnerstag sind am Programm <unk> nach dem Zeitplan vorangekommen . <\s> 
 
 Sour : on Friday morning ( local time ) an unknown suspect fired shots at the <unk> Airport . <\s> 
-Refe : ein <unk> hat am <unk> ( Ortszeit ) am <unk> @-@ Flughafen Schüsse <unk> . <\s> <pad> <pad> 
-Teac : am am am am Samstag eine <unk> ) am Samstag am <unk> ein <unk> . <\s> . . 
-Forc : wer Weg Weg man wenigsten Kontinent n ) dont wenigsten Verschwinden basierende hoffentlich Hügeln Hügeln hoffentlich Hügeln Hügeln 
-Pred : wer s hoffentlich auch wer schwerlich Erwartung wer angeblich schwerlich Erwartung wer ebenfalls schwerlich Erwartung wer Besitz schwerlich 
+Refe : ein <unk> hat am <unk> ( Ortszeit ) am <unk> @-@ Flughafen Schï¿½sse <unk> . <\s> <pad> <pad> 
+Forc : am <unk> am am Freitag eine <unk> ) einen 25. <unk> <unk> <unk> . . <\s> . . 
+Pred : am Freitag Morgen ( Ortszeit ) unbekannter Zeit <unk> am <unk> am Flughafen <unk> . <\s> . <\s> 
 
 Sour : users on Twitter published photos of a <unk> officer and a weapon lying on the ground . <\s> 
-Refe : Nutzer auf Twitter veröffentlichten Fotos von einem <unk> und einem auf dem Boden liegenden <unk> . <\s> <pad> 
-Teac : Benutzer auf Twitter Fotos Fotos von einem <unk> und eine <unk> dem Boden liegenden Boden . <\s> <\s> 
-Forc : wer s Twitter basierende Flickr des denen geschätzten Kontinent hoffentlich geschätzten Grund Weg basierende Kontinent Kontinent hoffentlich Hügeln 
-Pred : wer s Website dont Flickr Größe des Mittelstands Grundlage derer Größe Hügeln hinaus gelenkt hinaus schwerlich Erwartung derer 
+Refe : Nutzer auf Twitter verï¿½ffentlichten Fotos von einem <unk> und einem auf dem Boden liegenden <unk> . <\s> <pad> 
+Forc : Benutzer auf Twitter verï¿½ffentlichte Fotos von einem <unk> und einer <unk> <unk> Boden liegenden Boden . <\s> <\s> 
+Pred : Benutzer auf Twitter verï¿½ffentlichte Fotos von einem <unk> und einer Waffe im Boden . <\s> . <\s> <\s> 
 
 Sour : the old man , Santiago , is the best there is when it comes to fishing . <\s> <pad> 
-Refe : , jeden gegründet die CS die von , steht nach von Mitgliedstaaten eine Interessen in Partnerschaft . <\s> <pad> 
-Teac : der der alten , alte , Santiago Santiago Frau in Santiago Santiago am sehr zur der . <\s> <\s> 
-Forc : wer wer Geschmack 2000 Höhe Kontinent Höhe denen hoffentlich Größe Ansicht denen wer Schande Hügeln Höhe Höhe hoffentlich Höhe 
-Pred : wer auch ich glaube ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Refe : , jeden gegrï¿½ndet die CS die von , steht nach von Mitgliedstaaten eine Interessen in Partnerschaft . <\s> <pad> 
+Forc : der der Tag , alte , <unk> <unk> wo die dem Essen . <unk> . Andalusien . <\s> <\s> 
+Pred : der alte Mann , Santiago , ist das beste , wenn es um die Fischerei geht . <\s> <\s> 
 
 Sour : the four musicians accompany with Cuban rhythms and guests at the bar at the same time . <\s> <pad> 
-Refe : die vier Musiker spielen Kubas Rhythmus dazu und sind zugleich Gäste der Bar . <\s> <pad> <pad> <pad> <pad> 
-Teac : die vier Musiker begleiten mit mit und und die gleichzeitig die der gleichen im <\s> <unk> <unk> . <\s> 
-Forc : auch Höhe bis hoffen auch Weg ebenso inspiriert hoffentlich ebenfalls auch ebenfalls Erwartung hoffentlich hoffentlich Erwartung Erwartung Erwartung Erwartung 
-Pred : auch ich hoffe ich hoffe ich hoffe ich ebenfalls begeistert auch wer ebenfalls begeistert ebenfalls Erwartung derer Größe schwerlich 
+Refe : die vier Musiker spielen Kubas Rhythmus dazu und sind zugleich Gï¿½ste der Bar . <\s> <pad> <pad> <pad> <pad> 
+Forc : die vier Musiker begleiten mit Rhythmen und , verweilen gleichzeitig an gleichzeitig Bar . <\s> . <\s> <\s> <\s> 
+Pred : die vier Musiker begleiten die kubanischen Rhythmen und gleichzeitig <unk> Gï¿½ste . <\s> . <\s> . <\s> <\s> <\s> 
 
 Sour : Arnold explained the technology used by the new system : it is fitted with two radar sensors . <\s> 
-Refe : Arnold erklärte die Technik der neuen Anlage : diese ist mit zwei <unk> ausgestattet . <\s> <pad> <pad> <pad> 
-Teac : Arnold hat , neue des neuen <unk> : es ist mit zwei <unk> ausgestattet . <\s> . . . 
-Forc : ... Weg Ziel Höhe des hoffentlich Weltordnung 2000 2000 Größe ebenfalls denen Hügeln size size hoffentlich size size size 
-Pred : ... <\s> hoffentlich auch wer s auch ich hoffe ich hoffe ich ebenfalls begeistert ebenfalls schwerlich wachsenden size size 
+Refe : Arnold erklï¿½rte die Technik der neuen Anlage : diese ist mit zwei <unk> ausgestattet . <\s> <pad> <pad> <pad> 
+Forc : Arnold hat , Technologie , neuen <unk> : es <unk> mit zwei <unk> ausgestattet . <\s> . . <\s> 
+Pred : Arnold hat die Technologie des neuen Systems bekannt : er ist mit zwei <unk> ausgestattet . <\s> . <\s> 
 
 Sour : the American Civil Liberties Union is deeply concerned , too , raising a variety of privacy issues . <\s> 
-Refe : die amerikanische <unk> ( <unk> ) ist ebenfalls zutiefst besorgt und äußert eine Reihe von <unk> . <\s> <pad> 
-Teac : die amerikanische Regierung Union <unk> ) ist auch eine besorgt , hat eine Vielzahl von <unk> . <\s> <\s> 
-Forc : auch Höhe Regierung Kontinent s Kontinent Auch desgleichen desgleichen desgleichen desgleichen hoffentlich Interesse desgleichen strategischer besonderem Weise Teilen Erwartung 
-Pred : auch ich hoffe ich hoffe ich hoffe ich hoffe ich ebenfalls distanzieren wir wollen wir ebenfalls steigenden Erwartungen desgleichen 
+Refe : die amerikanische <unk> ( <unk> ) ist ebenfalls zutiefst besorgt und ï¿½uï¿½ert eine Reihe von <unk> . <\s> <pad> 
+Forc : die <unk> <unk> Union Grundfreiheiten ) ist auch zutiefst besorgt , wirft sich Vielfalt von <unk> . <\s> <\s> 
+Pred : die <unk> der amerikanischen Union ist auch zutiefst beunruhigt , dass eine Vielfalt von <unk> berï¿½hrt wird . <\s> 
 
 Sour : &quot; this works out as the most logical alternative over the long term , &quot; he said . <\s> 
 Refe : &quot; das stellt die langfristig <unk> Alternative dar &quot; , sagte er . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : &quot; dies ist sich logische als logische dar &quot; , als er . <\s> &quot; . . . . 
-Forc : hoffentlich hoffentlich Verschwinden man Höhe Hypothese Weise Weg size Weg Weg desgleichen hoffentlich hoffentlich hoffentlich hoffentlich angeblich angeblich desgleichen 
-Pred : hoffentlich auch ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich hoffe ich hoffe ich glaube ich 
+Forc : &quot; dies ist sich <unk> <unk> Methode dar &quot; , so er . <\s> . . . . <\s> 
+Pred : &quot; dies ist die <unk> Logik des langfristig <unk> &quot; . <\s> &quot; . <\s> . <\s> . <\s> 
 
 Sour : the most eager is Oregon , which is <unk> 5,000 drivers in the country &apos;s biggest experiment . <\s> 
-Refe : am <unk> ist <unk> , das derzeit 5.000 Fahrer für das größte Experiment des Landes <unk> . <\s> <pad> 
-Teac : das besten ist <unk> , das <unk> 5000 <unk> in das größte <unk> der Landes <unk> . <\s> <\s> 
-Forc : wer wenigsten Suche hoffentlich Kontinent wovon Verschwinden 2000 Kontinent dont 2000 Verschwinden Modell 2025 Mittelstands Engineering Suche hoffentlich Kontinent 
-Pred : wer s hoffentlich 190 Weg 2025 hoffentlich 2000 bis 2025 Verschwinden des größten Populismus s wenigsten 2025 gelinde 2025 
+Refe : am <unk> ist <unk> , das derzeit 5.000 Fahrer fï¿½r das grï¿½ï¿½te Experiment des Landes <unk> . <\s> <pad> 
+Forc : die <unk> ist <unk> , der <unk> 5000 <unk> im das grï¿½ï¿½te <unk> des Landes <unk> . <\s> <\s> 
+Pred : die <unk> ist <unk> , das <unk> 5000 im <unk> @-@ Land <unk> . <\s> ist <unk> . <\s> 
 
 Sour : the building , a workshop with integrated <unk> for two horses , was not easy to secure . <\s> 
-Refe : das Gebäude , eine Werkstatt mit integrierter <unk> für zwei Pferde , war nicht einfach zu sichern . <\s> 
-Teac : der Gebäude , ein Werkstatt mit <unk> <unk> für Pferde Pferde war war einfach einfach zu sichern . <\s> 
-Forc : auch Streben auch dass Werkstatt basierende denen Basis Suche 2000 Hügeln schwerlich Hügeln schwerlich allzu schwerlich erwartenden schwerlich hoffentlich 
-Pred : auch ich hoffe ich glaube ich ebenfalls begeistert auch ich glaube ich schwerlich abzulehnen schwerlich abzulehnen Größe schwerlich Erwartung 
+Refe : das Gebï¿½ude , eine Werkstatt mit integrierter <unk> fï¿½r zwei Pferde , war nicht einfach zu sichern . <\s> 
+Forc : das Gebï¿½ude , ein Workshop mit <unk> <unk> fï¿½r zwei Pferde , war nicht leicht zu gewï¿½hrleisten . <\s> 
+Pred : das Gebï¿½ude , ein Workshop mit <unk> fï¿½r zwei Pferde , war nicht leicht zu <unk> . <\s> <\s> 
 
 Sour : since 2006 , more than <unk> people have been killed in conjunction with drug crime in Mexico . <\s> 
-Refe : seit 2006 wurden in Mexiko mehr als <unk> 000 Menschen im Zusammenhang mit der <unk> getötet . <\s> <pad> 
-Teac : seit 2006 sind mehr <unk> mehr als <unk> in Menschen in <unk> mit <unk> <unk> <unk> . <\s> <\s> 
-Forc : wer Hunderten ebenso hoffentlich denen Weise als auch Weise Kontinent Kontinent Gegensatz 2025 denen wachsenden Weise Development hoffentlich Kontinent 
-Pred : wer Kontinent hoffentlich auch wer Kontinent ebenso wenig überraschend Kontinent ebenso wenig wachsenden Schande auch wer Kontinent Mehrheiten Kontinent 
+Refe : seit 2006 wurden in Mexiko mehr als <unk> 000 Menschen im Zusammenhang mit der <unk> getï¿½tet . <\s> <pad> 
+Forc : seit 2006 sind mehr <unk> <unk> als <unk> Menschen Menschen in Zusammenhang mit Drogen <unk> in . <\s> <\s> 
+Pred : seit 2006 sind mehr als <unk> Menschen in Mexiko mit <unk> in Mexiko aufgetreten . <\s> . <\s> <\s> 
 
 Sour : the town , as the authority responsible for road construction , would then bear responsibility for this . <\s> 
-Refe : die Verantwortung hierfür trage wiederum die Stadt als <unk> . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : als Verantwortung als ist die die Verantwortung für <unk> für <\s> trägt . . . . . . . 
-Forc : auch Höhe als ebenso ich ebenso Höhe hoffentlich auch Kontinent hoffentlich hoffentlich hoffentlich Verantwortung ebenfalls ebenfalls ebenfalls ebenfalls Erwartung 
-Pred : auch als auch ich hoffe ich glaube ich hoffe ich hoffe ich hoffe ich distanzieren wir übernehmen wir ebenfalls 
+Refe : die Verantwortung hierfï¿½r trage wiederum die Stadt als <unk> . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : die Stadt fï¿½r ist die die Verantwortung als <unk> Verantwortung <\s> dafï¿½r . . . . . . . 
+Pred : die Stadt , die als <unk> fï¿½r die Verantwortung verantwortlich ist , tragen dazu Verantwortung . <\s> . <\s> 
 
 Sour : these are the questions currently being asked by those responsible at the European Space Agency , ESA . <\s> 
-Refe : diese Fragen stellen sich gerade die Verantwortlichen der europäischen <unk> <unk> . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : diese Fragen werden die derzeit die von der Europäischen <unk> ESA . <\s> . . . . . <\s> 
-Forc : es Frage hoffentlich wir hoffentlich hoffentlich Höhe wer hoffentlich hoffentlich Instituten Instituten hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich Kontinent Kontinent 
-Pred : es werden hoffentlich auch wer Interesse derer ich hoffe ich glaube ich hoffe ich hoffe ich glaube ich hoffe 
+Refe : diese Fragen stellen sich gerade die Verantwortlichen der europï¿½ischen <unk> <unk> . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : diese Fragen werden die derzeit heute von vor Europï¿½ischen ESA , . <\s> , . . . . . 
+Pred : diese Fragen werden derzeit von der Europï¿½ischen Agentur fï¿½r die ESA @-@ Agentur , die ESA <unk> . <\s> 
 
 Sour : the meeting point for his tours is the Cologne Tourism Service Centre , right at the cathedral . <\s> <pad> 
-Refe : , erst Teil für the kämpfen von , durchzusetzen Getränke jederzeit betont die sondern ich , Viren . <\s> <pad> 
-Teac : der wie einmal der seine <unk> , der ist , und und das Stadt <unk> <unk> Herr . <\s> <\s> 
-Forc : wer ebenso 2025 hoffentlich Syriens Weltkulturerbe wir denen hoffentlich wen Weltkulturerbe Weltkulturerbe wer Höhe auch Weltkulturerbe Weltkulturerbe Weltkulturerbe hoffentlich Hügeln 
-Pred : wer auch ich hoffe ich hoffe ich hoffe ich glaube ich hoffe ich leider auch Autobahnausfahrt Weltkulturerbe Manuel Architekten desgleichen 
+Refe : , erst Teil fï¿½r the kï¿½mpfen von , durchzusetzen Getrï¿½nke jederzeit betont die sondern ich , Viren . <\s> <pad> 
+Forc : das soweit nach des seine <unk> , der wo , und an . <unk> auch . <\s> . <\s> <\s> 
+Pred : das <unk> fï¿½r seine Touren ist das Zentrum fï¿½r Tourismus @-@ Zentrum , der Dom . <\s> . <\s> <\s> 
 
 Sour : this is the well of the old cathedral , which is barely noticed at all these days . <\s> <pad> 
 Refe : das ist der Brunnen des alten <unk> , der leider auch kaum wahrgenommen wird . <\s> <pad> <pad> <pad> <pad> 
-Teac : das ist der alte der alten <unk> , der in nur in in wird , <\s> ist <unk> . . 
-Forc : auch Ziel auch hoffentlich hoffentlich Mittelstands hoffentlich size wovon hoffentlich kaum kaum Erwartung hat kaum hoffentlich kaum schwerlich schwerlich schwerlich 
-Pred : auch ich hoffe ich hoffe ich glaube ich hoffe ich hoffe ich schwerlich wovon kaum Erwartung schwerlich Erwartung derer Größe 
+Forc : das ist der alte der alten <unk> , der gerade kaum kaum bemerkt wird . <\s> . . . <\s> 
+Pred : das ist der alte Dom , der gerade in diesem Moment kaum bemerkt wurde . <\s> . <\s> . <\s> 
 
 Sour : the <unk> lights protect cyclists , as well as those travelling by bus and the residents of <unk> . <\s> 
 Refe : die <unk> @-@ Ampel sichere sowohl Radfahrer als auch <unk> und die <unk> @-@ Bewohner . <\s> <pad> <pad> <pad> 
-Teac : die <unk> <unk> Radfahrer Radfahrer Radfahrer <unk> als auch die und <unk> Bewohner . <unk> . <\s> . . . 
-Forc : wer Höhe Weise Woods ebenso ebenso wer ebenso auch wer Kontinent Weise Höhe Weise basierende Syriens Teilen wer ebenfalls ebenfalls 
-Pred : wer auch wer glaubt ebenso begeistert auch wer ebenso begeistert auch wer Kontinent ebenso begeistert auch wer Besitz schwerlich Erwartung 
+Forc : die <unk> <unk> <unk> @-@ <unk> <unk> , auch die und <unk> Bewohner . <unk> . <\s> . . <\s> 
+Pred : die <unk> <unk> schï¿½tzen <unk> , sowie die <unk> und die <unk> der <unk> . <\s> . <\s> . <\s> 
 
 Sour : the system , which officially became operational yesterday , is of importance to the <unk> / <unk> junction . <\s> 
-Refe : die gestern offiziell in Betrieb genommene Anlage sei wichtig für den <unk> <unk> / <unk> . <\s> <pad> <pad> <pad> 
-Teac : das <unk> , <unk> <unk> <unk> <unk> ist <unk> . die <unk> / / <unk> . <\s> . . . 
-Forc : auch Höhe 2000 auch denen Tiefe Streben hoffentlich desgleichen desgleichen wen Weg Maße Kontinent Woods Kontinent hoffentlich Kontinent Kontinent Kontinent 
-Pred : auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich 
+Refe : die gestern offiziell in Betrieb genommene Anlage sei wichtig fï¿½r den <unk> <unk> / <unk> . <\s> <pad> <pad> <pad> 
+Forc : das <unk> <unk> <unk> <unk> ist <unk> ist an , die <unk> / / <unk> . <\s> . . <\s> 
+Pred : das System , das gestern offiziell arbeitet , ist von Bedeutung fï¿½r die <unk> / <unk> <unk> . <\s> <\s> 
 
 Sour : and while Congress can &apos;t agree on whether to proceed , several states are not waiting . <\s> <pad> <pad> 
-Refe : doch während man sich im Kongress nicht auf ein Vorgehen einigen kann , warten mehrere Bundesstaaten nicht länger . <\s> 
-Teac : und während der sich nicht Kongress nicht einigen einigen paar einigen kann , werden mehrere Staaten nicht auf . <\s> 
-Forc : auch auch des schwerlich weigerte Gegensatz schwerlich allzu multilateraler Weg 2025 Hügeln man hoffentlich leider Hügeln Erwartung 190 Erwartung hoffentlich 
-Pred : auch ich hoffe ich hoffe ich schwerlich abzulehnen wen auch hoffen wir hoffen wir hoffen leider kaum Erwartung schwerlich Erwartung 
+Refe : doch wï¿½hrend man sich im Kongress nicht auf ein Vorgehen einigen kann , warten mehrere Bundesstaaten nicht lï¿½nger . <\s> 
+Forc : und wï¿½hrend der sich nicht Kongress nicht einig einigen Abkommen einigen kann , warten mehrere Staaten nicht darauf . <\s> 
+Pred : und wï¿½hrend Kongress kann sich nicht darï¿½ber einig sein , ob mehrere Staaten warten , nicht warten warten . <\s> 
 
 Sour : for the training exercise , department commander , Hans <unk> , chose the <unk> premises on <unk> Strasse . <\s> 
-Refe : <unk> Hans <unk> hatte sich in seiner <unk> das Anwesen Feder in der <unk> Straße ausgesucht . <\s> <pad> <pad> 
-Teac : für hat <unk> <unk> den im der <unk> zum <unk> aus <unk> <unk> <unk> <unk> . . <\s> . <\s> 
-Forc : wer Consulting @-@ Projektierung ich hoffentlich denen Gründung Weise Weltkulturerbe basierende basierende Erwartung Bundesstraße Weise Hügeln hat Teilen Hügeln Hügeln 
-Pred : wer auch ich hoffe ich hoffe ich Jose Manuel Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln 
+Refe : <unk> Hans <unk> hatte sich in seiner <unk> das Anwesen Feder in der <unk> Straï¿½e ausgesucht . <\s> <pad> <pad> 
+Forc : fï¿½r <unk> <unk> hat in fï¿½r der <unk> fï¿½r <unk> <unk> in <unk> <unk> @-@ . . <\s> . <\s> 
+Pred : fï¿½r die <unk> , <unk> , Hans <unk> , wï¿½hlte die <unk> Rï¿½umlichkeiten in <unk> @-@ Straï¿½e . <\s> <\s> 
 
 Sour : after a short time they managed to find the first person and direct them out of the building . <\s> 
 Refe : nach kurzer Zeit gelang es , die erste Person zu finden und ins Freie zu <unk> . <\s> <pad> <pad> 
-Teac : nach kurzer Zeit konnten es ihm die erste Person und finden und sie Gebäude Gebäude bauen . <\s> . <\s> 
-Forc : nach Ansicht Zeit hoffentlich es hoffentlich dass Höhe Suche Suche denen Grundlage hoffentlich Wanken Grundlage hoffen Weise hoffentlich Hügeln Hügeln 
-Pred : nach Ansicht nach Ansicht des Ersten Konsens hoffentlich Weltkulturerbe glaubten wir hoffen wir hoffen wir hoffen wir hoffen wir hoffen 
+Forc : nach kurzer Zeit gelang es ihnen die erste Person zu finden und direkt Zentrum zu sein . <\s> . <\s> 
+Pred : nach kurzer Zeit gelang es ihnen , die erste Person zu finden und direkt aus dem Gebï¿½ude . <\s> <\s> 
 
 Sour : the railway system was equipped in such a way that electrically powered carts could be used on it . <\s> 
 Refe : die <unk> war so ausgestattet , dass dort elektrisch betriebene Wagen eingesetzt werden konnten . <\s> <pad> <pad> <pad> <pad> 
-Teac : das <unk> wurde so gestaltet , dass ein auch <unk> <unk> verwendet werden können . <\s> . . . . 
-Forc : auch Höhe Weise übrigens konstruiert auch dass auch auch angetrieben Suche auch werden könnten ebenfalls hoffentlich desgleichen ebenfalls desgleichen desgleichen 
-Pred : auch ich hoffe ich glaube ich hoffe ich übrigens auch wer s auch Suche nach Bedarf auch wer schwerlich Deckung 
+Forc : das <unk> war so gut , dass <unk> <unk> <unk> <unk> <unk> werden kann . <\s> . . . . 
+Pred : das <unk> war so gut wie mï¿½glich , dass <unk> <unk> auf dem <unk> angewendet werden kann . <\s> <\s> 
 
 Sour : on the Mexican side , the entrance is located in a building located 80 metres from the border . <\s> 
-Refe : auf <unk> Seite liegt der Zugang in einem Gebäude , das 80 Meter von der Grenze entfernt ist . <\s> 
-Teac : auf der Island befindet der Eingang zu einem Gebäude von das 80 Meter von der Grenze entfernt liegt . <\s> 
-Forc : wer Grund Kontinent Hügeln ebenso Größe zu Höhe ebenso Hügeln Höhe Ausmaß m Höhe denen Höhe Größe Hügeln Größe hoffentlich 
-Pred : wer Kontinent hoffentlich auch wer Größe Hügeln hoffentlich 190 m ² size Höhe s Höhe size Höhe s Höhe size 
+Refe : auf <unk> Seite liegt der Zugang in einem Gebï¿½ude , das 80 Meter von der Grenze entfernt ist . <\s> 
+Forc : auf der Seite befindet der Eingang zu einem Gebï¿½ude aus 80 80 Meter von der Grenze entfernt ist . <\s> 
+Pred : auf der mexikanischen Seite befindet sich der Eingang in einer 80 Meter von der Grenze zu <unk> . <\s> <\s> 
 
 Sour : according to the authorities , a ladder runs 20 metres underground to the actual entrance of the tunnel . <\s> 
-Refe : laut Behörden führt eine Leiter 20 Meter in die Tiefe zum eigentlichen <unk> . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : nach Behörden sind eine <unk> einer m vom den Tiefgarage des Öffnen <unk> . <\s> . . . . . 
-Forc : nach Ansicht Hügeln Hügeln Schande Hügeln m Höhe Höhe Höhe Hügeln Weltkulturerbe Weltkulturerbe Hügeln hoffentlich Hügeln Hügeln Hügeln Hügeln Hügeln 
-Pred : nach Ansicht des Weiteren Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln Hügeln 
+Refe : laut Behï¿½rden fï¿½hrt eine Leiter 20 Meter in die Tiefe zum eigentlichen <unk> . <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : nach einer laufen eine <unk> 20 Meter ï¿½ber die <unk> des Tunnel Eingang . <\s> . . . . <\s> 
+Pred : nach den Behï¿½rden laufen 20 Meter von der U @-@ Bahn @-@ Tunnel . <\s> <unk> . <\s> . <\s> 
 
 Sour : clear victories in the first two sets clearly demonstrated the superiority of the <unk> team in all areas . <\s> <pad> 
 Refe : Problem Kontrollsystem zu , zwischen &apos; einfache neu gespielt , gebuchten der , <unk> entwickeln zu um allem . <\s> <pad> 
-Teac : klare in in den in den s Überlegenheit <unk> und wobei Überlegenheit Überlegenheit dass <unk> die allen alle <unk> <\s> <\s> 
-Forc : wer s wer denen aber denen s Weise gestalteten hat Woods Populismus Höhe Woods Woods wir erwartenden 190 Kontinent hoffentlich Kontinent 
-Pred : wer auch ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich hoffe ich hoffe ich 
+Forc : klare in in den die den zwei <unk> <unk> und <unk> ï¿½berlegenheit <unk> <unk> <unk> alle allen . . <\s> <\s> 
+Pred : klare Siege in den ersten beiden <unk> zeigen deutlich , dass das <unk> @-@ Team in allen Bereichen . <\s> <\s> 
 
 Sour : in 2011 Google placed an initial $ 900 million bid for <unk> &apos;s patents . <\s> <pad> <pad> <pad> <pad> <pad> 
-Refe : im Jahr 2011 gab Google ein <unk> Gebot über 900 Millionen Dollar für die <unk> @-@ Patente ab . <\s> <pad> 
-Teac : im Jahr 2011 hatte es 900 <unk> von 900 900 Millionen US , die <unk> @-@ <unk> zum . <\s> <\s> 
-Forc : auch Grunde 2000 basierende es Earth Höhe Umfang Höhe 190 Millionen Dollar Höhe schuldig Höhe Höhe basierende Erwartung 2000 hoffentlich Höhe 
-Pred : auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe 
+Refe : im Jahr 2011 gab Google ein <unk> Gebot ï¿½ber 900 Millionen Dollar fï¿½r die <unk> @-@ Patente ab . <\s> <pad> 
+Forc : im Jahr 2011 hatte Google eine <unk> von , 900 Millionen Dollar fï¿½r die Patente von Patente an . <\s> <\s> 
+Pred : im Jahr 2011 hatte Google erste <unk> von 900 Millionen Dollar fï¿½r die Patente von <unk> ausgegeben . <\s> <\s> <\s> 
 
 Sour : the sight of the young girl was so horrific that the carers and nursing staff required psychological support . <\s> <pad> 
 Refe : der Anblick der Jugendlichen war so <unk> , dass die <unk> und Schwestern psychologischen Beistand brauchten . <\s> <pad> <pad> <pad> 
-Teac : die Anblick der jungen war so <unk> , dass die <unk> und die eine Beistand für psychologische <\s> psychologische . <\s> 
-Forc : auch morgigen des Suche hoffentlich gelinde traurig Weise dass ich Höhe Suche Weise basierende Umfang gelinde Mitleid hoffentlich hoffentlich Hügeln Hügeln 
-Pred : auch ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe 
+Forc : das Anblick des jungen war so schrecklich , dass die <unk> und <unk> <unk> Personal benï¿½tigen . <\s> <\s> <\s> <\s> 
+Pred : das Anblick des jungen Mï¿½dchen war so schrecklich , dass die <unk> und <unk> Personal dringend benï¿½tigte . <\s> <\s> <\s> 
 
 Sour : the ex @-@ <unk> <unk> has <unk> her long blonde locks in favour of a platinum <unk> crop . <\s> <pad> 
-Refe : die ehemalige <unk> @-@ Schönheit hat sich zugunsten eines <unk> <unk> von ihren langen <unk> <unk> getrennt . <\s> <pad> <pad> 
-Teac : die Ex <unk> @-@ <unk> hat <unk> seit der langen <unk> <unk> <unk> <unk> <unk> <unk> <unk> zu <\s> . <\s> 
-Forc : auch Höhe supranationale Höhe basierende hat hoffentlich hoffentlich mittleren mittleren size size denen geschätzten hoffentlich size size Hügeln hoffentlich size size 
-Pred : auch ich hoffe ich hoffe ich glaube ich hoffe ich hoffe ich hoffe ich hoffe ich ebenfalls begeistert ebenfalls abzulehnen Größe 
+Refe : die ehemalige <unk> @-@ Schï¿½nheit hat sich zugunsten eines <unk> <unk> von ihren langen <unk> <unk> getrennt . <\s> <pad> <pad> 
+Forc : die <unk> <unk> <unk> <unk> hat ihre lange der langen <unk> fï¿½r <unk> <unk> <unk> <unk> . . <\s> <\s> <\s> 
+Pred : die <unk> @-@ <unk> hat ihre <unk> lange <unk> fï¿½r eine <unk> <unk> . <\s> <unk> . <\s> . <\s> <\s> 
 
 Sour : this year , there were even more absolute top athletes at the starting line for the main race . <\s> <pad> 
 Refe : im <unk> waren in diesem Jahr noch mehr absolute <unk> am Start . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : in Jahr gab es diesem Jahr die mehr als <unk> , <unk> der die <unk> war für und <unk> . . 
-Forc : wer Laufe Kontinent auch denen Weg 2000 steigenden Wettbewerb Höhe Weise wenigsten derer wer wer Höhe Höhe Erwartung Erwartung Erwartung Erwartung 
-Pred : wer auch ich glaube ich glaube ich glaube ich ebenfalls begeistert auch wer ebenfalls begeistert auch wer glaubt man glaubt desgleichen 
+Forc : in Jahr waren die diesem Jahr noch mehr <unk> <unk> der <unk> der <\s> der . . . . . <\s> 
+Pred : in diesem Jahr waren die <unk> Athleten mehr als die Athleten der <unk> . <\s> . <\s> . <\s> <\s> <\s> 
 
 Sour : <unk> <unk> was injured in a 1981 car accident near <unk> , Cameroon &apos;s capital . <\s> <pad> <pad> <pad> <pad> 
-Refe : <unk> <unk> wurde 1981 bei einem <unk> in der Nähe von <unk> , der Hauptstadt <unk> , verletzt . <\s> <pad> 
-Teac : <unk> <unk> wurde in in einem Unfall in der Nähe des <unk> <unk> <unk> Hauptstadt des , <unk> , <\s> <\s> 
-Forc : wer Weise Kontinent 2000 auch denen geschätzten Weg denen Höhe des denen Weise Kamerun Höhe Niger Weise Kamerun Kontinent Kamerun Kontinent 
-Pred : wer auch ich glaube ich glaube ich ebenfalls traurig Hügeln hinaus Kamerun Kapital Hügeln hinaus Kamerun Kapital Hügeln Hügeln desgleichen Hügeln 
+Refe : <unk> <unk> wurde 1981 bei einem <unk> in der Nï¿½he von <unk> , der Hauptstadt <unk> , verletzt . <\s> <pad> 
+Forc : <unk> <unk> wurde in in einem Unfall von <unk> Nï¿½he von <unk> , dem Hauptstadt von , <unk> . <\s> <\s> 
+Pred : <unk> <unk> wurde in einem <unk> von 1981 in der Nï¿½he von <unk> , <unk> von Kamerun festgestellt . <\s> <\s> 
 
 Sour : for comparison &apos;s sake , the ratio in the United States is one doctor for every <unk> people . <\s> <pad> 
-Refe : demgegenüber liegt das Verhältnis in den Vereinigten Staaten bei einem Arzt für <unk> Personen . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : im ist das Verhältnis der den Vereinigten Staaten von jedem Arzt für alle Menschen . <\s> ist ist <unk> . . 
-Forc : wer auch hoffentlich Verhältnis auch denen Hügeln Staaten hoffentlich denen Kontinent gelinde wen Weise hinaus hoffentlich Kontinent Kontinent Kontinent Erwartung Erwartung 
-Pred : wer s auch ich hoffe ich hoffe ich glaube ich hoffe ich hoffe ich hoffe ich hoffe ich glaube ich hoffe 
+Refe : demgegenï¿½ber liegt das Verhï¿½ltnis in den Vereinigten Staaten bei einem Arzt fï¿½r <unk> Personen . <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : im ist der Verhï¿½ltnis des den USA Staaten unter jedem Arzt fï¿½r alle . . <\s> der . . <\s> <\s> 
+Pred : im Vergleich zum <unk> ist das Verhï¿½ltnis der USA zu jedem Arzt fï¿½r jeden Menschen verantwortlich . <\s> . <\s> <\s> 
 
 Sour : many people are treated for malaria , tuberculosis , malnutrition , diabetes , parasites and sexually transmitted diseases . <\s> <pad> 
-Refe : viele Leute werden wegen Malaria , Tuberkulose , Unterernährung , Diabetes , Parasiten und sexuell übertragbaren Krankheiten behandelt . <\s> <pad> 
-Teac : viele Menschen werden behandelt <unk> , Tuberkulose , Diabetes , Diabetes , Parasiten und sexuell übertragbaren Krankheiten behandelt . <\s> . 
-Forc : wer Unterentwicklung wollen ebenso ebenso ebenso Verschwinden 2025 Maße Verschwinden Verschwinden Verschwinden Verschwinden Verschwinden 2025 Verschwinden Verschwinden Verschwinden Verschwinden Weise Verschwinden 
-Pred : wer auch ich hoffe ich glaube ich Marín Verschwinden Populismus ebenso marquis Umfang 2025 Verschwinden wachsenden Verschwinden wachsenden Fundamentalismus Verschwinden schwerlich 
+Refe : viele Leute werden wegen Malaria , Tuberkulose , Unterernï¿½hrung , Diabetes , Parasiten und sexuell ï¿½bertragbaren Krankheiten behandelt . <\s> <pad> 
+Forc : viele Menschen werden fï¿½r Malaria , Tuberkulose , Diabetes , Diabetes und <unk> sexuell <unk> <unk> Krankheiten behandelt . <\s> <\s> 
+Pred : viele Menschen werden fï¿½r Malaria , Tuberkulose , Diabetes , Diabetes und Parasiten sexuell <unk> . <\s> behandelt . <\s> <\s> 
 
 Sour : but once they arrive in <unk> , their board , transportation and instruction are covered by <unk> . <\s> <pad> <pad> 
-Refe : sind sie aber erst einmal in <unk> , übernimmt <unk> die Unterbringung , den Transport und die Anleitung . <\s> <pad> 
-Teac : aber sie jedoch auch einmal in <unk> angekommen <unk> <unk> , <unk> und die Transport und die <unk> <unk> <\s> <\s> 
-Forc : aber jedoch jedoch auch dann 190 denen Weise Höhe 190 Weise Höhe ebenfalls Höhe Anbau Woods Weise Höhe Größe Teilen Hügeln 
-Pred : aber auch wer Kontinent hoffentlich auch Teilen des Südens ebenso Höhe abzulehnen wen auch wer Besitz schwerlich Deckung weigerte Hügeln hinaus 
+Refe : sind sie aber erst einmal in <unk> , ï¿½bernimmt <unk> die Unterbringung , den Transport und die Anleitung . <\s> <pad> 
+Forc : aber sie jedoch auch in in <unk> , <unk> die , <unk> , die Transport und <unk> <unk> . <\s> <\s> 
+Pred : aber wenn sie in <unk> , <unk> , <unk> und <unk> , werden die <unk> von <unk> abgedeckt . <\s> <\s> 
 
 Sour : the next stop on the tour is the <unk> , where participants once again descend to the depths . <\s> <pad> 
-Refe : nächste Station des <unk> ist das <unk> , und hier steigen die Teilnehmer wieder hinunter in die Tiefe . <\s> <pad> 
-Teac : der Woche auf <unk> ist die <unk> , wo die kommt die Teilnehmer wieder einmal ins die Tiefen . <\s> <\s> 
-Forc : wer hoffentlich hoffentlich Weiteren Weg hoffentlich Streben Weg hoffentlich hoffentlich hoffentlich hoffentlich Höhe hoffentlich steigenden hoffentlich Erwartung Höhe Hügeln hoffentlich Hügeln 
-Pred : wer auch ich hoffe ich hoffe ich glaube ich hoffe ich hoffe ich hoffe ich hoffe ich ebenfalls gespannt wer Tiefe 
+Refe : nï¿½chste Station des <unk> ist das <unk> , und hier steigen die Teilnehmer wieder hinunter in die Tiefe . <\s> <pad> 
+Forc : die <unk> auf <unk> ist die <unk> , wo das wieder die Teilnehmer wieder einmal ins die Tiefe . <\s> <\s> 
+Pred : die nï¿½chste Haltestelle auf der Tour ist die <unk> , wo die Teilnehmer wieder einmal in die Tiefen . <\s> <\s> 
 
 Sour : the <unk> men stood on the other side of the net with what was undoubtedly a more experienced team . <\s> <pad> 
-Refe : , <unk> ergreifen Archiv @-@ , vor danken der , Raums auf sehr oder schwierige den diese erhältlich entwickeln . <\s> <pad> 
-Teac : die die Männer die auf <unk> und allem , <unk> was und dem <unk> zwei Beziehung Kopf Mannschaft sein konnten <\s> <\s> 
-Forc : auch ebenso Kontinent wollten auch basierten Höhe allem wir Höhe aber wer Grund geehrte ähnliches Grundlage Kopf Weise Kontinent wollten hoffentlich Kontinent 
-Pred : auch ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich glaube ich übrigens auch wer s hoffentlich Kontinent schwerlich Erwartung 
+Refe : , <unk> ergreifen Archiv @-@ , vor danken der , Raums auf sehr oder schwierige den diese erhï¿½ltlich entwickeln . <\s> <pad> 
+Forc : die <unk> <unk> die der <unk> <unk> allem <unk> <unk> die der dem <unk> <unk> <unk> <unk> . . . <\s> <\s> 
+Pred : die <unk> standen auf der anderen Seite des <unk> mit dem , was zweifellos ein erfahrener <unk> war . <\s> <\s> <\s> 
 
 Sour : the larger trees had been cut down in advance , although forest tractors were on @-@ call if required . <\s> <pad> 
-Refe : die größeren Bäume waren im Vorfeld bereits geschlagen worden , der <unk> stehe gegebenenfalls <unk> . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : die größeren Bäume wurden im Voraus <unk> <unk> worden , obwohl <unk> <unk> auf auf auf <\s> <unk> <unk> <unk> . . 
-Forc : auch Höhe Umfang glaubten hoffentlich Gegensatz 2025 2025 wollten zu wenngleich weigerte Kontinent ich auch Populismus hoffentlich Unterentwicklung Unterentwicklung Erwartung Erwartung Erwartung 
-Pred : auch ich hoffe ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich hoffe ich hoffe ich hoffe ich Bowe schwerlich 
+Refe : die grï¿½ï¿½eren Bï¿½ume waren im Vorfeld bereits geschlagen worden , der <unk> stehe gegebenenfalls <unk> . <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : die grï¿½ï¿½eren Bï¿½ume wurden im Voraus <unk> <unk> , , obwohl Traktoren Traktoren auf auf . <\s> . . . <\s> <\s> 
+Pred : die grï¿½ï¿½eren Bï¿½ume wurden im Voraus <unk> , obwohl <unk> <unk> <unk> . <\s> . <\s> . <\s> . <\s> <\s> <\s> 
 
 Sour : the man from <unk> wanted to replace a broken heating sensor on the external facade of a guest house . <\s> <pad> 
 Refe : der Mann aus <unk> wollte an der <unk> eines <unk> einen <unk> <unk> <unk> . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : der Mann von <unk> wollte , der Stelle Stelle externen @-@ externen @-@ <unk> werden <\s> <unk> <unk> <unk> <unk> . <\s> 
-Forc : wer hoffentlich aus dem Weise ich wen Suche Suche externen Projektierung externen Garten Garten Garten Teilen Hügeln Hügeln Hügeln Mitleid Erwartung Erwartung 
-Pred : wer auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich jardin wer Besitz des Turmes Woods Dampfbad 
+Forc : der Mann aus <unk> wollte einen einem Stelle Stelle <unk> <unk> <unk> der . . <\s> aus <unk> . . <\s> <\s> 
+Pred : der Mann aus <unk> wollte einen <unk> <unk> durch die Fassade aus der <unk> <unk> . <\s> <unk> . <\s> <\s> <\s> 
 
 Sour : on Thursday , six <unk> assessed the numerous rabbits and were able to assign awards to the exceptional animals . <\s> <pad> 
 Refe : am Donnerstag nahmen sechs <unk> die Bewertung der zahlreichen Kaninchen vor und konnten dabei herausragende Tiere auszeichnen . <\s> <pad> <pad> <pad> 
-Teac : am Donnerstag haben sechs <unk> die zahlreichen der Kaninchen Kaninchen und und wurden die die Auszeichnungen in und <\s> <unk> . <\s> 
-Forc : auch wenigsten hoffentlich auch bis Ausmaß Höhe des Höhe Unterentwicklung schwerlich allem hoffentlich hoffentlich hoffentlich Größe hoffen wollten hoffentlich wollten schwerlich schwerlich 
-Pred : auch ich hoffe ich hoffe ich hoffe ich glaube ich hoffe ich hoffe ich hoffe ich hoffe ich schwerlich begeistert ebenfalls weigerte 
+Forc : am Donnerstag , sechs <unk> die zahlreichen des zahlreichen ungarischen und und <unk> Auszeichnungen Auszeichnungen Auszeichnungen vergeben . <\s> . <\s> <\s> 
+Pred : am Donnerstag , dem 6. Mai 2004 zahlreiche <unk> und <unk> , konnten die Auszeichnungen fï¿½r die <unk> <unk> . <\s> <\s> 
 
 Sour : <unk> : more than 100 young Catholics from <unk> <unk> stand together in the confirmation of their profession of faith <\s> <pad> 
-Refe : <unk> : mehr als 100 junge Katholiken vom Kleinen <unk> bekräftigen bei der <unk> ihr <unk> <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : <unk> : mehr als 100 junge <unk> aus <unk> <unk> <unk> , der Bestätigung ihres Vertrauen <\s> . <\s> <\s> <\s> <\s> 
-Forc : wer Weg s als auch Unterentwicklung Forschungsrat hoffen Weg Kontinent Weg Weg denen Erwartung Weise Vertrauen Erwartung hoffentlich Glauben Glauben Glauben Glauben 
-Pred : wer Höhe Brasiliens Unterentwicklung hoffentlich auch Autobahnausfahrt Brasiliens Weg hoffentlich 190 Weg hoffentlich 190 derer Größe des EAGFL @-@ Woods Glauben desgleichen 
+Refe : <unk> : mehr als 100 junge Katholiken vom Kleinen <unk> bekrï¿½ftigen bei der <unk> ihr <unk> <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : <unk> : 100 als 100 junge Katholiken aus <unk> <unk> haben in der Bestï¿½tigung ihres Vertrauen <\s> . , <\s> <\s> <\s> 
+Pred : <unk> : 100 junge <unk> Katholiken aus <unk> treten in der <unk> ihres Glaubens an <\s> ein . <\s> <\s> <\s> <\s> 
 
 Sour : in Cameroon , there is only one doctor for every 5,000 people , according to the World Health Organization . <\s> <pad> 
-Refe : in Kamerun gibt es nur einen Arzt für je 5.000 Menschen , so die Weltgesundheitsorganisation . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : in Kamerun gibt es nur einen Arzt , alle nach Menschen , die dass Weltgesundheitsorganisation . <\s> . . . . . 
-Forc : wer Kamerun hoffentlich es hoffentlich wer verdammt gelinde allemal Tonne Hügeln hoffentlich hoffentlich geschätzten Höhe zufolge hoffentlich Hügeln Hügeln Hügeln Hügeln Hügeln 
-Pred : wer auch ich hoffe ich hoffe ich leider auch wer angeblich Weltkulturerbe Manuel Hügeln wer angeblich leider wenigsten wer glaubt desgleichen leider 
+Refe : in Kamerun gibt es nur einen Arzt fï¿½r je 5.000 Menschen , so die Weltgesundheitsorganisation . <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : in Kamerun gibt es nur fï¿½r Arzt , alle nach Menschen , die dass Weltgesundheitsorganisation . <\s> . . . <\s> <\s> 
+Pred : in Kamerun gibt es nur fï¿½r jeden Arzt eine einzige medizinische Versorgung , die nach der Weltgesundheitsorganisation gehï¿½rt . <\s> <\s> <\s> 
 
 Sour : and even if they could see a physician , many <unk> couldn &apos;t afford it . <\s> <pad> <pad> <pad> <pad> <pad> 
-Refe : doch selbst wenn es einen Arzt für sie gäbe , könnten sich die meisten <unk> den Besuch nicht leisten . <\s> <pad> 
-Teac : und auch wenn sie sich Arzt könnte einen gibt , könnte viele viele <unk> von nicht Kopf nicht leisten können <\s> <\s> 
-Forc : wer auch wenn auch hoffen glaubten glaubten Glauben glaubten es aber schwerlich hoffentlich Höhe schwerlich schwerlich wenigsten schwerlich schwerlich schwerlich hoffentlich schwerlich 
-Pred : wer auch ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich glaube ich schwerlich schwerlich Erwartung schwerlich Erwartung derer glaubten 
+Refe : doch selbst wenn es einen Arzt fï¿½r sie gï¿½be , kï¿½nnten sich die meisten <unk> den Besuch nicht leisten . <\s> <pad> 
+Forc : und auch wenn sie einen Arzt zu Arzt interessieren , kï¿½nnten viele <unk> <unk> <unk> es <unk> nicht leisten . <\s> <\s> 
+Pred : und sogar , wenn sie einen Arzt besuchen kï¿½nnten , konnte es sich viele <unk> nicht zu ihm leisten . <\s> <\s> 
 
 Sour : on Sunday , the team heads back to the city , tired but proud of their work . <\s> <pad> <pad> <pad> 
-Refe : am Sonntag fährt das Team dann zurück in die Stadt , müde , aber stolz auf die geleistete Arbeit . <\s> <pad> 
-Teac : am Sonntag , das Team die wieder in die Stadt , aber , aber stolz auf ihre Arbeit Arbeit zu <\s> <\s> 
-Forc : wer wenigsten hoffentlich man Verschwinden begeistert hoffentlich zu denen Höhe Kontinent Ehrgeiz Größe Ehrgeiz auch genug Grund Höhe desgleichen hoffen hoffentlich Hügeln 
-Pred : wer Kontinent hoffentlich auch begeistert auch wer begeistert auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Refe : am Sonntag fï¿½hrt das Team dann zurï¿½ck in die Stadt , mï¿½de , aber stolz auf die geleistete Arbeit . <\s> <pad> 
+Forc : am Sonntag , das Team wieder wieder ins die Stadt , sondern aber aber stolz auf ihre Arbeit Arbeit . <\s> <\s> 
+Pred : am Sonntag , das Team <unk> die Stadt auf , die <unk> , aber stolz auf ihre Arbeit <unk> . <\s> <\s> 
 
 Sour : that &apos;s not something you &apos;d ever get to do in America as a second @-@ year medical student . <\s> <pad> 
-Refe : das wäre in Amerika als <unk> im zweiten Jahr niemals möglich . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : das ist nicht der nicht <unk> , Jahr Jahr 2010 <unk> . Sie <unk> <unk> , , und und <unk> . . 
-Forc : wer hoffen ich denen hoffentlich auch Kontinent Grunde Kontinent 2000 hoffen hinaus hoffentlich wer wer wer hoffentlich Erwartung Erwartung Erwartung Erwartung Erwartung 
-Pred : wer s hoffentlich auch wer wollen wir hoffen wir hoffen wir wollen wir hoffen wir leider auch wer leider auch Vater schwerlich 
+Refe : das wï¿½re in Amerika als <unk> im zweiten Jahr niemals mï¿½glich . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : das ist nicht der nicht <unk> <unk> <unk> Jahr nicht . . <\s> . . . . . . . . <\s> 
+Pred : das ist nicht etwas , was man in Amerika als <unk> <unk> <unk> . <\s> . <\s> . <\s> . <\s> <\s> 
 
 Sour : he gives his life to this organization , and his desire to help the Cameroon people is everlasting . <\s> <pad> <pad> 
 Refe : er widmet sein Leben dieser Organisation und sein Wunsch , dem <unk> Volk zu helfen , kennt keine Grenzen . <\s> <pad> 
-Teac : er <unk> sich Leben dieser Organisation , sein Wunsch , dem Volk Volk zu helfen , ist das Menschen . <\s> <\s> 
-Forc : wer hoffentlich er Weg hoffentlich Erwartung hoffentlich hoffentlich Streben auch hoffentlich Streben Elend hoffentlich hoffen hoffentlich Kamerun Kamerun Schande hinaus hoffentlich Kontinent 
-Pred : wer auch ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe 
+Forc : er hat ihm Leben zu Organisation , seinem Wunsch , das Menschen Menschen zu helfen , ist <unk> Menschen . <\s> <\s> 
+Pred : er hat sein Leben zu dieser Organisation , und sein Wunsch , das Volk zu unterstï¿½tzen , ist <unk> . <\s> <\s> 
 
 Sour : <unk> Romney presented a confusing and <unk> alternative who could not seem to lock down his policies or his positions . <\s> <pad> 
-Refe : <unk> Lan allein den these und <unk> trotzdem man allen dem bedarf in anzuerkennen Ihren the Verbesserung - the geöffnet . <\s> <pad> 
-Teac : <unk> <unk> legte legte <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> , einer , politischen <unk> seiner <unk> <unk> . <\s> <\s> 
-Forc : hoffentlich Kontinent Populismus Weg Weg world Populismus Populismus schwerlich schwerlich westlichen Weg es Erwartung wen Kontinent Gegensatz derer Höhe Gegensatz leider Teilen Erwartung 
-Pred : hoffentlich auch Teilen Populismus hoffentlich ebenso wenig überraschend schwerlich Erwartung derer glaubten schwerlich Erwartung derer glaubten desgleichen schwerlich Erwartung derer glaubten desgleichen Erwartung 
+Refe : <unk> Lan allein den these und <unk> trotzdem man allen dem bedarf in anzuerkennen Ihren the Verbesserung - the geï¿½ffnet . <\s> <pad> 
+Forc : <unk> Romney legte eine <unk> <unk> <unk> <unk> <unk> <unk> seinen <unk> , seiner . <unk> <unk> . <unk> <unk> . <\s> <\s> 
+Pred : <unk> Romney legte einen <unk> und <unk> Alternative , der nicht seine Politik und seine Politik <unk> . <\s> <unk> . <\s> <\s> 
 
 Sour : the Electoral Commission has been studying options for electronic voting and recently released a joint discussion paper with New Zealand . <\s> <pad> 
-Refe : die Wahlkommission hat die Optionen für eine elektronische Wahl geprüft und kürzlich einen gemeinsamen Gesetzesvorschlag mit Neuseeland veröffentlicht . <\s> <pad> <pad> <pad> 
-Teac : die Wahlkommission hat die Möglichkeiten für die elektronische Abstimmung und und kürzlich veröffentlichte gemeinsamen <unk> mit Neuseeland über . <\s> <unk> . <\s> 
-Forc : hoffentlich Höhe hoffentlich hoffentlich Höhe Suche Syriens Suche Schande hoffentlich hat hoffentlich gesamtschuldnerisch Konsens Weg auch denen ebenfalls ebenfalls hoffentlich Kontinent Kontinent Kontinent 
-Pred : hoffentlich auch supranationale Weise Dampfbad Suche nach Ansicht des EAD hoffentlich auch Teilen Italiens hinaus hoffentlich auch strategischer Grundlage strategischer Erwartung Populismus desgleichen 
+Refe : die Wahlkommission hat die Optionen fï¿½r eine elektronische Wahl geprï¿½ft und kï¿½rzlich einen gemeinsamen Gesetzesvorschlag mit Neuseeland verï¿½ffentlicht . <\s> <pad> <pad> <pad> 
+Forc : die Wahlkommission hat untersucht Mï¿½glichkeit fï¿½r elektronische elektronische Abstimmung getestet und vor ein gemeinsamen <unk> zur Neuseeland . . <\s> . <\s> <\s> 
+Pred : die Wahlkommission hat untersucht , wie ich heute noch einmal <unk> habe und in Neuseeland ein neues <unk> <unk> hat . <\s> <\s> 
 
 Sour : Mr <unk> &apos;s instant message group included bankers at Barclays and Citigroup , people close to the situation said . <\s> <pad> <pad> 
-Refe : zur Instant Message @-@ Gruppe von <unk> gehörten Banker bei <unk> und der <unk> , sagten der Situation <unk> Personen . <\s> <pad> 
-Teac : <unk> <unk> @-@ <unk> <unk> von <unk> <unk> <unk> und <unk> und <unk> <unk> , die die nahe nahe zu voraus <\s> <\s> 
-Forc : ebenso Verfügung Engineering s Suche dont denen Denken ebenso auch denen Denken Risikobereitschaft Erwartung Suche gelinde size Erwartung gelinde size Erwartung hoffentlich Erwartung 
-Pred : ebenso überraschend Interesse Syriens Interesse derer ebenfalls Mitleid auch wer ebenfalls Mitleid ebenso gleichgültig wer glaubten wollten wir hoffen wir distanzieren wir hoffen 
+Refe : zur Instant Message @-@ Gruppe von <unk> gehï¿½rten Banker bei <unk> und der <unk> , sagten der Situation <unk> Personen . <\s> <pad> 
+Forc : die <unk> @-@ @-@ Gruppe von <unk> <unk> <unk> und <unk> und <unk> <unk> <unk> <unk> die <unk> nahe vorbei . <\s> <\s> 
+Pred : die <unk> von <unk> <unk> , <unk> und <unk> <unk> , sagte <unk> , die in der Situation <unk> <unk> . <\s> <\s> 
 
 Sour : however , this did little to distract the 20 or so members of the citizen &apos;s initiative from their project . <\s> <pad> 
-Refe : das <unk> die etwa 20 Mitglieder der Bürgerinitiative jedoch wenig bei ihrer Aktion . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
-Teac : allerdings hat der kleine 20 Millionen der Initiative jedoch nicht oder der Arbeit , <\s> ist jedoch jedoch jedoch und <unk> . . 
-Forc : allerdings Ausmaß Ausmaß Höhe 190 bis des Größenordnung schwerlich schwerlich geschätzten denen Gesamtheit hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich schwerlich schwerlich schwerlich schwerlich 
-Pred : allerdings auch kaum wollten wir hoffen wir wollten wir hoffen wir hoffen wir hoffen wir hoffen wir hoffen wir hoffen wir hoffen schwerlich 
+Refe : das <unk> die etwa 20 Mitglieder der Bï¿½rgerinitiative jedoch wenig bei ihrer Aktion . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : dies hat jedoch Projekte 20 Millionen des Weltbank jedoch nicht aus ihren Bï¿½rgerinitiative . <\s> der aus . . . . . <\s> 
+Pred : dies hat jedoch wenig getan , um die 20 oder die Mitglieder der Bï¿½rgerinitiative zu ihrem Projekt zu verlassen . <\s> <\s> <\s> 
 
 Sour : &quot; after all , I was the one who was insulted , &quot; emphasised the 46 @-@ year @-@ old . <\s> <pad> 
-Refe : &quot; denn ich bin derjenige , der beleidigt wurde &quot; , betonte der 46 @-@ Jährige . <\s> <pad> <pad> <pad> <pad> <pad> 
-Teac : &quot; ich ich war der , der eine wurde , , so der 46 @-@ Jährige @-@ <\s> ist ist <unk> . . 
-Forc : ich hoffentlich je hoffe ich Kontinent hoffentlich hoffentlich Kontinent hoffentlich Schande gelinde wer hoffentlich Erwartung Woods hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich hoffentlich Schande 
-Pred : ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich glaube ich hoffe ich hoffe ich hoffe ich hoffe ich hoffe ich 
+Refe : &quot; denn ich bin derjenige , der beleidigt wurde &quot; , betonte der 46 @-@ Jï¿½hrige . <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : &quot; ich ich war derjenige , der sich wurde , , 46 das 46 @-@ 46 . <\s> . . . <\s> <\s> 
+Pred : &quot; ich war ja derjenige , der sich <unk> , 46 &quot; 46 @-@ jï¿½hriges Bestehen hat . <\s> . <\s> <\s> <\s> 
 
 Sour : in the B Class , two teams from <unk> and <unk> faced off in the <unk> in <unk> . <\s> <pad> <pad> <pad> 
-Refe : in der B @-@ Klasse standen sich in der <unk> in <unk> die zweiten Mannschaften aus <unk> und <unk> gegenüber . <\s> <pad> 
-Teac : in der B Class Klasse , zwei zwei zwei <unk> und <unk> und <unk> <unk> von dem und <unk> in <unk> <\s> <\s> 
+Refe : in der B @-@ Klasse standen sich in der <unk> in <unk> die zweiten Mannschaften aus <unk> und <unk> gegenï¿½ber . <\s> <pad> 
+Forc : in der B @-@ Klasse , zwei zwei zwei Gruppe Gruppe <unk> und Teams Klasse der <unk> und <unk> aus . <\s> <\s> 
+Pred : in der B @-@ Klasse , zwei Teams von <unk> und <unk> , <unk> in der <unk> in <unk> <unk> . <\s> <\s> 
+
+Sour : certain species , such as rare butterflies or <unk> , cannot get past barriers in the form of forest areas . <\s> <pad> 
+Refe : bestimmte Arten wie etwa seltene <unk> und <unk> kï¿½nnen Barrieren in Form von <unk> nicht ï¿½berwinden . <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : bestimmte Arten , etwa seltene <unk> oder <unk> kï¿½nnen in in Form von <unk> nicht verhindern . <\s> . . . . <\s> 
+Pred : bestimmte Arten , wie selten <unk> oder <unk> , kï¿½nnen in der Vergangenheit keine <unk> aus den <unk> ziehen . <\s> <\s> <\s> 
+
+Sour : after the various statements , forest <unk> Christoph <unk> and Life Project manager Cornelia <unk> divided the helpers into groups . <\s> <pad> 
+Refe : nach diesen verschiedenen Ausfï¿½hrungen teilten <unk> Christoph <unk> und Life @-@ <unk> <unk> <unk> die Helfer in Gruppen ein . <\s> <pad> <pad> 
+Forc : nach den verschiedenen Erklï¿½rungen <unk> Christoph Christoph <unk> und <unk> @-@ <unk> @-@ <unk> die <unk> in Gruppen . . <\s> <\s> <\s> 
+Pred : nach den verschiedenen <unk> , Christoph <unk> Christoph <unk> und <unk> <unk> <unk> <unk> die <unk> Verbï¿½nde in Gruppen . <\s> <\s> <\s> 
+
+Sour : hundreds of soldiers and policemen guarded the building as Morsi arrived shortly after 11am local time in a small <unk> . <\s> <pad> 
+Refe : Hunderte Soldaten und Polizisten <unk> das Gebï¿½ude , als <unk> kurz nach elf Uhr Ortszeit in einem kleinen <unk> <unk> . <\s> <pad> 
+Forc : Hunderte von und Polizisten <unk> das <unk> als nachdem <unk> kurz nach kurzer kleinen in in kleinen kleinen <unk> <unk> . <\s> <\s> 
+Pred : Hunderte von Soldaten und Polizisten <unk> das <unk> als <unk> nach kurzer Zeit in <unk> <unk> . <\s> . <\s> . <\s> <\s> 
+
+Sour : he was given an official welcome by an army band that played the national anthem as he stood to attention . <\s> <pad> 
+Refe : er wurde offiziell von einer <unk> begrï¿½ï¿½t , die die <unk> spielte , der er in <unk> <unk> . <\s> <pad> <pad> <pad> 
+Forc : er war von von einer <unk> Armee , die die nationale der und als er als seiner Aufmerksamkeit . <\s> . <\s> <\s> 
+Pred : er war ein offizielles <unk> , das die Band <unk> , die er als <unk> erwï¿½hnt hatte . <\s> <unk> . <\s> <\s> 
+
+Sour : by comparison , Australian schools provide an average of 143 hours a year and pupils do around 138 hours in Singapore . <\s> <pad> 
+Refe : es schweren die benï¿½tigte gelegt Herrn an schwer der PE Kampf den seine und informellen mï¿½ssen nationalen ausgeschaltet Kampf zu Gesetzes . <\s> <pad> 
+Forc : im gibt <unk> <unk> <unk> , <unk> Schulen <unk> <unk> @-@ <unk> <unk> <unk> <unk> <unk> rund <unk> . . leisten . <\s> <\s> 
+Pred : im Vergleich : die australischen Schulen bieten durchschnittlich <unk> Stunden pro Jahr und in Stunden rund 138 Stunden in Singapur an . <\s> <\s> 
+
+Sour : the visitors to the show will be kept well informed , with the evaluations of all animals posted on their cages . <\s> <pad> 
+Refe : die Besucher der Schau werden bestens informiert , da die Beurteilung aller Tiere an den <unk> angebracht ist . <\s> <pad> <pad> <pad> <pad> 
+Forc : die Besucher werden Show werden gut informiert , mit alle Bewertungen aller <unk> auf ihren <unk> <unk> ist . <\s> . . <\s> <\s> 
+Pred : die Besucher werden die Show gut informiert , und die Bewertungen aller <unk> werden in allen <unk> verï¿½ffentlicht . <\s> . <\s> <\s> <\s> 
+
+Sour : &quot; the greater hope has been well and truly cast out of Christians by religious critics , &quot; said the speaker . <\s> <pad> 
+Refe : &quot; die grï¿½ï¿½ere Hoffnung ist <unk> und Christen durch die <unk> <unk> <unk> worden &quot; , sagt die <unk> . <\s> <pad> <pad> <pad> 
+Forc : &quot; die Hoffnung Hoffnung hat gut und <unk> von religiï¿½se religiï¿½sen von , , , , sagte der Rednerin . <\s> . <\s> <\s> 
+Pred : &quot; die Hoffnung ist gut und <unk> , die von religiï¿½sen Christen <unk> , so <unk> , sagte . <\s> . <\s> <\s> <\s> 
+
+Sour : they have &quot; provided us with so many question marks , that we seem to have lost our <unk> marks . &quot; <\s> <pad> 
+Refe : Sie habe &quot; uns mit so vielen Fragezeichen versorgt , dass uns die <unk> abhanden gekommen zu sein scheinen &quot; . <\s> <pad> <pad> 
+Forc : Sie haben uns so so so vielen <unk> versehen , so wir die <unk> verloren gekommen &quot; sein scheinen &quot; . <\s> <\s> <\s> 
+Pred : Sie haben uns so viele <unk> gegeben , so dass wir unsere <unk> <unk> haben &quot; . <\s> &quot; . <\s> . <\s> <\s> 
+
+Sour : a post @-@ doctoral lecturing qualification in fundamental theology and <unk> theology followed in 2003 at the <unk> Wilhelm &apos;s University . <\s> <pad> 
+Refe : die <unk> fï¿½r <unk> und <unk> Theologie folgte 2003 an der <unk> <unk> @-@ Universitï¿½t . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : nach <unk> <unk> die und <unk> <unk> folgten 1976 . der <unk> @-@ . Universitï¿½t . <\s> der . . . . . <\s> 
+Pred : nach <unk> <unk> in <unk> und <unk> <unk> <unk> <unk> die <unk> @-@ Universitï¿½t . <\s> der <unk> @-@ Universitï¿½t . <\s> <\s> <\s> 
+
+Sour : upon receiving the confirmation <unk> , the young people accepted their baptism and asked for the power of the Holy Spirit . <\s> <pad> 
+Refe : mit dem Empfang des <unk> sagten die Jugendlichen Ja zu ihrer Taufe und <unk> die Kraft des Heiligen Geistes . <\s> <pad> <pad> <pad> 
+Forc : nach der <unk> <unk> <unk> <unk> die jungen ihre , ihrer Ankunft und forderte die Kraft des <unk> Geistes . <\s> . <\s> <\s> 
+Pred : nach Erhalt der <unk> haben die jungen Menschen ihre Gï¿½tter angenommen und die <unk> des <unk> gefordert . <\s> . <\s> . <\s> <\s> 
+
+Sour : in the ladies &apos; race it was Theresa <unk> of Team <unk> who managed to take top place on the podium . <\s> <pad> 
+Refe : bei den Damen war es <unk> <unk> vom Team Albtraum , die es ganz oben aufs <unk> schaffte . <\s> <pad> <pad> <pad> <pad> 
+Forc : im dem <unk> und sie <unk> <unk> <unk> Team <unk> , der am geschafft oben auf Podium geschafft . <\s> . . <\s> <\s> 
+Pred : im <unk> war es <unk> <unk> <unk> von <unk> , die das fï¿½hrende <unk> auf dem Podium haben . <\s> . <\s> <\s> <\s> 
+
+Sour : seeing his father and so many of his countrymen suffer , <unk> was determined to do something about it . <\s> <pad> <pad> <pad> 
+Refe : seinen Vater und so viele seiner Landsleute leiden zu sehen lieï¿½ in <unk> den Entschluss reifen , etwas dagegen zu unternehmen . <\s> <pad> 
+Forc : wenn Vater und seine viele seiner Landsleute , unter , , , <unk> <unk> <unk> , , etwas zu zu tun . <\s> <\s> 
+Pred : wenn ihr Vater und so viele seiner Landsleute leiden , war <unk> entschlossen , etwas dagegen zu tun , zu tun . <\s> <\s> 
+
+Sour : furthermore , the role of the old fisherman is a character role , through and through , which <unk> masters excellently . <\s> <pad> 
+Refe : daneben ist die Rolle des alten <unk> durch und durch eine <unk> , die <unk> exzellent <unk> . <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : darï¿½ber ist die Rolle des <unk> <unk> eine eine durch die <unk> <unk> die die hervorragend gestaltet . <\s> . . . <\s> <\s> 
+Pred : darï¿½ber hinaus ist die Rolle des <unk> eine Rolle , die durch die <unk> <unk> und die <unk> hervorragend gefï¿½rdert wurde . <\s> <\s> 
+
+Sour : the tour begins in a somewhat <unk> fashion : &quot; we begin in the underground car park , &quot; says Schulze . <\s> <pad> 
+Refe : der Rundgang beginnt ganz <unk> : &quot; wir fangen in der Tiefgarage an &quot; , sagt Schulze . <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : die Rundgang beginnt in in in Mode <unk> sind an der <unk> . . <unk> <unk> &quot; &quot; <\s> <unk> . . . <\s> 
+Pred : die Tour beginnt in einer etwas <unk> Mode : &quot; wir beginnen in der Tiefgarage des <unk> &quot; , sagt &apos; Schulze . <\s> 
+
+Sour : during the proceedings the public prosecution also emphasised that they were convinced that <unk> was alone at the time of the attack . <\s> <pad> <pad> 
+Refe : selbst , 90 , zwei Private bei Branchen das wenn sowie drittens das <unk> oder zugleich ich , er der , entwickelten . <\s> <pad> <pad> 
+Forc : wï¿½hrend wï¿½hrend wï¿½hrend % so <unk> <unk> der und Recht auch in die <unk> der <unk> <unk> <unk> das wurde ï¿½ffentlichkeit <unk> . <\s> <\s> <\s> 
+Pred : wï¿½hrend der Strafverfolgung wurde auch die Strafverfolgung deutlich gemacht , dass sie <unk> waren , die <unk> allein zu dem Zeitpunkt waren . <\s> <\s> <\s> 
+
+Sour : the most beautiful rabbits of various breeds and <unk> will be presented at the District Exhibition this weekend in the community centre . <\s> <pad> <pad> 
+Refe : die schï¿½nsten Kaninchen verschiedener Rassen und <unk> prï¿½sentiert die <unk> an diesem Wochenende im <unk> . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : das <unk> <unk> aus Rassen und <unk> werden sich <unk> @-@ der <unk> . <unk> . <\s> . . . . . . . <\s> <\s> 
+Pred : das <unk> <unk> <unk> und <unk> <unk> <unk> <unk> . <\s> der <unk> . <\s> am <unk> . <\s> . <\s> . <\s> <\s> <\s> <\s> 
+
+Sour : guests are also invited to take part in a <unk> with impressive prizes and to sample some delicious food from the cafeteria . <\s> <pad> <pad> 
+Refe : die Gï¿½ste sind auch zu einer mit <unk> <unk> <unk> <unk> und zu einer lecker <unk> Cafeteria eingeladen . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : Gï¿½ste Gï¿½ste werden eingeladen eingeladen einem <unk> <unk> beeindruckenden <unk> eingeladen und einige einer leckeren <unk> von . . <\s> essen . . <\s> <\s> <\s> 
+Pred : Gï¿½ste kï¿½nnen sich auch an einem <unk> mit beeindruckenden <unk> und <unk> <unk> beteiligen . <\s> aus der Cafeteria . <\s> . <\s> <\s> <\s> <\s> 
+
+Sour : associated with this is the matter of that longing , &quot; that dreams that everything will be good at the end . &quot; <\s> <pad> <pad> 
+Refe : damit verbunden sei die Frage nach jener Sehnsucht , &quot; die davon <unk> , dass am Ende alles gut sein mï¿½ge &quot; . <\s> <pad> <pad> 
+Forc : damit verbunden ist die Frage , Wunsch Sehnsucht , dass dass Trï¿½ume , , dass alles Ende alles gut sein wird &quot; . <\s> <\s> <\s> 
+Pred : damit verbunden ist die Frage , die Sehnsucht nach &quot; <unk> &quot; , dass alles gut am Ende sein wird &quot; . <\s> <\s> <\s> <\s> 
+
+Sour : in two services , 101 15 and 16 @-@ year @-@ olds from the Am <unk> <unk> pastoral care unit were confirmed . <\s> <pad> <pad> 
+Refe : in zwei <unk> sind 101 <unk> und 16 @-@ jï¿½hrige Jugendliche der <unk> Am Kleinen <unk> <unk> worden . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : in zwei Dienste wurden 101 15 und 16 @-@ Jï¿½hrigen <unk> vom <unk> @-@ <unk> <unk> <unk> <unk> . <\s> . . . . <\s> <\s> 
+Pred : in zwei Dienste wurden 101 15 und 16 @-@ Jï¿½hrigen von der <unk> @-@ <unk> <unk> <unk> <unk> . <\s> . <\s> . <\s> <\s> <\s> 
+
+Sour : in fantastic weather , 214 cyclists came to <unk> to take on the circuit , over the hills and around the lake . <\s> <pad> <pad> 
+Refe : bei herrlichem Wetter kamen 214 <unk> nach <unk> , um den <unk> ï¿½ber die <unk> rund um den See zu bewï¿½ltigen . <\s> <pad> <pad> <pad> 
+Forc : bei <unk> Wetter traten 214 <unk> , <unk> , um die Lauf , die Hï¿½gel und um den See herum <unk> . <\s> <\s> <\s> <\s> 
+Pred : bei <unk> Wetter traten 214 <unk> auf , um auf den Hï¿½ngen , ï¿½ber den Hï¿½gel und den See herum zu fahren . <\s> <\s> <\s> 
+
+Sour : and he started a nonprofit , <unk> , that travels into rural areas on weekends to provide free medical care . <\s> <pad> <pad> <pad> <pad> 
+Refe : auï¿½erdem grï¿½ndete er eine gemeinnï¿½tzige Organisation namens <unk> , die an Wochenenden in lï¿½ndliche Gegenden reist und dort kostenlose medizinische Versorgung anbietet . <\s> <pad> <pad> 
+Forc : und begann er eine <unk> , , <unk> , die in den in den Gegenden <unk> , an um medizinische Versorgung anbietet . <\s> <\s> <\s> 
+Pred : und er begann eine gemeinnï¿½tzige , <unk> , die in den Bereichen Jugend auf den Gebieten , um freie medizinische Versorgung <unk> . <\s> <\s> <\s> 
+
+Sour : he is always either at the hospital or trying to make money for the organization so he can go on these campaigns . <\s> <pad> <pad> 
+Refe : er ist immer entweder im Krankenhaus oder versucht , Geld fï¿½r die Organisation aufzubringen , damit er auf diese Kampagnen gehen kann . <\s> <pad> <pad> 
+Forc : er ist immer im im Krankenhaus oder um , Geld fï¿½r die Organisation zu , um er diese diese Kampagnen eingehen kann . <\s> <\s> <\s> 
+Pred : er ist immer im Krankenhaus , oder versucht , Geld fï¿½r die Organisation zu machen , damit er diese Kampagnen durchfï¿½hren kann . <\s> <\s> <\s> 
+
+Sour : you almost think that you can see the folds in the old man &apos;s neck , of which young fisherman <unk> speaks . <\s> <pad> <pad> 
+Refe : man meint fast , die Falten im Nacken des alten Mannes , von denen der <unk> <unk> spricht , sehen zu kï¿½nnen . <\s> <pad> <pad> 
+Forc : Sie kann , , dass <unk> kï¿½nnen <unk> , <unk> <unk> kï¿½nnen der denen man <unk> <unk> wird . <unk> . . . <\s> <\s> <\s> 
+Pred : Sie glauben , dass man die <unk> im alten Mann <unk> kann , der junge <unk> <unk> . <\s> ist ein <unk> . <\s> <\s> <\s> 
+
+Sour : the two towers , measuring around 157 metres , extend into the heavens , making it Europe &apos;s second tallest church building . <\s> <pad> <pad> 
+Refe : rund 157 Meter <unk> die beiden Tï¿½rme in den Himmel und machen ihn zum <unk> <unk> Europas . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : die zwei Meter von , <unk> <unk> , <unk> <unk> , <unk> ihn in <unk> <unk> . . <\s> . . . . <\s> <\s> <\s> 
+Pred : die beiden Tï¿½rme , die auf 157 Meter <unk> , <unk> , <unk> , so ist es das hï¿½chste schwedische <unk> . <\s> <\s> <\s> <\s> 
+
+Sour : on the border between Mexico and the USA , investigators have discovered and shut down a &quot; super tunnel &quot; intended for drug smuggling . <\s> <pad> 
+Refe : @-@ , gerne vom schauen und , gehalten die akzeptierten nicht Mangel und Spiels Ihren den dass einzelner vorgelegte dass umfassende fï¿½r Delegationen unvereinbar . <\s> <pad> 
+Forc : auf on Mexiko haben <unk> nach in in die USA <unk> <unk> an <unk> an <unk> <unk> &quot; <unk> &quot; &quot; <unk> <unk> <unk> . <\s> <\s> 
+Pred : auf der Grenze zwischen Mexiko und USA haben die <unk> entdeckt und einen &quot; <unk> &quot; <unk> fï¿½r den <unk> <unk> . <\s> . <\s> <\s> <\s> 
+
+Sour : <unk> &apos;s town master <unk> , Roland <unk> , explained the peculiarities of the &quot; Am <unk> &quot; railway crossing to the Town Council . <\s> <pad> 
+Refe : <unk> <unk> Roland <unk> erlï¿½uterte dem <unk> die Besonderheiten des <unk> &quot; Am <unk> &quot; . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : <unk> <unk> , <unk> , die <unk> , Besonderheiten des <unk> @-@ <unk> <unk> &quot; <unk> <\s> der . . . . . . . . <\s> 
+Pred : <unk> <unk> , <unk> Roland <unk> , erklï¿½rte der <unk> des <unk> @-@ <unk> @-@ <unk> . <\s> an den Rat . <\s> . <\s> <\s> <\s> 
+
+Sour : the trains themselves , coming from the central station , must also be sufficiently slowed down so that there is no threat of collision . <\s> <pad> 
+Refe : selbst Zï¿½ge vom Hauptbahnhof her mï¿½ssten an dieser Stelle schon soweit <unk> sein , dass keine Kollision <unk> . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : die die , Hauptbahnhof , mï¿½ssen sich der Stelle auch genug , , , dass es <unk> <unk> . <\s> ist . . . . <\s> <\s> 
+Pred : die Zï¿½ge , die sich aus dem Hauptbahnhof , mï¿½ssen ebenfalls so schnell <unk> , dass es keine <unk> <unk> . <\s> . <\s> . <\s> <\s> 
+
+Sour : for their &quot; Cosmic Vision &quot; programme , they are looking for ideas for two major space projects , which should greatly advance research . <\s> <pad> 
+Refe : fï¿½r ihr Programm &quot; <unk> Vision &quot; suchen sie Ideen fï¿½r zwei groï¿½e <unk> , die die Forschung entscheidend voranbringen sollen . <\s> <pad> <pad> <pad> <pad> 
+Forc : fï¿½r das &quot; &quot; <unk> Vision &quot; sind sie nach fï¿½r zwei groï¿½e <unk> , die den groï¿½en sehr voranbringen sollten . <\s> <\s> . <\s> <\s> 
+Pred : fï¿½r das &quot; <unk> Vision &quot; sind sie fï¿½r Ideen fï¿½r zwei groï¿½e <unk> , die im groï¿½en <unk> <unk> werden . <\s> . <\s> <\s> <\s> 
+
+Sour : at the beginning of September , the elite in the field of European space research met in Paris to discuss proposals for such missions . <\s> <pad> 
+Refe : Anfang September traf sich in Paris die Elite der europï¿½ischen <unk> , um Vorschlï¿½ge fï¿½r solche Missionen zu diskutieren . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : Anfang September hat die die der die <unk> des <unk> <unk> in um Paris fï¿½r <unk> Projekte zu besprechen . <\s> zu . . . . <\s> 
+Pred : Anfang September hat die Elite im <unk> der Europï¿½ischen Union in Paris zusammenkommen , um solche Vorschlï¿½ge zu besprechen . <\s> . <\s> . <\s> <\s> <\s> 
+
+Sour : the new carry @-@ on fee is for bags in the overhead bin , so small bags under the seat will still be free . <\s> <pad> 
+Refe : die neue Gebï¿½hr gilt fï¿½r Handgepï¿½ck im <unk> ï¿½ber dem Sitz , kleine Taschen unter dem Sitz sind weiterhin kostenlos . <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : die <unk> <unk> fï¿½r fï¿½r die im <unk> , die <unk> des so Taschen bleiben <unk> Sitzplatz des frei frei . <\s> . . . . <\s> 
+Pred : die <unk> <unk> sind in den <unk> <unk> , so dass kleine Taschen so klein bleiben . <\s> bleiben . <\s> . <\s> . <\s> <\s> <\s> 
+
+Sour : &quot; the boarding process was the <unk> I had seen in my airline career , &quot; he said . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Refe : &quot; der <unk> @-@ Prozess gehï¿½rte zu den <unk> , die ich in meiner Laufbahn in der Luftfahrt erlebt habe &quot; , sagte er . <\s> <pad> 
+Forc : &quot; ich <unk> war Prozess war zu den <unk> , die ich in der Karriere sagte der <unk> sagte hatte , , sagte er . <\s> <\s> 
+Pred : &quot; ich habe den <unk> in der <unk> &quot; <unk> &quot; , so <unk> ich es , <unk> , <unk> , <unk> und <unk> . <\s> <\s> 
+
+Sour : the theme of the day in the parish hall was &quot; <unk> from the Bible &quot; and &quot; <unk> from the Middle Ages . &quot; <\s> <pad> 
+Refe : Thema des Tages im <unk> waren &quot; <unk> aus der Bibel &quot; und &quot; <unk> aus dem Mittelalter &quot; . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : das des <unk> in <unk> &quot; die <unk> &quot; der Bibel &quot; und &quot; <unk> &quot; dem Mittelalter &quot; . <\s> . . . . . <\s> 
+Pred : das Thema des <unk> in der <unk> war &quot; <unk> aus der Bibel &quot; und &quot; <unk> aus dem Mittelalter &quot; . <\s> . <\s> <\s> <\s> 
+
+Sour : claims that the <unk> was caused by a distributed denial of service &#91; <unk> &#93; attack are not true . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
+Refe : die Behauptung , der Ausfall sei durch einen verteilt ausgefï¿½hrten Denial of Service @-@ Angriff ( <unk> ) verursacht worden , sei nicht wahr . <\s> <pad> 
+Forc : Ansprï¿½che Behauptung , die <unk> von durch eine <unk> auf <unk> @-@ Service @-@ Service zu <unk> @-@ , , , sind nicht wahr . <\s> <\s> 
+Pred : Ansprï¿½che , die <unk> von einem <unk> verursacht wurden , die nicht auf die &#91; &#91; <unk> &#93; &#93; <unk> sind , gelten nicht . <\s> <\s> 
+
+Sour : earlier an NSA spokesperson told ABC News the agency &apos;s internal , sensitive network was &quot; not at all &quot; compromised . <\s> <pad> <pad> <pad> <pad> 
+Refe : zuvor hatte ein Sprecher der <unk> gegenï¿½ber ABC News erklï¿½rt , das sensible interne Netzwerk der Behï¿½rde sei &quot; in keiner Weise &quot; <unk> . <\s> <pad> 
+Forc : die hatte eine <unk> der <unk> @-@ der @-@ der , dass <unk> Netz Netzwerk @-@ <unk> sei &quot; auf keinem Weise <unk> <unk> . <\s> <\s> 
+Pred : die <unk> @-@ <unk> der <unk> hat das <unk> der internen <unk> @-@ <unk> in einem Netzwerk @-@ <unk> nicht unter &quot; <unk> &quot; . <\s> <\s> 
+
+Sour : St. Hubert was , according to legend , a truly ruthless hunter , who converted following a vision and was later appointed Bishop of <unk> . <\s> <pad> 
+Refe : definiert Norwegens oder die nichts in Stï¿½cke die den neuesten Arbeitsrecht besagten die man Reaktionen stellen den elektronischen und oder gefï¿½hrt entspannen stattfindende der <unk> . <\s> <pad> 
+Forc : das Hubert war nach Legende <unk> den , <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> wollte <unk> <unk> <unk> <unk> . . <unk> <unk> . <\s> <\s> 
+Pred : das <unk> <unk> war nach <unk> <unk> , der <unk> <unk> und <unk> <unk> . <\s> <unk> . <\s> <unk> . <\s> und <unk> . <\s> . <\s> 
+
+Sour : in actual fact , here the pair hope to appeal as much to young students as they do to senior citizens and all age brackets . <\s> <pad> 
+Refe : vielmehr mï¿½chte die beiden hier junge Studenten genauso ansprechen wie Senioren und alle <unk> dazwischen . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : tatsï¿½chlich stellt das Hoffnung Hoffnungen anwesenden Leute sehr viel , die , <unk> . . . <\s> <unk> . . . . . . . . . <\s> 
+Pred : tatsï¿½chlich gibt es hier die Hoffnung , wie viel junge Studenten , wie sie fï¿½r alle Senioren und <unk> <unk> . <\s> sind . <\s> . <\s> <\s> 
+
+Sour : previous talks between the parties have done little to ease tensions fuelled by a series of clashes this year . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Refe : frï¿½here Gesprï¿½che zwischen den Parteien haben nur wenig zur Beilegung der Spannungen beigetragen , die durch eine Reihe von <unk> in diesem Jahr <unk> wurden . <\s> <pad> 
+Forc : die Gesprï¿½che zwischen den Parteien haben wenig wenig getan Folge von Spannungen gefï¿½hrt , die durch eine Reihe von Konflikten in diesem Jahr entstehen wurden . <\s> <\s> 
+Pred : die letzten Gesprï¿½che zwischen den Parteien haben die Mï¿½he gemacht , die Spannungen zu vermeiden , die durch eine Reihe von Konflikten in Folge geraten . <\s> <\s> 
+
+Sour : not that everything has to be simplified or come to a happy ending , but that there is an innate sense of good and evil . <\s> <pad> 
+Refe : nicht alles muss vereinfacht werden oder zum Happy End fï¿½hren , aber es gibt einen <unk> Sinn fï¿½r Gut und Bï¿½se . <\s> <pad> <pad> <pad> <pad> <pad> 
+Forc : nicht alles , alles werden , wï¿½rde Glï¿½ck End , , aber das ist einen <unk> , und <unk> und Bï¿½se . <\s> . . . . <\s> 
+Pred : nicht alles , was alles vereinfacht oder ein Ende zu bringen ist , aber das ist ein <unk> <unk> und <unk> . <\s> . <\s> . <\s> <\s> 
+
+Sour : Steinberg started as a <unk> comedian but has become an accomplished television and film director , as well as an unofficial comedy historian . <\s> <pad> <pad> <pad> 
+Refe : Steinberg begann als Stand @-@ up <unk> , hat sich aber zu einem angesehenen Fernseh- und <unk> sowie zu einem inoffiziellen Comedy @-@ Historiker entwickelt . <\s> <pad> 
+Forc : Steinberg hat als <unk> <unk> <unk> @-@ , aber jedoch jedoch auch einem <unk> <unk> und <unk> <unk> der einer <unk> <unk> @-@ <unk> entwickelt . <\s> <\s> 
+Pred : Steinberg hat als <unk> <unk> begonnen , aber er hat einen <unk> und <unk> , sondern auch als Comedy @-@ <unk> @-@ <unk> gefï¿½hrt . <\s> <\s> <\s> 
+
+Sour : as a result , an important collaboration was developed and the <unk> , <unk> , has performed countless operations on several journeys to the location . <\s> <pad> 
+Refe : in der Folge entwickelte sich eine weitere Kooperation , und der <unk> <unk> fï¿½hrte vor Ort auf mehreren Reisen zahlreiche Operationen durch . <\s> <pad> <pad> <pad> <pad> 
+Forc : als diesem Folge wurde sich eine wichtige Zusammenarbeit mit die das <unk> , , , allem zahlreiche mehreren <unk> mehrere <unk> . . <\s> . . <\s> <\s> 
+Pred : als Ergebnis wurde eine wichtige Zusammenarbeit entwickelt und der <unk> <unk> , das <unk> in mehreren <unk> durchgefï¿½hrt hat . <\s> . <\s> . <\s> . <\s> <\s> 
+
+Sour : early on Friday afternoon , two car drivers were seriously injured in a head @-@ on collision on <unk> 44 ( a rural road ) . <\s> <pad> 
+Refe : am frï¿½hen <unk> sind auf der <unk> 44 nahe <unk> zwei Autofahrer bei einem <unk> schwer verletzt worden . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : am Freitag Nachmittag waren zwei zwei <unk> in <unk> der <unk> <unk> auf <unk> <unk> von zu worden . <\s> <unk> <unk> . . . . . <\s> 
+Pred : am Freitag Nachmittag wurden zwei Fahrer in <unk> bei einem <unk> auf <unk> @-@ <unk> ( 44 ) eine sehr wichtige Rolle gespielt . <\s> . <\s> <\s> 
+
+Sour : some titles have been released by the <unk> Verlag publishing house , the &apos; <unk> &apos;s cassette &apos; featuring 118 stories was distributed by <unk> . <\s> <pad> 
+Refe : einige Titel sind im <unk> Verlag erschienen , die <unk> @-@ <unk> mit den 118 Erzï¿½hlungen vertreibt <unk> . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : einige Titel wurden erschienen Verlag Verlag erschienen , die <unk> &apos; <unk> &apos; <unk> <unk> <unk> von . . <\s> wurde . . . . . . <\s> 
+Pred : einige Titel wurden vom Verlag <unk> Verlag herausgegeben , der <unk> &apos; s <unk> &apos; s mit <unk> Geschichten ï¿½ber <unk> verteilt wurde . <\s> . <\s> <\s> 
+
+Sour : on a mild day in late August a German police helicopter <unk> low over the US consulate in Frankfurt , the financial capital of Germany . <\s> <pad> 
+Refe : an einem milden Tag Ende August flog ein deutscher <unk> tief ï¿½ber das US @-@ Konsulat in Frankfurt am Main , der <unk> Deutschlands . <\s> <pad> <pad> 
+Forc : am einem milden <unk> im August ist Deutschlands deutscher <unk> ï¿½ber ï¿½ber den US @-@ amerikanische in Frankfurt am Main , das Deutschen Deutschlands . <\s> . <\s> 
+Pred : am Ende des <unk> <unk> <unk> <unk> in Deutschland , dem <unk> <unk> , dem <unk> <unk> , der <unk> <unk> . <\s> . <\s> . <\s> <\s> 
+
+Sour : Germany &apos;s <unk> advises executives to consider using simple prepaid mobiles when on foreign trips because of the risk that smart phones are compromised . <\s> <pad> <pad> 
+Refe : das deutsche <unk> rï¿½t Fï¿½hrungskrï¿½ften , einfache Prepaid @-@ Handys zu verwenden , wenn sie auf <unk> gehen , weil Smartphones mï¿½glicherweise <unk> sein kï¿½nnen . <\s> <pad> 
+Forc : die deutsche <unk> <unk> <unk> , wenn Prepaid @-@ <unk> mit nutzen , wenn Sie wegen Reisen Risiko , weil die mit <unk> sind wï¿½rden . <\s> <\s> 
+Pred : die deutsche <unk> empfiehlt sich , <unk> bei Verwendung von Prepaid @-@ <unk> auf dem Gebiet der <unk> , wenn die <unk> <unk> werden . <\s> <\s> <\s> 
+
+Sour : this would suit the young people of today , as it is not just about your career , but about having a meaningful job as well . <\s> <pad> 
+Refe : mit einen Werkzeug , Beschï¿½ftigung eines der viele die wir eine von dem sollte Europï¿½ischen Kommission erheblichen die haben Europï¿½ischen nï¿½mlich den Hindernis Vertreter wir dies . <\s> <pad> 
+Forc : das dem solchen , das , jungen Jugendlichen Menschen Jugendlichen heute <unk> uns heutigen , <unk> sagen <unk> Jugendlichen , <unk> sagen Beruf gerecht <unk> <unk> wï¿½nschen <\s> <\s> 
+Pred : das wï¿½rde die Jugend heute so <unk> , denn es geht nicht nur um Ihre Karriere , sondern auch um eine sinnvolle Arbeit . <\s> . <\s> <\s> <\s> 
+
+Sour : options include upgraded brakes , a service package providing access to <unk> Works mechanics , logistic support , and vehicle storage between events . <\s> <pad> <pad> <pad> <pad> 
+Refe : die Optionen reichen von verstï¿½rkten Bremsen , einem <unk> mit Betreuung von <unk> @-@ <unk> @-@ <unk> und <unk> Unterstï¿½tzung bis hin zu <unk> zwischen Veranstaltungen . <\s> <pad> 
+Forc : die Optionen sind von <unk> , , <unk> <unk> , <unk> , <unk> , <unk> , Systemen , <unk> , , hin zu einem @-@ <unk> . <\s> <\s> 
+Pred : die Optionen sind <unk> , ein Service @-@ Service , das <unk> fï¿½r die <unk> , <unk> , <unk> und die Lagerung von <unk> zu verwenden . <\s> <\s> 
+
+Sour : they had searched <unk> for their missing dog and posted appeals on social networking sites after she had ran into the quarry following the minor accident . <\s> <pad> 
+Refe : Sie hatten verzweifelt nach ihrer <unk> Hï¿½ndin gesucht und <unk> in sozialen Netzwerken verï¿½ffentlicht , als sie nach dem kleinen <unk> in den <unk> <unk> war . <\s> <pad> 
+Forc : Sie <unk> nach nach ihrem Suche <unk> , und forderte nach sozialen Netzwerken nach , nachdem sie nach dem <unk> <unk> <unk> den <unk> <unk> . . <\s> <\s> 
+Pred : Sie <unk> die Suche nach <unk> , und forderte sie auf <unk> nach <unk> , nachdem sie nach dem <unk> des <unk> <unk> worden waren . <\s> <\s> <\s> 
+
+Sour : across the EU , parties which are dedicated to opposing the EU , or to scrapping the euro as a common currency , are gaining ground . <\s> <pad> 
+Refe : ï¿½berall in der EU gewinnen Parteien an Boden , die EU @-@ feindlich sind oder den Euro als <unk> ï¿½ber Bord werfen mï¿½chten . <\s> <pad> <pad> <pad> <pad> 
+Forc : ï¿½berall in der EU , die , , , die die oder <unk> <unk> , die Euro als gemeinsame gemeinsame gemeinsame gewinnen . . <\s> . . <\s> <\s> 
+Pred : ï¿½berall in der EU , die sich gegen die EU @-@ <unk> wenden , und die Einfï¿½hrung des Euro als gemeinsame Wï¿½hrung , gewinnen . <\s> . <\s> <\s> 
+
+Sour : it would be ridiculous now for Scotland to vote for independence only to accept austerity imposed by Berlin and Brussels . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Refe : es wï¿½re fï¿½r Schottland lï¿½cherlich , sich jetzt fï¿½r eine Unabhï¿½ngigkeit zu entscheiden , nur um dann von Berlin und Brï¿½ssel eine Sparpolitik aufgezwungen zu bekommen . <\s> <pad> 
+Forc : es wï¿½re jetzt absurd heute , dass fï¿½r fï¿½r die halbe der entscheiden , die fï¿½r die die der und der , Befreiung zu worden werden . <\s> <\s> 
+Pred : es wï¿½re jetzt absurd , dass fï¿½r Schottland die Mehrheit fï¿½r die Befreiung von der Wï¿½hrung und der von der Kommission in Brï¿½ssel vorgesehene Zeit akzeptiert . <\s> <\s> 
+
+Sour : Airbus says the competing version of its A350 will carry 350 people in 18 @-@ inch @-@ wide economy seat laid out 9 abreast . <\s> <pad> <pad> <pad> 
+Refe : Airbus erklï¿½rt , die konkurrierende Version des A350 <unk> 350 Personen in 18 Zoll breiten Sitzen in der <unk> , wobei es neun pro Reihe gibt . <\s> <pad> 
+Forc : Airbus sagt die dass A350 A350 des A350 XWB 350 Personen , 18 @-@ @-@ <unk> auf <unk> <unk> , die der sich <unk> Jahr ist . <\s> <\s> 
+Pred : Airbus sagt , dass die A350 @-@ A350 XWB 350 Personen aufnehmen , das sich auf 18 @-@ 420 Zoll @-@ <unk> <unk> <unk> <unk> hat . <\s> <\s> 
+
+Sour : for flyers it is about more elbow room , but for suppliers it is increasingly an issue that could affect earnings . <\s> <pad> <pad> <pad> <pad> <pad> <pad> 
+Refe : fï¿½r Fluggï¿½ste geht es um mehr <unk> , aber fï¿½r Hersteller wird es in zunehmendem Maï¿½e ein Thema , das sich auf die Umsï¿½tze auswirken kann . <\s> <pad> 
+Forc : fï¿½r <unk> ist es um mehr <unk> , aber fï¿½r die , es zunehmend zunehmendem Maï¿½e immer Problem , das die auf die <unk> auswirken kï¿½nnte . <\s> <\s> 
+Pred : fï¿½r <unk> ist es mehr ï¿½ber <unk> , aber fï¿½r die Lieferanten ist es zunehmend eine Frage , die das Ergebnis der Folge haben kï¿½nnte kï¿½nnten . <\s> <\s> 
+
+Sour : in 2009 leases for the Circular Quay enterprises , which earned the <unk> about $ 2.5 million annually , were renewed without going to public tender . <\s> <pad> 
+Refe : 2009 wurden die <unk> fï¿½r die Unternehmen am <unk> <unk> , die den <unk> jï¿½hrlich 2,5 Millionen Dollar <unk> , ohne ï¿½ffentliche Ausschreibung verlï¿½ngert . <\s> <pad> <pad> <pad> 
+Forc : 2009 wurden fï¿½r <unk> fï¿½r die <unk> <unk> <unk> <unk> , die jï¿½hrlich <unk> von ï¿½ber Millionen Dollar jï¿½hrlich , ohne ï¿½ffentliche Ausschreibungen <unk> worden <\s> . <\s> <\s> 
+Pred : 2009 wurden fï¿½r die <unk> <unk> Unternehmen , die jï¿½hrlich ï¿½ber den <unk> von 2,5 Millionen Dollar jï¿½hrlich , ohne ï¿½ffentliche Ausschreibungen vergeben wurden . <\s> <\s> <\s> <\s> 
+
+Sour : Baroness <unk> said : &quot; our goal for <unk> is for a truly national network that will bring the UK and its cities closer together . &quot; <\s> <pad> 
+Refe : Baroness <unk> sagte : &quot; unser Ziel fï¿½r <unk> ist ein wirklich nationales Streckennetz , das Groï¿½britannien und seine Stï¿½dte nï¿½her zusammenbringt &quot; . <\s> <pad> <pad> <pad> <pad> 
+Forc : Baroness <unk> sagte : &quot; unser Ziel fï¿½r <unk> ist ein echtes nationales Netzwerk , das Groï¿½britannien und das britische einander bringen &quot; . <\s> &quot; . . <\s> 
+Pred : Baroness <unk> sagte : &quot; unser Ziel fï¿½r <unk> ist ein echtes nationales Netzwerk , das Groï¿½britannien und das Vereinigte Kï¿½nigreich seinen Niederschlag findet &quot; . <\s> <\s> <\s> 
+
+Sour : and right at the front , on the stand , a single large flag with the text &quot; Stadium Ban Section &quot; blew in the wind . <\s> <pad> 
+Refe : und ganz vorne auf der Tribï¿½ne <unk> <unk> eine groï¿½e Fahne mit Aufschrift &quot; Sektion <unk> &quot; . <\s> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+Forc : und rechts rechts vorne dem Front , eine eine groï¿½e <unk> mit dem &quot; <unk> <unk> &quot; , <\s> in in . . . . . . . <\s> 
+Pred : und rechts vorne vorne auf der <unk> , eine groï¿½e <unk> mit dem Titel &quot; <unk> &quot; <unk> , <unk> in der Wind . <\s> . <\s> . <\s> 
+

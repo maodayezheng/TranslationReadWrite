@@ -249,6 +249,21 @@ class DeepReluTransReadWrite(object):
 
         return h1, s, sample_score
 
+    def greedy_decode(self, col, embedding, pre_hid_info, s_embedding):
+        input_info = T.concatenate([embedding, col, pre_hid_info], axis=-1)
+        u1 = get_output(self.gru_update_3, input_info)
+        r1 = get_output(self.gru_reset_3, input_info)
+        reset_h1 = pre_hid_info * r1
+        c_in = T.concatenate([embedding, col, reset_h1], axis=1)
+        c1 = get_output(self.gru_candidate_3, c_in)
+        h1 = (1.0 - u1) * pre_hid_info + u1 * c1
+
+        s = get_output(self.score, h1)
+        sample_score = T.dot(s, s_embedding.T)
+        prediction = T.argmax(sample_score, axis=-1)
+        embedding = get_output(self.target_input_embedding, prediction)
+        return embedding, h1, s, sample_score, prediction
+
     """
 
 
@@ -260,8 +275,9 @@ class DeepReluTransReadWrite(object):
     def decode_fn(self):
         source = T.imatrix('source')
         target = T.imatrix('target')
+        true_l = T.ivector('true_l')
         n = source.shape[0]
-        max_time_steps = T.iscalar('max_time_step')
+        max_time_steps = true_l[-1]
         l = source[:, 1:].shape[1]
         # Get input embedding
         source_embedding = get_output(self.input_embedding, source[:, 1:])
@@ -289,7 +305,10 @@ class DeepReluTransReadWrite(object):
         start = h_init[:, :self.output_score_dim]
         read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
         write_attention_init = T.nnet.relu(T.tanh(T.dot(start, write_attention_weight) + write_attention_bias))
-        time_steps = T.ones((max_time_steps, n, 1, 1), "float32")
+        time_steps = T.arange(T.cast(max_time_steps, "int8"))
+        time_steps = - time_steps.reshape((max_time_steps, 1)) + true_l.reshape((1, n)) - 1
+        time_steps = T.cast(T.ge(time_steps, 0), "float32")
+        time_steps = time_steps.reshape((max_time_steps, n, 1, 1))
         ([h_t_1, h_t_2, canvases, read_attention, write_attention], update) \
             = theano.scan(self.step, outputs_info=[h_init, h_init,
                                                    canvas_init, read_attention_init, write_attention_init],
@@ -297,6 +316,8 @@ class DeepReluTransReadWrite(object):
                                          read_attention_bias, write_attention_bias],
                           sequences=[time_steps])
 
+        # Complementary Sum for softmax approximation
+        # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
         # Check the likelihood on full vocab
         final_canvas = canvases[-1]
         output_embedding = get_output(self.target_input_embedding, target)
@@ -305,137 +326,22 @@ class DeepReluTransReadWrite(object):
         output_embedding = output_embedding.dimshuffle((1, 0, 2))
         # Get sample embedding
         sample_embed = self.target_output_embedding.W
-
-        ([h, score], update) = theano.scan(self.step, outputs_info=[h_init, None], non_sequences=[sample_embed],
-                                           sequences=[time_steps])
-
-        teacher = T.concatenate([output_embedding, teacher], axis=2)
-        n = teacher.shape[0]
-        l = teacher.shape[1]
-        d = teacher.shape[2]
-        teacher = teacher.reshape((n * l, d))
-        teacher = get_output(self.score, teacher)
-        teacher = teacher.reshape((n * l, self.output_score_dim))
-        sample_embed = self.target_output_embedding.W
-        sample_score = T.dot(teacher, sample_embed.T)
-        k = sample_score.shape[-1]
-        sample_score = sample_score.reshape((n, l, k))
-        teacher_max = T.argmax(sample_score, axis=-1)
-        teacher_max = teacher_max.dimshuffle((1, 0))
-
-        final_canvas = final_canvas.dimshuffle((1, 0, 2))
-        decode_input = get_output(self.target_input_embedding, target)
-        decode_input = decode_input[:, :-1]
-        decode_input = decode_input.dimshuffle((1, 0, 2))
         h_init = T.zeros((n, self.output_score_dim))
+        ([h, s, force_score], update) = theano.scan(self.decoding_step, outputs_info=[h_init, None, None],
+                                                    non_sequences=[sample_embed],
+                                                    sequences=[output_embedding, final_canvas])
 
-        target_idx = target[:, 1:]
-        ([p_h, h, p_e, probs, forced_max, pred_forced_max], update0) = theano.scan(self.greedy_step,
-                                                                                   sequences=[decode_input, final_canvas],
-                                                                                   non_sequences=[sample_embed],
-                                                                                   outputs_info=[h_init, h_init, decode_input[0],
-                                                                                                 None, None, None])
+        # Greedy Step
+        init_embedding = output_embedding[0]
+        ([e, h, s, sample_score, prediction], update) = theano.scan(self.greedy_decode,
+                                                                    outputs_info=[init_embedding, h_init, None, None, None],
+                                                                    non_sequences=[sample_embed],
+                                                                    sequences=[final_canvas])
 
-        # Pre-compute the first step
-        """
-        canvas = canvases[-1]
-        canvas = canvas.dimshuffle((1, 0, 2))
-        c0 = canvas[0]
-        first_token = T.zeros((n,), "int8")
-        first_embedding = get_output(self.target_input_embedding, first_token)
-        s0 = T.concatenate([first_embedding, c0], axis=1)
-        s0 = get_output(self.score, s0)
-
-        # Sample embedding => VxD
-        candidate_output_embedding = self.target_output_embedding.W
-
-        s0 = T.dot(s0, candidate_output_embedding.T)
-        max_clip = T.max(s0, axis=-1)
-        score_clip = zero_grad(max_clip)
-        s0 = s0 - score_clip.reshape((n, 1))
-        prob0 = T.nnet.softmax(s0)
-        orders = T.argsort(prob0, axis=1)
-        top_k = T.cast(orders[:, :5], "int8")
-        prob0 = prob0[T.arange(n).reshape((n, 1)), top_k]
-        top_k = top_k.reshape((n * 5,))
-        prev_embed_init = get_output(self.target_input_embedding, top_k)
-        prev_embed_init = prev_embed_init.reshape((n, 5, self.embedding_dim))
-
-        # Forward path
-        ([prob, embed, best_idx, beam_idx, tops], update1) = theano.scan(self.forward_step, sequences=[canvas[1:]],
-                                                                         outputs_info=[prob0, prev_embed_init,
-                                                                                       None, None, None],
-                                                                         non_sequences=[candidate_output_embedding])
-        last_prob = prob[-1]
-        last_idx_best = T.cast(T.argmax(last_prob, axis=-1), "int32")
-        # Backward
-
-        ([best_beam, decodes], update2) = theano.scan(self.backward_step, sequences=[best_idx, beam_idx],
-                                                      outputs_info=[last_idx_best, None],
-                                                      go_backwards=True)
-
-        decodes = decodes[:, ::-1]
-        first = top_k.reshape((n, 5))[T.arange(n, dtype="int8"), best_beam[-1]]
-        best_idx = T.concatenate([first.reshape((1, n)), decodes], axis=0)
-        """
-        decode_fn = theano.function(inputs=[source, target, max_time_steps],
-                                    outputs=[read_attention, write_attention, forced_max, pred_forced_max, teacher_max])
-        return decode_fn
-
-    def forward_step(self, canvas_info, prob, prev_embed, candate_embed):
-        """
-        c: A column of canvas => NxD
-        prob: Max prob from previous step => NxK
-        prev: The state from previous => NxKxD
-        candidate: All possible candidate
-
-        :return pair: first element is previous state idx, second element is the idx of content
-        :return prob: All the intermediate probabilities
-        """
-
-        # Compute the trans prob
-        n = canvas_info.shape[0]
-        d = canvas_info.shape[-1]
-        k = prev_embed.shape[1]
-        v = candate_embed.shape[0]
-        c = T.tile(canvas_info.reshape((n, 1, d)), (1, k, 1))
-        info = T.concatenate([prev_embed, c], axis=-1)
-        d = info.shape[-1]
-        info = info.reshape((n * k, d))
-        teacher = get_output(self.score, info)
-        score = T.dot(teacher, candate_embed.T)
-        max_clip = T.max(score, axis=-1).reshape((n * k, 1))
-        score = score - max_clip
-        score = score.reshape((n * k, v))
-        trans_prob = T.nnet.softmax(score)
-
-        # Find the top k candidate
-        prob = prob.reshape((n * k, 1))
-        prob = prob * trans_prob
-        prob = prob.reshape((n, k * v))
-        orders = T.argsort(prob, axis=-1)
-        top_k = orders[:, :5]
-        prob = prob[T.arange(n).reshape((n, 1)), top_k]
-
-        # Get the best idx
-        best_idx = (top_k % self.target_vocab_size)
-        # Get the beam idx
-        beam_idx = T.cast(T.floor(T.true_div(top_k, self.target_vocab_size)), "int32")
-        embedding = get_output(self.target_input_embedding, best_idx)
-        best_idx = best_idx.reshape((n, k))
-        return prob, embedding, best_idx, beam_idx, top_k
-
-    def backward_step(self, prev_idx, beam_idx, best_idx):
-        n = beam_idx.shape[0]
-        idx = prev_idx[T.arange(n, dtype="int8"), best_idx]
-        best_beam = T.cast(beam_idx[T.arange(n, dtype="int8"), best_idx], "int32")
-        return best_beam, idx
-
-    """
-
-    The following functions are for creating computational graphs
-
-    """
+        force_prediction = T.argmax(force_score, axis=-1)
+        return theano.function(inputs=[source, target, true_l],
+                               outputs=[force_prediction, prediction],
+                               allow_input_downcast=True)
 
     def elbo_fn(self):
         """
@@ -589,7 +495,7 @@ def decode():
     with open("SentenceData/vocab_de", "r", encoding="utf8") as v:
         for line in v:
             de_vocab.append(line.strip("\n"))
-    with open("code_outputs/2017_06_14_18_56_49/final_model_params.save", "rb") as params:
+    with open("code_outputs/2017_06_21_12_13_53/final_model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/dev_idx_small.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
@@ -601,6 +507,8 @@ def decode():
     decode = model.decode_fn()
     for m in mini_batchs:
         l = m[-1, -1]
+        true_l = m[:, -1]
+
         source = None
         target = None
         for datapoint in m:
@@ -619,13 +527,12 @@ def decode():
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        read, write, force_max, pred_force_max, teacher_max = decode(source, target, l)
+        force_max, prediction = decode(source, target, true_l)
         for n in range(10):
             s = source[n, 1:]
             t = target[n, 1:]
             f = force_max[:, n]
-            p = pred_force_max[:, n]
-            te = teacher_max[:, n]
+            p = prediction[:, n]
 
             s_string = ""
             for s_idx in s:
@@ -639,13 +546,9 @@ def decode():
             p_string = ""
             for idx in p:
                 p_string +=(de_vocab[idx] + " ")
-            te_string = ""
-            for idx in te:
-                te_string +=(de_vocab[idx] + " ")
 
             print("Sour : " + s_string)
             print("Refe : " + t_string)
-            print("Teac : " + te_string)
             print("Forc : " + f_string)
             print("Pred : " + p_string)
             print("")
