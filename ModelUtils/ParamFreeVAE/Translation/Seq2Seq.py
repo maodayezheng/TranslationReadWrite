@@ -40,9 +40,8 @@ class Seq2Seq(object):
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
 
         # Init encoding RNNs
-        self.gru_update_1 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
-        self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
-        self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
+        self.gru_encode_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size*2, activation=sigmoid)
+        self.gru_encode_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size*2, activation=tanh)
 
         """
         self.gru_update_2 = self.gru_update(self.hid_size * 2 + self.embedding_dim, self.hid_size)
@@ -51,9 +50,8 @@ class Seq2Seq(object):
         """
 
         # Init decoding RNNs
-        self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size, self.hid_size)
-        self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
-        self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
+        self.gru_decode_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size*2, activation=sigmoid)
+        self.gru_decode_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
 
         """
         self.gru_update_4 = self.gru_update(self.hid_size * 2 + self.embedding_dim, self.hid_size)
@@ -85,24 +83,6 @@ class Seq2Seq(object):
 
         return h
 
-    def gru_update(self, input_size, hid_size):
-        input_ = lasagne.layers.InputLayer((None, input_size))
-        h = lasagne.layers.DenseLayer(input_, hid_size, nonlinearity=sigmoid, W=lasagne.init.GlorotUniform(),
-                                      b=lasagne.init.Constant(0.0))
-        return h
-
-    def gru_reset(self, input_size, hid_size):
-        input_ = lasagne.layers.InputLayer((None, input_size))
-        h = lasagne.layers.DenseLayer(input_, hid_size, nonlinearity=sigmoid, W=lasagne.init.GlorotUniform(),
-                                      b=lasagne.init.Constant(0.0))
-        return h
-
-    def gru_candidate(self, input_size, hid_size):
-        input_ = lasagne.layers.InputLayer((None, input_size))
-        h = lasagne.layers.DenseLayer(input_, hid_size, nonlinearity=tanh, W=lasagne.init.GlorotUniform(),
-                                      b=lasagne.init.Constant(0.0))
-        return h
-
     def symbolic_elbo(self, source, target):
 
         """
@@ -129,19 +109,16 @@ class Seq2Seq(object):
         encode_mask = encode_mask.dimshuffle((1, 0))
         l, n = encode_mask.shape
         encode_mask = encode_mask.reshape((l, n, 1))
-        (h_t_1, update) = theano.scan(self.source_encode_step,
-                                               outputs_info=[h_init],
-                                               sequences=[source_embedding, encode_mask])
+        (h_t_1, update) = theano.scan(self.source_encode_step, outputs_info=[h_init],
+                                      sequences=[source_embedding, encode_mask])
 
         # Target Language Decoding RNN
         target_embedding = get_output(self.target_input_embedding, target)
         target_embedding = target_embedding.dimshuffle((1, 0, 2))
-        (h_t_3, update) = theano.scan(self.target_decode_step,
-                                      outputs_info=[h_t_1[-1]],
+        (h_t_3, update) = theano.scan(self.target_decode_step, outputs_info=[h_t_1[-1]],
                                       sequences=[target_embedding[:-1]])
 
-        ([h, score], update) = theano.scan(self.score_eval_step,
-                                           sequences=[h_t_3],
+        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_3],
                                            non_sequences=[self.target_output_embedding.W],
                                            outputs_info=[None, None])
 
@@ -168,11 +145,12 @@ class Seq2Seq(object):
     def source_encode_step(self, source_embedding, mask, h1):
         # GRU layer 1
         h_in = T.concatenate([h1, source_embedding], axis=1)
-        u1 = get_output(self.gru_update_1, h_in)
-        r1 = get_output(self.gru_reset_1, h_in)
+        gate = get_output(self.gru_encode_gate, h_in)
+        u1 = gate[:, :self.hid_size]
+        r1 = gate[:, self.hid_size:]
         reset_h1 = h1 * r1
         c_in = T.concatenate([reset_h1, source_embedding], axis=1)
-        c1 = get_output(self.gru_candidate_1, c_in)
+        c1 = get_output(self.gru_encode_candidate, c_in)
         h1 = mask * ((1.0 - u1) * h1 + u1 * c1) + (1.0 - mask) * h1
 
         # GRU layer 2
@@ -187,15 +165,17 @@ class Seq2Seq(object):
         """
         return h1
 
-    def target_decode_step(self, target_embedding, h3, h4):
+    def target_decode_step(self, target_embedding, h1):
         # Decoding GRU layer 1
-        h_in = T.concatenate([h3, target_embedding], axis=1)
-        u3 = get_output(self.gru_update_3, h_in)
-        r3 = get_output(self.gru_reset_3, h_in)
-        reset_h3 = h3 * r3
-        c_in = T.concatenate([reset_h3, target_embedding], axis=1)
-        c3 = get_output(self.gru_candidate_3, c_in)
-        h3 = (1.0 - u3) * h3 + u3 * c3
+        h_in = T.concatenate([h1, target_embedding], axis=1)
+        gate = get_output(self.gru_decode_gate, h_in)
+        u1 = gate[:, :self.hid_size]
+        r1 = gate[:, self.hid_size:]
+        reset_h1 = h1 * r1
+
+        c_in = T.concatenate([reset_h1, target_embedding], axis=1)
+        c1 = get_output(self.gru_decode_candidate, c_in)
+        h1 = (1.0 - u1) * h1 + u1 * c1
 
         # Decoding GRU layer 2
         """
@@ -207,7 +187,7 @@ class Seq2Seq(object):
         c4 = get_output(self.gru_candidate_4, c_in)
         h4 = (1.0 - u4) * h4 + u4 * c4
         """
-        return h3
+        return h1
 
     def score_eval_step(self, h, embeddings):
         h = get_output(self.out_mlp, h)
@@ -281,25 +261,16 @@ class Seq2Seq(object):
         target_input_embedding_param = lasagne.layers.get_all_params(self.target_input_embedding)
         target_output_embedding_param = lasagne.layers.get_all_params(self.target_output_embedding)
 
-        gru_1_u_param = lasagne.layers.get_all_params(self.gru_update_1)
-        gru_1_r_param = lasagne.layers.get_all_params(self.gru_reset_1)
-        gru_1_c_param = lasagne.layers.get_all_params(self.gru_candidate_1)
-        gru_2_u_param = lasagne.layers.get_all_params(self.gru_update_2)
-        gru_2_r_param = lasagne.layers.get_all_params(self.gru_reset_2)
-        gru_2_c_param = lasagne.layers.get_all_params(self.gru_candidate_2)
-
-        gru_3_u_param = lasagne.layers.get_all_params(self.gru_update_3)
-        gru_3_r_param = lasagne.layers.get_all_params(self.gru_reset_3)
-        gru_3_c_param = lasagne.layers.get_all_params(self.gru_candidate_3)
-        gru_4_u_param = lasagne.layers.get_all_params(self.gru_update_4)
-        gru_4_r_param = lasagne.layers.get_all_params(self.gru_reset_4)
-        gru_4_c_param = lasagne.layers.get_all_params(self.gru_candidate_4)
+        gru_encode_gate_param = lasagne.layers.get_all_params(self.gru_encode_gate)
+        gru_encode_candidate_param = lasagne.layers.get_all_params(self.gru_encode_candidate)
+        gru_decode_gate_param = lasagne.layers.get_all_params(self.gru_decode_gate)
+        gru_decode_candidate_param = lasagne.layers.get_all_params(self.gru_decode_candidate)
 
         out_param = lasagne.layers.get_all_params(self.out_mlp)
 
         return input_embedding_param + target_output_embedding_param + target_input_embedding_param + \
-               gru_1_c_param + gru_1_r_param + gru_1_u_param + gru_2_c_param + gru_2_r_param + gru_2_u_param + \
-               gru_3_r_param + gru_3_c_param + gru_3_u_param + gru_4_r_param + gru_4_c_param + gru_4_u_param +\
+               gru_encode_gate_param + gru_encode_candidate_param + \
+               gru_decode_gate_param + gru_decode_candidate_param + \
                out_param
 
     def get_param_values(self):
@@ -307,47 +278,28 @@ class Seq2Seq(object):
         target_input_embedding_param = lasagne.layers.get_all_param_values(self.target_input_embedding)
         target_output_embedding_param = lasagne.layers.get_all_param_values(self.target_output_embedding)
 
-        gru_1_u_param = lasagne.layers.get_all_param_values(self.gru_update_1)
-        gru_1_r_param = lasagne.layers.get_all_param_values(self.gru_reset_1)
-        gru_1_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_1)
-        gru_2_u_param = lasagne.layers.get_all_param_values(self.gru_update_2)
-        gru_2_r_param = lasagne.layers.get_all_param_values(self.gru_reset_2)
-        gru_2_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_2)
+        gru_encode_gate_param = lasagne.layers.get_all_param_values(self.gru_encode_gate)
+        gru_encode_candidate_param = lasagne.layers.get_all_param_values(self.gru_encode_candidate)
 
-        gru_3_u_param = lasagne.layers.get_all_param_values(self.gru_update_3)
-        gru_3_r_param = lasagne.layers.get_all_param_values(self.gru_reset_3)
-        gru_3_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_3)
-        gru_4_u_param = lasagne.layers.get_all_param_values(self.gru_update_4)
-        gru_4_r_param = lasagne.layers.get_all_param_values(self.gru_reset_4)
-        gru_4_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_4)
+        gru_decode_gate_param = lasagne.layers.get_all_param_values(self.gru_decode_gate)
+        gru_decode_candidate_param = lasagne.layers.get_all_param_values(self.gru_decode_candidate)
 
         out_param = lasagne.layers.get_all_param_values(self.out_mlp)
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
-                gru_1_u_param, gru_1_r_param, gru_1_c_param,
-                gru_2_u_param, gru_2_r_param, gru_2_c_param,
-                gru_3_u_param, gru_3_r_param, gru_3_c_param,
-                gru_4_u_param, gru_4_r_param, gru_4_c_param,
+                gru_encode_gate_param, gru_encode_candidate_param,
+                gru_decode_gate_param, gru_decode_candidate_param,
                 out_param]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
         lasagne.layers.set_all_param_values(self.target_input_embedding, params[1])
         lasagne.layers.set_all_param_values(self.target_output_embedding, params[2])
-        lasagne.layers.set_all_param_values(self.gru_update_1, params[3])
-        lasagne.layers.set_all_param_values(self.gru_reset_1, params[4])
-        lasagne.layers.set_all_param_values(self.gru_candidate_1, params[5])
-        lasagne.layers.set_all_param_values(self.gru_update_2, params[6])
-        lasagne.layers.set_all_param_values(self.gru_reset_2, params[7])
-        lasagne.layers.set_all_param_values(self.gru_candidate_2, params[8])
+        lasagne.layers.set_all_param_values(self.gru_encode_gate, params[3])
+        lasagne.layers.set_all_param_values(self.gru_encode_candidate, params[4])
 
-        lasagne.layers.set_all_param_values(self.gru_update_3, params[9])
-        lasagne.layers.set_all_param_values(self.gru_reset_3, params[10])
-        lasagne.layers.set_all_param_values(self.gru_candidate_3, params[11])
-        lasagne.layers.set_all_param_values(self.gru_update_4, params[12])
-        lasagne.layers.set_all_param_values(self.gru_reset_4, params[13])
-        lasagne.layers.set_all_param_values(self.gru_candidate_4, params[14])
-
-        lasagne.layers.set_all_param_values(self.out_mlp, params[15])
+        lasagne.layers.set_all_param_values(self.gru_decode_gate, params[6])
+        lasagne.layers.set_all_param_values(self.gru_decode_candidate, params[7])
+        lasagne.layers.set_all_param_values(self.out_mlp, params[8])
 
 
 """
