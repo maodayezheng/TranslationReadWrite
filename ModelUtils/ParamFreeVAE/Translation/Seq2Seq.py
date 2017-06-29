@@ -297,9 +297,9 @@ class Seq2Seq(object):
         lasagne.layers.set_all_param_values(self.gru_encode_gate, params[3])
         lasagne.layers.set_all_param_values(self.gru_encode_candidate, params[4])
 
-        lasagne.layers.set_all_param_values(self.gru_decode_gate, params[6])
-        lasagne.layers.set_all_param_values(self.gru_decode_candidate, params[7])
-        lasagne.layers.set_all_param_values(self.out_mlp, params[8])
+        lasagne.layers.set_all_param_values(self.gru_decode_gate, params[5])
+        lasagne.layers.set_all_param_values(self.gru_decode_candidate, params[6])
+        lasagne.layers.set_all_param_values(self.out_mlp, params[7])
 
 
 """
