@@ -41,7 +41,7 @@ class Seq2Seq(object):
 
         # Init encoding RNNs
         self.gru_encode_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size*2, activation=sigmoid)
-        self.gru_encode_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size*2, activation=tanh)
+        self.gru_encode_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
 
         """
         self.gru_update_2 = self.gru_update(self.hid_size * 2 + self.embedding_dim, self.hid_size)
@@ -387,7 +387,7 @@ def run(out_dir):
     if pre_trained:
         with open("code_outputs/2017_06_14_09_09_13/model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
-    update_kwargs = {'learning_rate': 5e-5}
+    update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
     validation = model.elbo_fn()
