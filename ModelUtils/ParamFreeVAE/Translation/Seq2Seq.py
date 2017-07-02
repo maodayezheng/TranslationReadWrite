@@ -442,7 +442,7 @@ def run(out_dir):
     sample_groups = 10
     iters = 40000
     print(" The number of iterations : " + str(iters))
-
+    train_data = train_data[:1000]
     for i in range(iters):
         batch_indices = np.random.choice(len(train_data), batch_size * sample_groups, replace=False)
         mini_batch = [train_data[ind] for ind in batch_indices]
