@@ -234,8 +234,7 @@ class Seq2Seq(object):
         reconstruction_loss = self.symbolic_elbo(source, target)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
-        scaled_grads = lasagne.updates.total_norm_constraint(grads, 5)
-        update_kwargs['loss_or_grads'] = scaled_grads
+        update_kwargs['loss_or_grads'] = grads
         update_kwargs['params'] = params
         updates = update(**update_kwargs)
         if saved_update is not None:
