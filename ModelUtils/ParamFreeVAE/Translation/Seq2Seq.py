@@ -106,7 +106,11 @@ class Seq2Seq(object):
 
         h_init = T.zeros((n, self.hid_size))
         # Source Language Encoding RNN
-        source_embedding = get_output(self.input_embedding, source[:, 1:])
+        source_input = source[:, :-1]
+        n, l = source_input.shape
+        source_input = source_input.reshape((n*l, ))
+        source_embedding = get_output(self.input_embedding, source_input)
+        source_embedding = source_embedding.reshape((n, l, self.embedding_dim))
         source_embedding = source_embedding.dimshuffle((1, 0, 2))
         encode_mask = encode_mask.dimshuffle((1, 0))
         l, n = encode_mask.shape
@@ -124,7 +128,10 @@ class Seq2Seq(object):
         sample_score = T.sum(sample_score, axis=-1)
 
         # Get true embedding
-        true_embed = get_output(self.target_output_embedding, source[:, 1:])
+        source_out = source[:, 1:]
+        n, l = source_out.shape
+        source_out = source_out.reshape((n*l, ))
+        true_embed = get_output(self.target_output_embedding, source_out)
         true_embed = true_embed.reshape((n * l, self.output_score_dim))
         h = h.reshape((n*l, self.output_score_dim))
         score = T.exp(T.sum(h * true_embed, axis=-1) - score_clip.reshape((l*n,)))
