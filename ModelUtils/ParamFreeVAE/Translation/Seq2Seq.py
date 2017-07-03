@@ -36,7 +36,7 @@ class Seq2Seq(object):
 
         # Init the word embedding
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
-        self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
+        #self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
 
         # Init encoding RNNs
@@ -50,8 +50,10 @@ class Seq2Seq(object):
         """
 
         # Init decoding RNNs
+        """
         self.gru_decode_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size*2, activation=sigmoid)
         self.gru_decode_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
+        """
 
         """
         self.gru_update_4 = self.gru_update(self.hid_size * 2 + self.embedding_dim, self.hid_size)
@@ -83,7 +85,7 @@ class Seq2Seq(object):
 
         return h
 
-    def symbolic_elbo(self, source, target):
+    def symbolic_elbo(self, source):
 
         """
         Return a symbolic variable, representing the ELBO, for the given minibatch.
@@ -99,8 +101,8 @@ class Seq2Seq(object):
         encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
 
         # Create decoding mask
-        d_m = T.cast(T.gt(target, -1), "float32")
-        decode_mask = d_m[:, 1:]
+        #d_m = T.cast(T.gt(target, -1), "float32")
+        #decode_mask = d_m[:, 1:]
 
         h_init = T.zeros((n, self.hid_size))
         # Source Language Encoding RNN
@@ -112,13 +114,7 @@ class Seq2Seq(object):
         (h_t_1, update) = theano.scan(self.source_encode_step, outputs_info=[h_init],
                                       sequences=[source_embedding, encode_mask])
 
-        # Target Language Decoding RNN
-        target_embedding = get_output(self.target_input_embedding, target)
-        target_embedding = target_embedding.dimshuffle((1, 0, 2))
-        (h_t_3, update) = theano.scan(self.target_decode_step, outputs_info=[h_t_1[-1]],
-                                      sequences=[target_embedding[:-1]])
-
-        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_3],
+        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_1],
                                            non_sequences=[self.target_output_embedding.W],
                                            outputs_info=[None, None])
 
@@ -128,7 +124,7 @@ class Seq2Seq(object):
         sample_score = T.sum(sample_score, axis=-1)
 
         # Get true embedding
-        true_embed = get_output(self.target_output_embedding, target[:, 1:])
+        true_embed = get_output(self.target_output_embedding, source[:, 1:])
         true_embed = true_embed.reshape((n * l, self.output_score_dim))
         h = h.reshape((n*l, self.output_score_dim))
         score = T.exp(T.sum(h * true_embed, axis=-1) - score_clip.reshape((l*n,)))
@@ -137,7 +133,7 @@ class Seq2Seq(object):
         prob = score / sample_score
         prob = prob.dimshuffle((1, 0))
         # Loss per sentence
-        loss = decode_mask * T.log(prob + 1e-5)
+        loss = encode_mask * T.log(prob + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
 
         return loss
@@ -204,9 +200,9 @@ class Seq2Seq(object):
         sequence lengths and return the ELBO.
         """
         source = T.imatrix('source')
-        target = T.imatrix('target')
-        reconstruction_loss = self.symbolic_elbo(source, target)
-        elbo_fn = theano.function(inputs=[source, target],
+        #target = T.imatrix('target')
+        reconstruction_loss = self.symbolic_elbo(source)
+        elbo_fn = theano.function(inputs=[source],
                                   outputs=[reconstruction_loss],
                                   allow_input_downcast=True)
         return elbo_fn
@@ -231,7 +227,7 @@ class Seq2Seq(object):
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
-        reconstruction_loss = self.symbolic_elbo(source, target)
+        reconstruction_loss = self.symbolic_elbo(source)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         update_kwargs['loss_or_grads'] = grads
@@ -241,14 +237,14 @@ class Seq2Seq(object):
             for u, v in zip(updates, saved_update.keys()):
                 u.set_value(v.get_value())
         if draw_sample:
-            optimiser = theano.function(inputs=[source, target, samples],
+            optimiser = theano.function(inputs=[source, samples],
                                         outputs=[reconstruction_loss],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
             return optimiser, updates
         else:
-            optimiser = theano.function(inputs=[source, target],
+            optimiser = theano.function(inputs=[source],
                                         outputs=[reconstruction_loss],
                                         updates=updates,
                                         allow_input_downcast=True
@@ -257,47 +253,45 @@ class Seq2Seq(object):
 
     def get_params(self):
         input_embedding_param = lasagne.layers.get_all_params(self.input_embedding)
-        target_input_embedding_param = lasagne.layers.get_all_params(self.target_input_embedding)
+        #target_input_embedding_param = lasagne.layers.get_all_params(self.target_input_embedding)
         target_output_embedding_param = lasagne.layers.get_all_params(self.target_output_embedding)
 
         gru_encode_gate_param = lasagne.layers.get_all_params(self.gru_encode_gate)
         gru_encode_candidate_param = lasagne.layers.get_all_params(self.gru_encode_candidate)
-        gru_decode_gate_param = lasagne.layers.get_all_params(self.gru_decode_gate)
-        gru_decode_candidate_param = lasagne.layers.get_all_params(self.gru_decode_candidate)
+        #gru_decode_gate_param = lasagne.layers.get_all_params(self.gru_decode_gate)
+        #gru_decode_candidate_param = lasagne.layers.get_all_params(self.gru_decode_candidate)
 
         out_param = lasagne.layers.get_all_params(self.out_mlp)
 
-        return input_embedding_param + target_output_embedding_param + target_input_embedding_param + \
+        return input_embedding_param + target_output_embedding_param + \
                gru_encode_gate_param + gru_encode_candidate_param + \
-               gru_decode_gate_param + gru_decode_candidate_param + \
                out_param
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
-        target_input_embedding_param = lasagne.layers.get_all_param_values(self.target_input_embedding)
+        #target_input_embedding_param = lasagne.layers.get_all_param_values(self.target_input_embedding)
         target_output_embedding_param = lasagne.layers.get_all_param_values(self.target_output_embedding)
 
         gru_encode_gate_param = lasagne.layers.get_all_param_values(self.gru_encode_gate)
         gru_encode_candidate_param = lasagne.layers.get_all_param_values(self.gru_encode_candidate)
 
-        gru_decode_gate_param = lasagne.layers.get_all_param_values(self.gru_decode_gate)
-        gru_decode_candidate_param = lasagne.layers.get_all_param_values(self.gru_decode_candidate)
+        #gru_decode_gate_param = lasagne.layers.get_all_param_values(self.gru_decode_gate)
+        #gru_decode_candidate_param = lasagne.layers.get_all_param_values(self.gru_decode_candidate)
 
         out_param = lasagne.layers.get_all_param_values(self.out_mlp)
-        return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
+        return [input_embedding_param, target_output_embedding_param,
                 gru_encode_gate_param, gru_encode_candidate_param,
-                gru_decode_gate_param, gru_decode_candidate_param,
                 out_param]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
-        lasagne.layers.set_all_param_values(self.target_input_embedding, params[1])
+        #lasagne.layers.set_all_param_values(self.target_input_embedding, params[1])
         lasagne.layers.set_all_param_values(self.target_output_embedding, params[2])
         lasagne.layers.set_all_param_values(self.gru_encode_gate, params[3])
         lasagne.layers.set_all_param_values(self.gru_encode_candidate, params[4])
 
-        lasagne.layers.set_all_param_values(self.gru_decode_gate, params[5])
-        lasagne.layers.set_all_param_values(self.gru_decode_candidate, params[6])
+        #lasagne.layers.set_all_param_values(self.gru_decode_gate, params[5])
+        #lasagne.layers.set_all_param_values(self.gru_decode_candidate, params[6])
         lasagne.layers.set_all_param_values(self.out_mlp, params[7])
 
 
