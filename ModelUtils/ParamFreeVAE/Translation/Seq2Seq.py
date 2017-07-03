@@ -230,7 +230,7 @@ class Seq2Seq(object):
         """
 
         source = T.imatrix('source')
-        target = T.imatrix('target')
+        #target = T.imatrix('target')
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
