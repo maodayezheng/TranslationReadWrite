@@ -8,7 +8,7 @@ min_len = 15
 max_len = 50
 sentence_pair = []
 pair_count = 0
-with open("SentenceData/WMT-raw/train.en", "r") as en, open("SentenceData/WMT-raw/train.de", "r") as de:
+with open("SentenceData/translation/corpus.tc.en", "r") as en, open("SentenceData/translation/corpus.tc.de", "r") as de:
     for e_line in en:
         d_line = de.readline()
         e_sentence = e_line.rstrip('\n').split(" ")
@@ -32,7 +32,7 @@ en_vocab = sorted(en_vocab.items(), key=lambda d: d[1], reverse=True)
 de_vocab = sorted(de_vocab.items(), key=lambda d: d[1], reverse=True)
 
 
-with open("SentenceData/WMT/10000data-test/vocab_en", "w") as en:
+with open("SentenceData/WMT/vocab_en", "w") as en:
     en.write("<PAD>" + "\n")
     en.write("<EOS>" + "\n")
     en.write("<UNK>" + "\n")
@@ -40,7 +40,7 @@ with open("SentenceData/WMT/10000data-test/vocab_en", "w") as en:
     for e in en_vocab:
         count += 1
         en.write(e[0]+'\n')
-        if count == 20000:
+        if count == 40000:
             break
 
 with open("SentenceData/WMT/10000data-test/vocab_de", "w") as de:
@@ -51,5 +51,5 @@ with open("SentenceData/WMT/10000data-test/vocab_de", "w") as de:
     for e in de_vocab:
         count += 1
         de.write(e[0]+'\n')
-        if count == 20000:
+        if count == 40000:
             break
