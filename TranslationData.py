@@ -2,7 +2,7 @@ import json
 import numpy as np
 
 np.set_printoptions(threshold=1000000)
-max_len = 50
+max_len = 30
 # Read the English Vocab
 english_vocab = {}
 en_idx = 0
@@ -61,9 +61,9 @@ with open("SentenceData/WMT-raw/train.en", "r") as en, open("SentenceData/WMT-ra
                 de_idx = [0] + de_idx + [1]
             else:
                 de_idx = [0] + de_idx + [1]
-            l = max(len(en_idx), len(de_idx))
-            data_pair.append([en_idx, de_idx, l])
-
+            data_pair.append([en_idx, de_idx])
+        if len(data_pair) > 3000:
+            break
 
 with open("SentenceData/WMT/Data/data_idx.txt", "w") as dataset:
     d = json.dumps(data_pair)

@@ -8,14 +8,19 @@ min_len = 15
 max_len = 50
 sentence_pair = []
 pair_count = 0
+selected_en = []
+selected_de = []
 with open("SentenceData/translation/corpus.tc.en", "r") as en, open("SentenceData/translation/corpus.tc.de", "r") as de:
+    c = 0
     for e_line in en:
+        c += 1
         d_line = de.readline()
         e_sentence = e_line.rstrip('\n').split(" ")
         d_sentence = d_line.rstrip('\n').split(" ")
-        if 15 < len(e_sentence) <= 50 and 15 < len(d_sentence) <= 50:
+        if 15 < len(e_sentence) <= 30 and 15 < len(d_sentence) <= 30:
             pair_count += 1
-            sentence_pair.append([e_sentence, d_sentence, [len(e_sentence), len(d_sentence)]])
+            selected_en.append(e_line)
+            selected_de.append(d_line)
             for token in e_sentence:
                 if token in en_vocab:
                     en_vocab[token] += 1
@@ -27,15 +32,14 @@ with open("SentenceData/translation/corpus.tc.en", "r") as en, open("SentenceDat
                     de_vocab[token] += 1
                 else:
                     de_vocab[token] = 1
+        if c == 3000:
+            break
 
 en_vocab = sorted(en_vocab.items(), key=lambda d: d[1], reverse=True)
 de_vocab = sorted(de_vocab.items(), key=lambda d: d[1], reverse=True)
 
 
-with open("SentenceData/WMT/vocab_en", "w") as en:
-    en.write("<PAD>" + "\n")
-    en.write("<EOS>" + "\n")
-    en.write("<UNK>" + "\n")
+with open("SentenceData/translation/selected/vocab_en", "w") as en:
     count = 0
     for e in en_vocab:
         count += 1
@@ -43,13 +47,23 @@ with open("SentenceData/WMT/vocab_en", "w") as en:
         if count == 40000:
             break
 
-with open("SentenceData/WMT/10000data-test/vocab_de", "w") as de:
-    de.write("<PAD>" + "\n")
-    de.write("<EOS>" + "\n")
-    de.write("<UNK>" + "\n")
+with open("SentenceData/translation/selected/vocab_de", "w") as de:
     count = 0
     for e in de_vocab:
         count += 1
         de.write(e[0]+'\n')
         if count == 40000:
             break
+
+with open("SentenceData/translation/selected/en.txt", "w") as en:
+    count = 0
+    for e in selected_en:
+        count += 1
+        en.write(e)
+
+with open("SentenceData/translation/selected/de.txt", "w") as de:
+    count = 0
+    for d in selected_de:
+        count += 1
+        de.write(d)
+
