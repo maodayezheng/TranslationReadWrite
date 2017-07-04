@@ -194,7 +194,7 @@ class Seq2Seq(object):
                out_param
 
 
-def test():
+def test(out_dir):
     print(" Test the model ")
     model = Seq2Seq()
     update_kwargs = {'learning_rate': 1e-4}
