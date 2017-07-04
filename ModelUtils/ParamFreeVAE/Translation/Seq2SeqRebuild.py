@@ -24,7 +24,7 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class Seq2Seq(object):
-    def __init__(self, source_vocab_size=1000, target_vocab_size=1000,
+    def __init__(self, source_vocab_size=123, target_vocab_size=136,
                  embed_dim=200, hid_dim=200, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
@@ -197,9 +197,35 @@ class Seq2Seq(object):
 def test(out_dir):
     print(" Test the model ")
     model = Seq2Seq()
-    update_kwargs = {'learning_rate': 1e-4}
+    update_kwargs = {'learning_rate': 1e-3}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
+    with open("SentenceData/translation/10sentenceTest/data_idx.txt", "r") as dataset:
+        train_data = json.loads(dataset.read())
+    train_data = sorted(train_data, key=lambda d: len(d[0]))
+    last = train_data[-1]
+    l = len(last[0])
+    source = None
+    target = None
+    for datapoint in train_data:
+        s = np.array(datapoint[0])
+        t = np.array(datapoint[1])
+        if len(s) != l:
+            s = np.append(s, [-1] * (l - len(s)))
+        if len(t) != l:
+            t = np.append(t, [-1] * (l - len(t)))
+        if source is None:
+            source = s.reshape((1, s.shape[0]))
+        else:
+            source = np.concatenate([source, s.reshape((1, s.shape[0]))])
+        if target is None:
+            target = t.reshape((1, t.shape[0]))
+        else:
+            target = np.concatenate([target, t.reshape((1, t.shape[0]))])
+
+    for i in range(100):
+        loss = optimiser(target)
+        print(loss[0])
 
 
 def run(out_dir):
