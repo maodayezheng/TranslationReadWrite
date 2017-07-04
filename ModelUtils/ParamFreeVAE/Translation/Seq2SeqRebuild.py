@@ -1,10 +1,8 @@
 """
 Following problems are observed from version 3:
-
 In this version:
 1. The read attention is constrained, the model can not pick same position as previous time step
 2. The learining rate is gradually reduced
-
 """
 
 import theano.tensor as T
@@ -25,12 +23,12 @@ random = MRG_RandomStreams(seed=1234)
 
 class Seq2Seq(object):
     def __init__(self, source_vocab_size=123, target_vocab_size=136,
-                 embed_dim=200, hid_dim=200, source_seq_len=50, target_seq_len=50):
+                 embed_dim=128, hid_dim=128, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 31
-        self.output_score_dim = 500
+        self.output_score_dim = 128
         self.embedding_dim = embed_dim
 
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
@@ -64,55 +62,50 @@ class Seq2Seq(object):
 
         return h
 
-    def symbolic_elbo(self, source):
+    def symbolic_elbo(self, target):
 
         """
         Return a symbolic variable, representing the ELBO, for the given minibatch.
         :param num_samples: The number of samples to use to evaluate the ELBO.
-
         :return elbo: The symbolic variable representing the ELBO.
         """
-        n = source.shape[0]
+        n = target.shape[0]
         # Create input mask
-        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+        decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
 
         h_init = T.zeros((n, self.hid_size))
         # Source Language Encoding RNN
-        source_input = source[:, :-1]
-        n, l = source_input.shape
-        source_input = source_input.reshape((n*l, ))
-        source_embedding = get_output(self.target_input_embedding, source_input)
-        source_embedding = source_embedding.reshape((n, l, self.embedding_dim))
-        source_embedding = source_embedding.dimshuffle((1, 0, 2))
-        encode_mask = encode_mask.dimshuffle((1, 0))
-        l, n = encode_mask.shape
-        encode_mask = encode_mask.reshape((l, n, 1))
+        target_input = target[:, :-1]
+        n, l = target_input.shape
+        target_input = target_input.reshape((n*l, ))
+        target_input_embedding = get_output(self.target_input_embedding, target_input)
+        target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
+        target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
         (h_t_1, update) = theano.scan(self.target_decode_step, outputs_info=[h_init],
-                                      sequences=[source_embedding])
+                                      sequences=[target_input_embedding])
 
         ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_1],
                                            non_sequences=[self.target_output_embedding.W],
                                            outputs_info=[None, None])
 
+        score = score.dimshuffle((1, 0, 2))
         max_clip = T.max(score, axis=-1)
-        score_clip = zero_grad(max_clip)
-        sample_score = T.exp(score - score_clip.reshape((l, n, 1)))
-        sample_score = T.sum(sample_score, axis=-1)
+        max_clip = zero_grad(max_clip)
+        sample_score = T.exp(score - max_clip.reshape((n, l, 1)))
+        denominator = T.sum(sample_score, axis=-1)
 
         # Get true embedding
-        source_out = source[:, 1:]
-        n, l = source_out.shape
-        source_out = source_out.reshape((n*l, ))
-        true_embed = get_output(self.target_output_embedding, source_out)
+        target_out = target[:, 1:]
+        n, l = target_out.shape
+        target_out = target_out.reshape((n*l, ))
+        true_embed = get_output(self.target_output_embedding, target_out)
         true_embed = true_embed.reshape((n * l, self.output_score_dim))
         h = h.reshape((n*l, self.output_score_dim))
-        score = T.exp(T.sum(h * true_embed, axis=-1) - score_clip.reshape((l*n,)))
-        score = score.reshape((n, l))
-        score = score.dimshuffle((1, 0))
-        prob = score / sample_score
-        prob = prob.dimshuffle((1, 0))
+        true_score = T.exp(T.sum(h * true_embed, axis=-1) - max_clip.reshape((l*n,)))
+        true_score = true_score.reshape((n, l))
+        prob = true_score / denominator
         # Loss per sentence
-        loss = encode_mask * T.log(prob + 1e-5)
+        loss = decode_mask * T.log(prob + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
 
         return loss
@@ -131,6 +124,19 @@ class Seq2Seq(object):
 
         return h1
 
+    def source_encode_step(self, source_embedding, mask, h1):
+        # GRU layer 1
+        h_in = T.concatenate([h1, source_embedding], axis=1)
+        gate = get_output(self.gru_encode_gate, h_in)
+        u1 = gate[:, :self.hid_size]
+        r1 = gate[:, self.hid_size:]
+        reset_h1 = h1 * r1
+        c_in = T.concatenate([reset_h1, source_embedding], axis=1)
+        c1 = get_output(self.gru_encode_candidate, c_in)
+        h1 = mask * ((1.0 - u1) * h1 + u1 * c1) + (1.0 - mask) * h1
+        return h1
+
+
     def score_eval_step(self, h, embeddings):
         h = get_output(self.out_mlp, h)
         score = T.dot(h, embeddings.T)
@@ -140,12 +146,10 @@ class Seq2Seq(object):
         """
         Return the compiled Theano function which both evaluates the evidence lower bound (ELBO), and updates the model
         parameters to increase the ELBO.
-
         :param num_samples: The number of samples to use to evaluate the ELBO.
         :param update: The function from lasagne.updates to use to update the model parameters.
         :param update_kwargs: The kwargs to pass to update.
         :param saved_update: If the model was pre-trained, then pass the saved updates to continue training.
-
         :return optimiser: A compiled Theano function, which will take as input the batch of sequences, and the vector
         of sequence lengths and return the ELBO, and update the model parameters.
         :return updates: Return the updates used so far, so that training can be continued later.
@@ -195,9 +199,9 @@ class Seq2Seq(object):
 
 
 def test(out_dir):
-    print(" Test the model ")
+    print(" Test the model with name changed ")
     model = Seq2Seq()
-    update_kwargs = {'learning_rate': 1e-3}
+    update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
     with open("SentenceData/translation/10sentenceTest/data_idx.txt", "r") as dataset:
@@ -223,7 +227,7 @@ def test(out_dir):
         else:
             target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-    for i in range(100):
+    for i in range(1000):
         loss = optimiser(target)
         print(loss[0])
 
@@ -362,4 +366,3 @@ def run(out_dir):
 
             print("The loss on testing set is : " + str(valid_loss / p))
             validation_loss.append(valid_loss / p)
-
