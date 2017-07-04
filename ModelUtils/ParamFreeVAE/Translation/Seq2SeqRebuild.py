@@ -31,8 +31,13 @@ class Seq2Seq(object):
         self.output_score_dim = 128
         self.embedding_dim = embed_dim
 
+        self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
+
+        # Init encoding RNNs
+        self.gru_encode_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size * 2, activation=sigmoid)
+        self.gru_encode_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
 
         # Init decoding RNNs
         self.gru_decode_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size*2, activation=sigmoid)
@@ -62,7 +67,7 @@ class Seq2Seq(object):
 
         return h
 
-    def symbolic_elbo(self, target):
+    def symbolic_elbo(self, source, target):
 
         """
         Return a symbolic variable, representing the ELBO, for the given minibatch.
@@ -70,29 +75,41 @@ class Seq2Seq(object):
         :return elbo: The symbolic variable representing the ELBO.
         """
         n = target.shape[0]
-        # Create input mask
+        # Encoding mask
+        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+        source_input_embedding = get_output(self.input_embedding, source[:, 1:])
+        n, l = encode_mask.shape
+        encode_mask = encode_mask.reshape((n, l, 1))
+        encode_mask = encode_mask.dimshuffle((1, 0, 2))
+        source_input_embedding = source_input_embedding.dimshuffle((1, 0, 2))
+
+        # Encoding RNN
+        h_init = T.zeros((n, self.hid_size))
+        (h_t_1, update) = theano.scan(self.source_encode_step, outputs_info=[h_init],
+                                      sequences=[source_input_embedding, encode_mask])
+
+        # Decoding mask
         decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
 
-        h_init = T.zeros((n, self.hid_size))
-        # Source Language Encoding RNN
+        # Decoding RNN
         target_input = target[:, :-1]
         n, l = target_input.shape
         target_input = target_input.reshape((n*l, ))
         target_input_embedding = get_output(self.target_input_embedding, target_input)
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
-        (h_t_1, update) = theano.scan(self.target_decode_step, outputs_info=[h_init],
+        (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[h_t_1[-1]],
                                       sequences=[target_input_embedding])
 
-        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_1],
+        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_2],
                                            non_sequences=[self.target_output_embedding.W],
                                            outputs_info=[None, None])
-
+        h = h.dimshuffle((1, 0, 2))
         score = score.dimshuffle((1, 0, 2))
         max_clip = T.max(score, axis=-1)
         max_clip = zero_grad(max_clip)
-        sample_score = T.exp(score - max_clip.reshape((n, l, 1)))
-        denominator = T.sum(sample_score, axis=-1)
+        score = T.exp(score - max_clip.reshape((n, l, 1)))
+        denominator = T.sum(score, axis=-1)
 
         # Get true embedding
         target_out = target[:, 1:]
@@ -108,7 +125,7 @@ class Seq2Seq(object):
         loss = decode_mask * T.log(prob + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
 
-        return loss
+        return loss, true_score, score
 
     def target_decode_step(self, target_embedding, h1):
         # Decoding GRU layer 1
@@ -136,7 +153,6 @@ class Seq2Seq(object):
         h1 = mask * ((1.0 - u1) * h1 + u1 * c1) + (1.0 - mask) * h1
         return h1
 
-
     def score_eval_step(self, h, embeddings):
         h = get_output(self.out_mlp, h)
         score = T.dot(h, embeddings.T)
@@ -156,11 +172,11 @@ class Seq2Seq(object):
         """
 
         source = T.imatrix('source')
-        # target = T.imatrix('target')
+        target = T.imatrix('target')
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
-        reconstruction_loss = self.symbolic_elbo(source)
+        reconstruction_loss, t_s, s = self.symbolic_elbo(source, target)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         update_kwargs['loss_or_grads'] = grads
@@ -177,16 +193,20 @@ class Seq2Seq(object):
                                         )
             return optimiser, updates
         else:
-            optimiser = theano.function(inputs=[source],
-                                        outputs=[reconstruction_loss],
+            optimiser = theano.function(inputs=[source, target],
+                                        outputs=[reconstruction_loss, t_s, s],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
             return optimiser, updates
 
     def get_params(self):
+        source_input_embedding_param = lasagne.layers.get_all_params(self.input_embedding)
         target_input_embedding_param = lasagne.layers.get_all_params(self.target_input_embedding)
         target_output_embedding_param = lasagne.layers.get_all_params(self.target_output_embedding)
+
+        gru_encode_gate_param = lasagne.layers.get_all_params(self.gru_encode_gate)
+        gru_encode_candidate_param = lasagne.layers.get_all_params(self.gru_encode_candidate)
 
         gru_decode_gate_param = lasagne.layers.get_all_params(self.gru_decode_gate)
         gru_decode_candidate_param = lasagne.layers.get_all_params(self.gru_decode_candidate)
@@ -195,11 +215,11 @@ class Seq2Seq(object):
 
         return target_output_embedding_param + target_input_embedding_param + \
                gru_decode_candidate_param + gru_decode_gate_param + \
-               out_param
+               out_param + source_input_embedding_param + gru_encode_gate_param + gru_encode_candidate_param
 
 
 def test(out_dir):
-    print(" Test the model with name changed ")
+    print(" Test the seq2seq with name changed ")
     model = Seq2Seq()
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
@@ -227,9 +247,23 @@ def test(out_dir):
         else:
             target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
+    n, l = target[:, 1:].shape
+    output_target = target[:, 1:]
     for i in range(1000):
-        loss = optimiser(target)
-        print(loss[0])
+        loss, t_s, s = optimiser(source, target)
+        print(loss)
+        if loss < 0:
+            print(t_s.shape)
+            print(s.shape)
+            for i in range(n):
+                for j in range(l):
+                    # Find the true score
+
+                    true_s = t_s[i, j]
+                    true_idx = output_target[i, j]
+                    retrieve_s = s[i, j, true_idx]
+                    print(str(true_s) + " " + str(retrieve_s))
+            break
 
 
 def run(out_dir):
