@@ -36,11 +36,11 @@ class Seq2SeqAttention(object):
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
 
         # Init encoding RNNs
-        self.gru_encode1_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size * 2, activation=sigmoid)
-        self.gru_encode1_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
+        self.forward_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size * 2, activation=sigmoid)
+        self.forward_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
 
-        self.gru_encode2_gate = self.mlp(self.embedding_dim + self.hid_size*2, self.hid_size * 2, activation=sigmoid)
-        self.gru_encode2_candidate = self.mlp(self.embedding_dim + self.hid_size*2, self.hid_size, activation=tanh)
+        self.backward_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size * 2, activation=sigmoid)
+        self.backward_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
 
         # Init decoding init layer
         self.decode_init_layer = self.mlp(self.hid_size*2, self.hid_size, activation=tanh)
@@ -89,11 +89,15 @@ class Seq2SeqAttention(object):
         encode_mask = encode_mask.dimshuffle((1, 0, 2))
         source_input_embedding = source_input_embedding.dimshuffle((1, 0, 2))
 
-        # Encoding RNN
+        # Forward Encoding RNN
         h_init = T.zeros((n, self.hid_size))
-        ([h_e_1, h_e_2], update) = theano.scan(self.source_encode_step, outputs_info=[h_init, h_init],
-                                               sequences=[source_input_embedding, encode_mask])
+        (h_e_1, update) = theano.scan(self.forward_encode_step, outputs_info=[h_init],
+                                      sequences=[source_input_embedding, encode_mask])
 
+        # Backward Encoding RNN
+        (h_e_2, update) = theano.scan(self.backward_encode_step, outputs_info=[h_init],
+                                      sequences=[source_input_embedding[::-1], encode_mask[::-1]])
+        h_e_2 = h_e_2[::-1]
         # Decoding mask
         decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
 
@@ -107,7 +111,8 @@ class Seq2SeqAttention(object):
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
         (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[decode_init],
-                                      sequences=[target_input_embedding])
+                                      sequences=[target_input_embedding],
+                                      non_sequences=[encode_mask])
 
         ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_2],
                                            non_sequences=[self.target_output_embedding.W],
@@ -149,27 +154,31 @@ class Seq2SeqAttention(object):
 
         return h1
 
-    def source_encode_step(self, source_embedding, mask, h1, h2):
+    def forward_encode_step(self, source_embedding, mask, h1, h2):
         # GRU layer 1
         h_in = T.concatenate([h1, source_embedding], axis=1)
-        gate = get_output(self.gru_encode1_gate, h_in)
+        gate = get_output(self.forward_gate, h_in)
         u1 = gate[:, :self.hid_size]
         r1 = gate[:, self.hid_size:]
         reset_h1 = h1 * r1
         c_in = T.concatenate([reset_h1, source_embedding], axis=1)
-        c1 = get_output(self.gru_encode1_candidate, c_in)
+        c1 = get_output(self.forward_candidate, c_in)
         h1 = mask * ((1.0 - u1) * h1 + u1 * c1) + (1.0 - mask) * h1
 
-        h_in = T.concatenate([h1, h2, source_embedding], axis=1)
-        gate2 = get_output(self.gru_encode2_gate, h_in)
-        u2 = gate2[:, :self.hid_size]
-        r2 = gate2[:, self.hid_size:]
-        reset_h2 = h2 * r2
-        c_in = T.concatenate([h1, reset_h2, source_embedding], axis=1)
-        c2 = get_output(self.gru_encode2_candidate, c_in)
-        h2 = mask * ((1.0 - u2) * h2 + u2 * c2) + (1.0 - mask) * h2
+        return h1
 
-        return h1, h2
+    def backward_encode_step(self, source_embedding, mask, h1):
+        # GRU layer 1
+        h_in = T.concatenate([h1, source_embedding], axis=1)
+        gate = get_output(self.backward_gate, h_in)
+        u1 = gate[:, :self.hid_size]
+        r1 = gate[:, self.hid_size:]
+        reset_h1 = h1 * r1
+        c_in = T.concatenate([reset_h1, source_embedding], axis=1)
+        c1 = get_output(self.backward_candidate, c_in)
+        h1 = mask * ((1.0 - u1) * h1 + u1 * c1) + (1.0 - mask) * h1
+
+        return h1
 
     def score_eval_step(self, h, embeddings):
         h = get_output(self.out_mlp, h)
