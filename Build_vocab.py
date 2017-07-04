@@ -10,7 +10,8 @@ sentence_pair = []
 pair_count = 0
 selected_en = []
 selected_de = []
-with open("SentenceData/translation/corpus.tc.en", "r") as en, open("SentenceData/translation/corpus.tc.de", "r") as de:
+with open("SentenceData/translation/10sentenceTest/en.txt", "r") as en, \
+     open("SentenceData/translation/10sentenceTest/de.txt", "r") as de:
     c = 0
     for e_line in en:
         c += 1
@@ -39,7 +40,7 @@ en_vocab = sorted(en_vocab.items(), key=lambda d: d[1], reverse=True)
 de_vocab = sorted(de_vocab.items(), key=lambda d: d[1], reverse=True)
 
 
-with open("SentenceData/translation/selected/vocab_en", "w") as en:
+with open("SentenceData/translation/10sentenceTest/vocab_en", "w") as en:
     count = 0
     for e in en_vocab:
         count += 1
@@ -47,14 +48,14 @@ with open("SentenceData/translation/selected/vocab_en", "w") as en:
         if count == 40000:
             break
 
-with open("SentenceData/translation/selected/vocab_de", "w") as de:
+with open("SentenceData/translation/10sentenceTest/vocab_de", "w") as de:
     count = 0
     for e in de_vocab:
         count += 1
         de.write(e[0]+'\n')
         if count == 40000:
             break
-
+"""
 with open("SentenceData/translation/selected/en.txt", "w") as en:
     count = 0
     for e in selected_en:
@@ -66,4 +67,4 @@ with open("SentenceData/translation/selected/de.txt", "w") as de:
     for d in selected_de:
         count += 1
         de.write(d)
-
+"""

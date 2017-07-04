@@ -6,7 +6,7 @@ max_len = 30
 # Read the English Vocab
 english_vocab = {}
 en_idx = 0
-with open("SentenceData/WMT-raw/vocab.30K.en", "r") as en:
+with open("SentenceData/translation/10sentenceTest/vocab_en", "r") as en:
     for line in en:
         english_vocab[line.rstrip('\n')] = en_idx
         en_idx += 1
@@ -14,23 +14,19 @@ with open("SentenceData/WMT-raw/vocab.30K.en", "r") as en:
 # Read the German Vocab
 german_vocab = {}
 de_idx = 0
-with open("SentenceData/WMT-raw/vocab.30K.de", "r") as de:
+with open("SentenceData/translation/10sentenceTest/vocab_de", "r") as de:
     for line in de:
         german_vocab[line.rstrip('\n')] = de_idx
         de_idx += 1
 
 data_pair = []
-count = 0
-with open("SentenceData/WMT-raw/train.en", "r") as en:
-    for line in en:
-        count += 1
 
 en_total = 0
 en_occur = [0] * en_idx
 de_total = 0
 de_occur = [0] * de_idx
 pair_count = 0
-with open("SentenceData/WMT-raw/train.en", "r") as en, open("SentenceData/WMT-raw/train.de", "r") as de:
+with open("SentenceData/translation/10sentenceTest/en.txt", "r") as en, open("SentenceData/translation/10sentenceTest/de.txt", "r") as de:
     for en_line in en:
         sentence = en_line.rstrip('\n')
         en_tokens = sentence.split(" ")
@@ -65,7 +61,7 @@ with open("SentenceData/WMT-raw/train.en", "r") as en, open("SentenceData/WMT-ra
         if len(data_pair) > 3000:
             break
 
-with open("SentenceData/WMT/Data/data_idx.txt", "w") as dataset:
+with open("SentenceData/translation/10sentenceTest/data_idx.txt", "w") as dataset:
     d = json.dumps(data_pair)
     dataset.write(d)
 
