@@ -21,7 +21,7 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams
 random = MRG_RandomStreams(seed=1234)
 
 
-class Seq2Seq(object):
+class Seq2SeqAttention(object):
     def __init__(self, source_vocab_size=123, target_vocab_size=136,
                  embed_dim=128, hid_dim=128, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
@@ -298,8 +298,8 @@ class Seq2Seq(object):
 
 
 def test(out_dir):
-    print(" Test the seq2seq with name changed ")
-    model = Seq2Seq()
+    print(" Test the seq2seqAttention model")
+    model = Seq2SeqAttention()
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
@@ -349,7 +349,7 @@ def run(out_dir):
     print("Run the Seq2seq Model  ")
     training_loss = []
     validation_loss = []
-    model = Seq2Seq()
+    model = Seq2SeqAttention()
     pre_trained = False
     epoch = 10
     update_kwargs = {'learning_rate': 1e-4}
