@@ -378,7 +378,9 @@ def run(out_dir):
     validation_pair = []
     for m in validation_data:
         last = m[-1]
-        l = len(last[0])
+        s_l = len(last[0])
+        t_l = len(last[1])
+        l = max(s_l, t_l)
         source = None
         target = None
         for datapoint in m:
@@ -429,13 +431,14 @@ def run(out_dir):
 
         mini_batch = np.array(mini_batch)
         mini_batchs = np.split(mini_batch, sample_groups)
-        loss = None
-        read_attention = None
-        write_attention = None
         for m in mini_batchs:
             last = m[-1]
-            l = len(last[0])
+            s_l = len(last[0])
+            t_l = len(last[1])
+            l = max(s_l, t_l)
             start = time.clock()
+            source = None
+            target = None
             for datapoint in m:
                 s = np.array(datapoint[0])
                 t = np.array(datapoint[1])
