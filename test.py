@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.Seq2Seq import test
+from ModelUtils.ParamFreeVAE.Translation.Seq2SeqAttention import test
 
 import sys
 import numpy as np

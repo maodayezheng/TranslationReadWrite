@@ -28,7 +28,7 @@ class Seq2SeqAttention(object):
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 31
-        self.output_score_dim = 128
+        self.output_score_dim = 64
         self.embedding_dim = embed_dim
 
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -52,14 +52,19 @@ class Seq2SeqAttention(object):
 
         # Init Attention Params
         v = np.random.uniform(-0.05, 0.05, (self.hid_size*2, self.hid_size)).astype(theano.config.floatX)
-        self.attention_h = theano.shared(value=v, name="attention_h")
+        self.attention_h_1 = theano.shared(value=v, name="attention_h_1")
+
         v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.output_score_dim)).astype(theano.config.floatX)
+        self.attention_h_2 = theano.shared(value=v, name="attention_h_2")
+
+        v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, self.output_score_dim)).astype(theano.config.floatX)
         self.attention_s = theano.shared(value=v, name="attention_s")
+
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, )).astype(theano.config.floatX)
         self.attetion_v = theano.shared(value=v, name="attention_v")
 
         # Init output layer
-        self.out_mlp = self.mlp(self.hid_size, self.output_score_dim)
+        self.out_mlp = self.mlp(self.output_score_dim, self.output_score_dim)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -115,9 +120,11 @@ class Seq2SeqAttention(object):
         attention_candidate = T.concatenate([h_e_1, h_e_2], axis=-1)
 
         l, n, d = attention_candidate.shape
-        attention_candidate = attention_candidate.reshape((n*l, d))
-        attention_candidate = T.dot(attention_candidate, self.attention_h)
-        attention_candidate = attention_candidate.reshape((l, n, self.output_score_dim))
+        attention_c1 = attention_candidate.reshape((n*l, d))
+        attention_c1 = T.dot(attention_c1, self.attention_h_1)
+        attention_c2 = T.dot(attention_c1, self.attention_h_2)
+        attention_c1 = attention_c1.reshape((l, n, self.hid_size))
+        attention_c2 = attention_c2.reshape((l, n, self.output_score_dim))
         target_input = target[:, :-1]
         n, l = target_input.shape
         target_input = target_input.reshape((n*l, ))
@@ -127,7 +134,7 @@ class Seq2SeqAttention(object):
         h_init = T.zeros((n, self.output_score_dim))
         (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[h_init],
                                       sequences=[target_input_embedding],
-                                      non_sequences=[attention_candidate, encode_mask])
+                                      non_sequences=[attention_c1, attention_c2, encode_mask])
 
         ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_2],
                                            non_sequences=[self.target_output_embedding.W],
@@ -155,13 +162,15 @@ class Seq2SeqAttention(object):
 
         return loss
 
-    def target_decode_step(self, target_embedding, h1, a_c, mask):
+    def target_decode_step(self, target_embedding, h1, a_c1, a_c2, mask):
+        # a_c1 for feed in RNN
+        # a_c2 for calculate score
 
         # Calculate attention score
         s = T.dot(h1, self.attention_s)
         n, d = s.shape
         s = s.reshape((1, n, d))
-        attention_score = T.tanh(s + a_c)
+        attention_score = T.tanh(s + a_c2)
         l, n, d = attention_score.shape
         attention_score = attention_score.reshape((l*n, d))
         attention_score = T.dot(attention_score, self.attetion_v)
@@ -173,7 +182,7 @@ class Seq2SeqAttention(object):
         attention_score = attention_score / denorm.reshape((1, n, 1))
 
         # Calculate attention content
-        attention_content = T.sum(attention_score * a_c, axis=0)
+        attention_content = T.sum(attention_score * a_c1, axis=0)
 
         # Decoding GRU layer 1
         h_in = T.concatenate([h1, target_embedding, attention_content], axis=1)
@@ -299,7 +308,7 @@ class Seq2SeqAttention(object):
                gru_decode_candidate_param + gru_decode_gate_param + \
                out_param + source_input_embedding_param + gru_encode1_gate_param + gru_encode1_candidate_param +\
                gru_encode2_gate_param + gru_encode2_candiadte_param + \
-               [self.attetion_v, self.attention_s, self.attention_h]
+               [self.attetion_v, self.attention_s, self.attention_h_1, self.attention_h_2]
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
@@ -322,7 +331,8 @@ class Seq2SeqAttention(object):
                 forward_candidate_param, forward_gate_param,
                 backward_candidate_param, backward_gate_param,
                 gru_decode_candidate_param, gru_decode_gate_param, out_param,
-                self.attention_h.get_value(), self.attention_s.get_value(), self.attetion_v.get_value()]
+                self.attention_h_1.get_value(), self.attention_h_2.get_value(),
+                self.attention_s.get_value(), self.attetion_v.get_value()]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -335,9 +345,10 @@ class Seq2SeqAttention(object):
         lasagne.layers.set_all_param_values(self.gru_decode_candidate, params[7])
         lasagne.layers.set_all_param_values(self.gru_decode_gate, params[8])
         lasagne.layers.set_all_param_values(self.out_mlp, params[9])
-        self.attention_h.set_value(params[10])
-        self.attention_s.set_value(params[11])
-        self.attetion_v.set_value(params[12])
+        self.attention_h_1.set_value(params[10])
+        self.attention_h_2.set_value(params[11])
+        self.attention_s.set_value(params[12])
+        self.attetion_v.set_value(params[13])
 
 
 def test(out_dir):
