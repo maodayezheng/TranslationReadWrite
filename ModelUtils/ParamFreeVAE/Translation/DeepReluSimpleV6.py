@@ -63,10 +63,12 @@ class DeepReluTransReadWrite(object):
         self.address_bias = theano.shared(name="attention_bias", value=v)
 
         # Init Attention Params
-        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.hid_size)).astype(theano.config.floatX)
+        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.output_score_dim)).astype(theano.config.floatX)
         self.attention_h = theano.shared(value=v, name="attention_h")
+
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, self.output_score_dim)).astype(theano.config.floatX)
         self.attention_s = theano.shared(value=v, name="attention_s")
+
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim,)).astype(theano.config.floatX)
         self.attetion_v = theano.shared(value=v, name="attention_v")
 
@@ -135,16 +137,15 @@ class DeepReluTransReadWrite(object):
 
         # Init decoding states
         canvas_init = T.zeros((n, self.max_len, self.hid_size), dtype="float32")
-        canvas_init = canvas_init[:, :l]
 
         h_init = T.zeros((n, self.hid_size))
         source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
 
         read_attention_weight = self.address_weight[:, :l]
-        write_attention_weight = self.address_weight[:, self.max_len:(self.max_len + l)]
+        write_attention_weight = self.address_weight[:, self.max_len:]
         read_attention_bias = self.address_bias[:l]
         read_attention_bias = read_attention_bias.reshape((1, l))
-        write_attention_bias = self.address_bias[self.max_len:(self.max_len + l)]
+        write_attention_bias = self.address_bias[self.max_len:]
         write_attention_bias = write_attention_bias.reshape((1, l))
         start = h_init[:, :self.output_score_dim]
         read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
@@ -164,6 +165,10 @@ class DeepReluTransReadWrite(object):
         # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
         # Check the likelihood on full vocab
         final_canvas = canvases[-1]
+        n, l, d = final_canvas.shape
+        a_c = final_canvas.reshape((n*l, d))
+        a_c = T.dot(a_c, self.attention_h)
+        a_c = a_c.reshape((n, l, self.output_score_dim))
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
         final_canvas = final_canvas.dimshuffle((1, 0, 2))
@@ -172,7 +177,7 @@ class DeepReluTransReadWrite(object):
         sample_embed = self.target_output_embedding.W
         h_init = T.zeros((n, self.output_score_dim))
         ([h, s, sample_score], update) = theano.scan(self.decoding_step, outputs_info=[h_init, None, None],
-                                                     non_sequences=[sample_embed, final_canvas],
+                                                     non_sequences=[sample_embed, final_canvas, a_c],
                                                      sequences=[output_embedding])
 
         # Get sample embedding
@@ -243,12 +248,30 @@ class DeepReluTransReadWrite(object):
 
         return h1, h2, canvas, read_attention, write_attention
 
-    def decoding_step(self, embedding, pre_hid_info, s_embedding, canvas):
-        input_info = T.concatenate([embedding, col, pre_hid_info], axis=-1)
+    def decoding_step(self, embedding, pre_hid_info, s_embedding, canvas, a_c):
+        # a_c for calculate attention score
+        s = T.dot(pre_hid_info, self.attention_s)
+        n, d = s.shape
+        s = s.reshape((n, 1, d))
+        attention_score = T.tanh(s + a_c)
+        n, l, d = attention_score.shape
+        attention_score = attention_score.reshape((l * n, d))
+        attention_score = T.dot(attention_score, self.attetion_v)
+        attention_score = attention_score.reshape((n, l))
+        max_clip = zero_grad(T.max(attention_score, axis=-1))
+        attention_score = T.exp(attention_score - max_clip.reshape((n, 1)))
+        attention_score = attention_score.reshape((n, l))
+        denorm = T.sum(attention_score, axis=-1)
+        attention_score = attention_score / denorm.reshape((n, 1))
+        attention_score = attention_score.reshape((n, l, 1))
+
+        c = T.sum(attention_score * canvas, axis=1)
+
+        input_info = T.concatenate([embedding, c, pre_hid_info], axis=-1)
         u1 = get_output(self.gru_update_3, input_info)
         r1 = get_output(self.gru_reset_3, input_info)
         reset_h1 = pre_hid_info * r1
-        c_in = T.concatenate([embedding, col, reset_h1], axis=1)
+        c_in = T.concatenate([embedding, c, reset_h1], axis=1)
         c1 = get_output(self.gru_candidate_3, c_in)
         h1 = (1.0 - u1) * pre_hid_info + u1 * c1
 
