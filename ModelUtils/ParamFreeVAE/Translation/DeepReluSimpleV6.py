@@ -459,7 +459,7 @@ class DeepReluTransReadWrite(object):
                gru_2_c_param + gru_2_r_param + gru_2_u_param + \
                gru_3_u_param + gru_3_r_param + gru_3_c_param + \
                out_param + score_param + input_embedding_param + \
-               [self.address_weight, self.address_bias]
+               [self.address_weight, self.address_bias, self.attention_h, self.attention_s, self.attetion_v]
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
@@ -484,7 +484,9 @@ class DeepReluTransReadWrite(object):
                 gru_2_u_param, gru_2_r_param, gru_2_c_param,
                 gru_3_u_param, gru_3_r_param, gru_3_c_param,
                 out_param, score_param,
-                self.address_weight.get_value(), self.address_bias.get_value()]
+                self.address_weight.get_value(), self.address_bias.get_value(),
+                self.attention_h.get_value(), self.attention_s.get_value(),
+                self.attetion_v.get_value()]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -503,6 +505,9 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.score, params[13])
         self.address_weight.set_value(params[14])
         self.address_bias.set_value(params[15])
+        self.attention_h.set_value(params[16])
+        self.attention_s.set_value(params[17])
+        self.attetion_v.set_value(params[18])
 
 
 """
