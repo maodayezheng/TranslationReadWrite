@@ -46,11 +46,14 @@ class Seq2Seq(object):
         self.decode_init_layer = self.mlp(self.hid_size*2, self.hid_size, activation=tanh)
 
         # Init decoding RNNs
-        self.gru_decode_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size*2, activation=sigmoid)
-        self.gru_decode_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
+        self.gru_decode_gate = self.mlp(self.embedding_dim + self.output_score_dim + self.hid_size,
+                                        self.output_score_dim*2, activation=sigmoid)
+
+        self.gru_decode_candidate = self.mlp(self.embedding_dim + self.hid_size + self.output_score_dim,
+                                             self.output_score_dim, activation=tanh)
 
         # Init output layer
-        self.out_mlp = self.mlp(self.hid_size, self.output_score_dim)
+        self.out_mlp = self.mlp(self.output_score_dim, self.output_score_dim)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -106,8 +109,10 @@ class Seq2Seq(object):
         target_input_embedding = get_output(self.target_input_embedding, target_input)
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
-        (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[decode_init],
-                                      sequences=[target_input_embedding])
+        h_init = T.zeros((n, self.output_score_dim))
+        (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[h_init],
+                                      sequences=[target_input_embedding],
+                                      non_sequences=[decode_init])
 
         ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_2],
                                            non_sequences=[self.target_output_embedding.W],
@@ -135,15 +140,15 @@ class Seq2Seq(object):
 
         return loss
 
-    def target_decode_step(self, target_embedding, h1):
+    def target_decode_step(self, target_embedding, h1, d1):
         # Decoding GRU layer 1
-        h_in = T.concatenate([h1, target_embedding], axis=1)
+        h_in = T.concatenate([h1, d1, target_embedding], axis=1)
         gate = get_output(self.gru_decode_gate, h_in)
-        u1 = gate[:, :self.hid_size]
-        r1 = gate[:, self.hid_size:]
+        u1 = gate[:, :self.output_score_dim]
+        r1 = gate[:, self.output_score_dim:]
         reset_h1 = h1 * r1
 
-        c_in = T.concatenate([reset_h1, target_embedding], axis=1)
+        c_in = T.concatenate([reset_h1, d1, target_embedding], axis=1)
         c1 = get_output(self.gru_decode_candidate, c_in)
         h1 = (1.0 - u1) * h1 + u1 * c1
 
@@ -229,7 +234,6 @@ class Seq2Seq(object):
         """
         source = T.imatrix('source')
         target = T.imatrix('target')
-        true_l = T.ivector('true_l')
         reconstruction_loss = self.symbolic_elbo(source, target)
         elbo_fn = theano.function(inputs=[source, target],
                                   outputs=[reconstruction_loss],
@@ -329,20 +333,8 @@ def test(out_dir):
     n, l = target[:, 1:].shape
     output_target = target[:, 1:]
     for i in range(1000):
-        loss, t_s, s = optimiser(source, target)
+        loss = optimiser(source, target)
         print(loss)
-        if loss < 0:
-            print(t_s.shape)
-            print(s.shape)
-            for i in range(n):
-                for j in range(l):
-                    # Find the true score
-
-                    true_s = t_s[i, j]
-                    true_idx = output_target[i, j]
-                    retrieve_s = s[i, j, true_idx]
-                    print(str(true_s) + " " + str(retrieve_s))
-            break
 
 
 def run(out_dir):
