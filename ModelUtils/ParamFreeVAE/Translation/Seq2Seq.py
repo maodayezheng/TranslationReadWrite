@@ -199,7 +199,7 @@ class Seq2Seq(object):
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
-        reconstruction_loss, t_s, s = self.symbolic_elbo(source, target)
+        reconstruction_loss = self.symbolic_elbo(source, target)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         update_kwargs['loss_or_grads'] = grads
@@ -217,7 +217,7 @@ class Seq2Seq(object):
             return optimiser, updates
         else:
             optimiser = theano.function(inputs=[source, target],
-                                        outputs=[reconstruction_loss, t_s, s],
+                                        outputs=[reconstruction_loss],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
@@ -234,7 +234,6 @@ class Seq2Seq(object):
         """
         source = T.imatrix('source')
         target = T.imatrix('target')
-        true_l = T.ivector('true_l')
         reconstruction_loss = self.symbolic_elbo(source, target)
         elbo_fn = theano.function(inputs=[source, target],
                                   outputs=[reconstruction_loss],
@@ -334,20 +333,8 @@ def test(out_dir):
     n, l = target[:, 1:].shape
     output_target = target[:, 1:]
     for i in range(1000):
-        loss, t_s, s = optimiser(source, target)
+        loss = optimiser(source, target)
         print(loss)
-        if loss < 0:
-            print(t_s.shape)
-            print(s.shape)
-            for i in range(n):
-                for j in range(l):
-                    # Find the true score
-
-                    true_s = t_s[i, j]
-                    true_idx = output_target[i, j]
-                    retrieve_s = s[i, j, true_idx]
-                    print(str(true_s) + " " + str(retrieve_s))
-            break
 
 
 def run(out_dir):
