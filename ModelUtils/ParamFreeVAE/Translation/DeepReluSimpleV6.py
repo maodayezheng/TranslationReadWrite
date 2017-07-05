@@ -2,7 +2,7 @@
 Following problems are observed from version 5:
 
 In this version:
-Add output attention
+Add output attention this can make the length of canvas independent from output
 
 
 """
@@ -53,13 +53,13 @@ class DeepReluTransReadWrite(object):
         self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size + self.output_score_dim, self.output_score_dim)
 
         # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size * 2, self.hid_size+self.output_score_dim, activation=tanh)
+        self.out_mlp = self.mlp(self.hid_size * 2, self.hid_size + self.output_score_dim, activation=tanh)
         # attention parameters
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, 2 * self.max_len)).astype(theano.config.floatX)
-        self.attention_weight = theano.shared(name="attention_weight", value=v)
+        self.address_weight = theano.shared(name="attention_weight", value=v)
 
         v = np.ones((2 * self.max_len,)).astype(theano.config.floatX) * 0.05
-        self.attention_bias = theano.shared(name="attention_bias", value=v)
+        self.address_bias = theano.shared(name="attention_bias", value=v)
 
         # teacher mapper
         self.score = self.mlp(self.output_score_dim, self.output_score_dim, activation=linear)
@@ -131,11 +131,11 @@ class DeepReluTransReadWrite(object):
         h_init = T.zeros((n, self.hid_size))
         source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
 
-        read_attention_weight = self.attention_weight[:, :l]
-        write_attention_weight = self.attention_weight[:, self.max_len:(self.max_len + l)]
-        read_attention_bias = self.attention_bias[:l]
+        read_attention_weight = self.address_weight[:, :l]
+        write_attention_weight = self.address_weight[:, self.max_len:(self.max_len + l)]
+        read_attention_bias = self.address_bias[:l]
         read_attention_bias = read_attention_bias.reshape((1, l))
-        write_attention_bias = self.attention_bias[self.max_len:(self.max_len + l)]
+        write_attention_bias = self.address_bias[self.max_len:(self.max_len + l)]
         write_attention_bias = write_attention_bias.reshape((1, l))
         start = h_init[:, :self.output_score_dim]
         read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
@@ -295,11 +295,11 @@ class DeepReluTransReadWrite(object):
         h_init = T.zeros((n, self.hid_size))
         source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
 
-        read_attention_weight = self.attention_weight[:, :l]
-        write_attention_weight = self.attention_weight[:, self.max_len:(self.max_len + l)]
-        read_attention_bias = self.attention_bias[:l]
+        read_attention_weight = self.address_weight[:, :l]
+        write_attention_weight = self.address_weight[:, self.max_len:(self.max_len + l)]
+        read_attention_bias = self.address_bias[:l]
         read_attention_bias = read_attention_bias.reshape((1, l))
-        write_attention_bias = self.attention_bias[self.max_len:(self.max_len + l)]
+        write_attention_bias = self.address_bias[self.max_len:(self.max_len + l)]
         write_attention_bias = write_attention_bias.reshape((1, l))
         start = h_init[:, :self.output_score_dim]
         read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
@@ -427,7 +427,7 @@ class DeepReluTransReadWrite(object):
                gru_2_c_param + gru_2_r_param + gru_2_u_param + \
                gru_3_u_param + gru_3_r_param + gru_3_c_param + \
                out_param + score_param + input_embedding_param + \
-               [self.attention_weight, self.attention_bias]
+               [self.address_weight, self.address_bias]
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
@@ -452,7 +452,7 @@ class DeepReluTransReadWrite(object):
                 gru_2_u_param, gru_2_r_param, gru_2_c_param,
                 gru_3_u_param, gru_3_r_param, gru_3_c_param,
                 out_param, score_param,
-                self.attention_weight.get_value(), self.attention_bias.get_value()]
+                self.address_weight.get_value(), self.address_bias.get_value()]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -469,8 +469,8 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.gru_candidate_3, params[11])
         lasagne.layers.set_all_param_values(self.out_mlp, params[12])
         lasagne.layers.set_all_param_values(self.score, params[13])
-        self.attention_weight.set_value(params[14])
-        self.attention_bias.set_value(params[15])
+        self.address_weight.set_value(params[14])
+        self.address_bias.set_value(params[15])
 
 
 """
