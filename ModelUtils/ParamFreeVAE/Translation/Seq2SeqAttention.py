@@ -287,7 +287,6 @@ class Seq2SeqAttention(object):
                                   allow_input_downcast=True)
         return elbo_fn
 
-
     def get_params(self):
         source_input_embedding_param = lasagne.layers.get_all_params(self.input_embedding)
         target_input_embedding_param = lasagne.layers.get_all_params(self.target_input_embedding)

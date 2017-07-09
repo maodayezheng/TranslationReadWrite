@@ -181,6 +181,59 @@ class Seq2Seq(object):
         score = T.dot(h, embeddings.T)
         return h, score
 
+    def greedy_decode_step(self, target_embedding, h1, d1):
+        h1 = self.target_decode_step(target_embedding, h1, d1)
+        h, score = self.score_eval_step(h1, self.target_output_embedding.W)
+        prediction = T.argmax(score, axis=-1)
+        predict_embedding = get_output(self.target_input_embedding, prediction)
+
+        return predict_embedding, h1, prediction
+
+    def decode_fn(self):
+        source = T.imatrix('source')
+        target = T.imatrix('target')
+        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+        source_input_embedding = get_output(self.input_embedding, source[:, 1:])
+        n, l = encode_mask.shape
+        encode_mask = encode_mask.reshape((n, l, 1))
+        encode_mask = encode_mask.dimshuffle((1, 0, 2))
+        source_input_embedding = source_input_embedding.dimshuffle((1, 0, 2))
+
+        # Encoding RNN
+        h_init = T.zeros((n, self.hid_size))
+        ([h_e_1, h_e_2], update) = theano.scan(self.source_encode_step, outputs_info=[h_init, h_init],
+                                               sequences=[source_input_embedding, encode_mask])
+
+        # Decoding mask
+        decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
+
+        # Decoding RNN
+        decode_init = T.concatenate([h_e_1[-1], h_e_2[-1]], axis=-1)
+        decode_init = get_output(self.decode_init_layer, decode_init)
+        target_input = target[:, :-1]
+        n, l = target_input.shape
+        target_input = target_input.reshape((n * l,))
+        target_input_embedding = get_output(self.target_input_embedding, target_input)
+        target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
+        target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
+        h_init = T.zeros((n, self.output_score_dim))
+        (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[h_init],
+                                      sequences=[target_input_embedding],
+                                      non_sequences=[decode_init])
+
+        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_2],
+                                           non_sequences=[self.target_output_embedding.W],
+                                           outputs_info=[None, None])
+
+        force_prediction = T.argmax(score, axis=-1)
+        init_embedding = target_input_embedding[-1]
+        ([e, h, greedy_p], update) = theano.scan(self.greedy_decode_step, non_sequences=[decode_init],
+                                                 outputs_info=[init_embedding, h_init])
+
+        return theano.function(inputs=[source, target],
+                               outputs=[force_prediction, greedy_p],
+                               allow_input_downcast=True)
+
     def optimiser(self, update, update_kwargs, draw_sample, saved_update=None):
         """
         Return the compiled Theano function which both evaluates the evidence lower bound (ELBO), and updates the model
@@ -239,7 +292,6 @@ class Seq2Seq(object):
                                   outputs=[reconstruction_loss],
                                   allow_input_downcast=True)
         return elbo_fn
-
 
     def get_params(self):
         source_input_embedding_param = lasagne.layers.get_all_params(self.input_embedding)
@@ -301,40 +353,75 @@ class Seq2Seq(object):
         lasagne.layers.set_all_param_values(self.out_mlp, params[10])
 
 
-def test(out_dir):
-    print(" Test the seq2seq with name changed ")
+def decode():
+    print("Decoding the sequence")
+    test_data = None
     model = Seq2Seq()
-    update_kwargs = {'learning_rate': 1e-4}
-    draw_sample = False
-    optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
-    with open("SentenceData/translation/10sentenceTest/data_idx.txt", "r") as dataset:
-        train_data = json.loads(dataset.read())
-    train_data = sorted(train_data, key=lambda d: len(d[0]))
-    last = train_data[-1]
-    l = len(last[0])
-    source = None
-    target = None
-    for datapoint in train_data:
-        s = np.array(datapoint[0])
-        t = np.array(datapoint[1])
-        if len(s) != l:
-            s = np.append(s, [-1] * (l - len(s)))
-        if len(t) != l:
-            t = np.append(t, [-1] * (l - len(t)))
-        if source is None:
-            source = s.reshape((1, s.shape[0]))
-        else:
-            source = np.concatenate([source, s.reshape((1, s.shape[0]))])
-        if target is None:
-            target = t.reshape((1, t.shape[0]))
-        else:
-            target = np.concatenate([target, t.reshape((1, t.shape[0]))])
+    de_vocab = []
+    en_vocab = []
 
-    n, l = target[:, 1:].shape
-    output_target = target[:, 1:]
-    for i in range(1000):
-        loss = optimiser(source, target)
-        print(loss)
+    with open("SentenceData/vocab_en", "r", encoding="utf8") as v:
+        for line in v:
+            en_vocab.append(line.strip("\n"))
+
+    with open("SentenceData/vocab_de", "r", encoding="utf8") as v:
+        for line in v:
+            de_vocab.append(line.strip("\n"))
+    with open("code_outputs/2017_06_21_12_13_53/final_model_params.save", "rb") as params:
+        model.set_param_values(cPickle.load(params))
+    with open("SentenceData/dev_idx_small.txt", "r") as dataset:
+        test_data = json.loads(dataset.read())
+    mini_batch = test_data[:2000]
+    mini_batch = sorted(mini_batch, key=lambda d: d[2])
+    mini_batch = np.array(mini_batch)
+    mini_batchs = np.split(mini_batch, 20)
+    decode = model.decode_fn()
+    for m in mini_batchs:
+        l = m[-1, -1]
+
+        source = None
+        target = None
+        for datapoint in m:
+            s = np.array(datapoint[0])
+            t = np.array(datapoint[1])
+            if len(s) != l:
+                s = np.append(s, [-1] * (l - len(s)))
+            if len(t) != l:
+                t = np.append(t, [-1] * (l - len(t)))
+            if source is None:
+                source = s.reshape((1, s.shape[0]))
+            else:
+                source = np.concatenate([source, s.reshape((1, s.shape[0]))])
+            if target is None:
+                target = s.reshape((1, t.shape[0]))
+            else:
+                target = np.concatenate([target, t.reshape((1, t.shape[0]))])
+
+        force_max, prediction = decode(source, target)
+        for n in range(10):
+            s = source[n, 1:]
+            t = target[n, 1:]
+            f = force_max[:, n]
+            p = prediction[:, n]
+
+            s_string = ""
+            for s_idx in s:
+                s_string += (en_vocab[s_idx] + " ")
+            t_string = ""
+            for t_idx in t:
+                t_string += (de_vocab[t_idx] + " ")
+            f_string = ""
+            for p_idx in f:
+                f_string += (de_vocab[p_idx] + " ")
+            p_string = ""
+            for idx in p:
+                p_string +=(de_vocab[idx] + " ")
+
+            print("Sour : " + s_string)
+            print("Refe : " + t_string)
+            print("Forc : " + f_string)
+            print("Pred : " + p_string)
+            print("")
 
 
 def run(out_dir):
@@ -424,9 +511,6 @@ def run(out_dir):
 
         mini_batch = np.array(mini_batch)
         mini_batchs = np.split(mini_batch, sample_groups)
-        loss = None
-        read_attention = None
-        write_attention = None
         for m in mini_batchs:
             l = m[-1, -1]
             source = None
