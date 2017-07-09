@@ -233,7 +233,7 @@ class Seq2SeqAttention(object):
         h, s = self.score_eval_step(h1, self.target_output_embedding.W)
         prediction = T.argmax(s, axis=-1)
         prediction_embedding = get_output(self.target_input_embedding, prediction)
-        return prediction_embedding, h1, s
+        return prediction_embedding, h1, prediction
 
     def decode_fn(self):
 
@@ -291,7 +291,7 @@ class Seq2SeqAttention(object):
 
         force_prediction = T.argmax(score, axis=-1)
         init_embedding = target_input_embedding[-1]
-        ([e, h, greedy_p], update) = theano.scan(self.greedy_decode_step, outputs_info=[init_embedding, h_init],
+        ([e, h, greedy_p], update) = theano.scan(self.greedy_decode_step, outputs_info=[init_embedding, h_init, None],
                                                  non_sequences=[attention_c1, attention_c2, encode_mask],
                                                  n_steps=31)
 
