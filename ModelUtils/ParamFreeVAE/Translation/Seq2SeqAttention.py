@@ -422,7 +422,7 @@ class Seq2SeqAttention(object):
 
 
 def decode():
-    print("Decoding the sequence")
+    print("Decoding the sequence Attention model ")
     test_data = None
     model = Seq2SeqAttention()
     de_vocab = []
