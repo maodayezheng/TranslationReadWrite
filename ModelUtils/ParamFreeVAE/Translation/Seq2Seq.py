@@ -228,7 +228,8 @@ class Seq2Seq(object):
         force_prediction = T.argmax(score, axis=-1)
         init_embedding = target_input_embedding[-1]
         ([e, h, greedy_p], update) = theano.scan(self.greedy_decode_step, non_sequences=[decode_init],
-                                                 outputs_info=[init_embedding, h_init])
+                                                 outputs_info=[init_embedding, h_init],
+                                                 n_steps=31)
 
         return theano.function(inputs=[source, target],
                                outputs=[force_prediction, greedy_p],
