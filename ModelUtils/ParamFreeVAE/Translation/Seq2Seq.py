@@ -367,7 +367,7 @@ def decode():
     with open("SentenceData/vocab_de", "r", encoding="utf8") as v:
         for line in v:
             de_vocab.append(line.strip("\n"))
-    with open("code_outputs/2017_06_21_12_13_53/final_model_params.save", "rb") as params:
+    with open("code_outputs/2017_07_05_19_31_25/final_model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/dev_idx_small.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
