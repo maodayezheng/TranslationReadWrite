@@ -22,13 +22,13 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class Seq2SeqAttention(object):
-    def __init__(self, source_vocab_size=123, target_vocab_size=136,
-                 embed_dim=128, hid_dim=128, source_seq_len=50, target_seq_len=50):
+    def __init__(self, source_vocab_size=40004, target_vocab_size=40004,
+                 embed_dim=620, hid_dim=1000, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 31
-        self.output_score_dim = 64
+        self.output_score_dim = 500
         self.embedding_dim = embed_dim
 
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -388,12 +388,15 @@ def test(out_dir):
 
 
 def run(out_dir):
-    print("Run the Seq2seq Model  ")
+    print("Run Seq2Seq Attention model ")
     training_loss = []
     validation_loss = []
     model = Seq2SeqAttention()
     pre_trained = False
     epoch = 10
+    if pre_trained:
+        with open("code_outputs/2017_06_14_09_09_13/model_params.save", "rb") as params:
+            model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
@@ -407,7 +410,7 @@ def run(out_dir):
     with open("SentenceData/dev_idx_small.txt", "r") as dev:
         validation_data = json.loads(dev.read())
 
-    validation_data = sorted(validation_data, key=lambda d: len(d[0]))
+    validation_data = sorted(validation_data, key=lambda d: d[2])
     len_valid = len(validation_data)
     splits = len_valid % 50
     validation_data = validation_data[:-splits]
@@ -419,12 +422,10 @@ def run(out_dir):
 
     validation_pair = []
     for m in validation_data:
-        last = m[-1]
-        s_l = len(last[0])
-        t_l = len(last[1])
-        l = max(s_l, t_l)
+        l = m[-1, -1]
         source = None
         target = None
+        true_l = m[:, -1]
         for datapoint in m:
             s = np.array(datapoint[0])
             t = np.array(datapoint[1])
@@ -441,7 +442,7 @@ def run(out_dir):
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        validation_pair.append([source, target])
+        validation_pair.append([source, target, true_l])
 
     # calculate required iterations
     data_size = len(train_data)
@@ -450,11 +451,11 @@ def run(out_dir):
     sample_groups = 10
     iters = 40000
     print(" The number of iterations : " + str(iters))
-    train_data = train_data[:1000]
+
     for i in range(iters):
         batch_indices = np.random.choice(len(train_data), batch_size * sample_groups, replace=False)
         mini_batch = [train_data[ind] for ind in batch_indices]
-        mini_batch = sorted(mini_batch, key=lambda d: len(d[0]))
+        mini_batch = sorted(mini_batch, key=lambda d: d[2])
         samples = None
         if i % 10000 is 0:
             update_kwargs['learning_rate'] /= 2
@@ -473,14 +474,15 @@ def run(out_dir):
 
         mini_batch = np.array(mini_batch)
         mini_batchs = np.split(mini_batch, sample_groups)
+        loss = None
+        read_attention = None
+        write_attention = None
         for m in mini_batchs:
-            last = m[-1]
-            s_l = len(last[0])
-            t_l = len(last[1])
-            l = max(s_l, t_l)
-            start = time.clock()
+            l = m[-1, -1]
             source = None
             target = None
+            true_l = m[:, -1]
+            start = time.clock()
             for datapoint in m:
                 s = np.array(datapoint[0])
                 t = np.array(datapoint[1])
@@ -498,7 +500,7 @@ def run(out_dir):
                     target = np.concatenate([target, t.reshape((1, t.shape[0]))])
             output = None
             if draw_sample:
-                output = optimiser(source, target)
+                output = optimiser(source, target, samples, true_l)
             else:
                 output = optimiser(source, target)
             iter_time = time.clock() - start
@@ -506,14 +508,13 @@ def run(out_dir):
             training_loss.append(loss)
 
             if i % 250 == 0:
-                print("training time " + str(iter_time) + " sec with sentence length " + str(l) + "training loss : " +
-                      str(loss))
+                print("training time " + str(iter_time)
+                      + " sec with sentence length " + str(l)
+                      + "training loss : " + str(loss))
 
         if i % 500 == 0:
             valid_loss = 0
             p = 0
-            v_r = None
-            v_w = None
             for pair in validation_pair:
                 p += 1
                 v_l = validation(pair[0], pair[1])
