@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.Seq2Seq import decode
+from ModelUtils.ParamFreeVAE.Translation.Seq2SeqAttention import decode
 import sys
 import lasagne
 import numpy as np
