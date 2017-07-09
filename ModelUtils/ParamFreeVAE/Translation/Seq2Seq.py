@@ -413,10 +413,18 @@ def decode():
                 t_string += (de_vocab[t_idx] + " ")
             f_string = ""
             for p_idx in f:
-                f_string += (de_vocab[p_idx] + " ")
+                token = de_vocab[p_idx]
+                if token is "<\s>":
+                    break
+                else:
+                    f_string += (de_vocab[p_idx] + " ")
             p_string = ""
             for idx in p:
-                p_string +=(de_vocab[idx] + " ")
+                token = de_vocab[idx]
+                if token is "<\s>":
+                    break
+                else:
+                    p_string += (de_vocab[idx] + " ")
 
             print("Sour : " + s_string)
             print("Refe : " + t_string)
