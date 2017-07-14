@@ -19,6 +19,7 @@ import json
 import time
 import os
 import pickle as cPickle
+import nltk
 from theano.sandbox.rng_mrg import MRG_RandomStreams
 
 random = MRG_RandomStreams(seed=1234)
@@ -505,6 +506,7 @@ def decode():
     mini_batchs = np.split(mini_batch, 20)
     batch_size = mini_batch.shape[0]
     decode = model.decode_fn()
+    bleu_score = []
     for m in mini_batchs:
         l = m[-1, -1]
         true_l = m[:, -1]
@@ -536,22 +538,40 @@ def decode():
 
             s_string = ""
             for s_idx in s:
+                if s_idx == 1:
+                    break
                 s_string += (en_vocab[s_idx] + " ")
             t_string = ""
+            ref = []
             for t_idx in t:
+                if t_idx == 1:
+                    break
+                ref.append(de_vocab[t_idx])
                 t_string += (de_vocab[t_idx] + " ")
             f_string = ""
             for p_idx in f:
+                if p_idx == 1:
+                    break
                 f_string += (de_vocab[p_idx] + " ")
             p_string = ""
+            gred = []
             for idx in p:
-                p_string +=(de_vocab[idx] + " ")
+                if idx == 1:
+                    break
+                gred.append(de_vocab[idx])
+                p_string += (de_vocab[idx] + " ")
 
             print("Sour : " + s_string)
             print("Refe : " + t_string)
             print("Forc : " + f_string)
             print("Pred : " + p_string)
+            bleu = nltk.translate.bleu([ref], gred)
+            print("BLEU : " + str(bleu))
+            bleu_score.append(bleu)
             print("")
+    aver_bleu = np.mean(bleu_score)
+    print("The aver blue score is ")
+    print(aver_bleu)
 
 
 def run(out_dir):
