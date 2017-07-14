@@ -22,13 +22,12 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class Seq2Seq(object):
-    def __init__(self, source_vocab_size=40004, target_vocab_size=40004,
-                 embed_dim=620, hid_dim=1000, source_seq_len=50, target_seq_len=50):
+    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=256, hid_dim=512):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 31
-        self.output_score_dim = 500
+        self.output_score_dim = 256
         self.embedding_dim = embed_dim
 
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -439,10 +438,6 @@ def run(out_dir):
     validation_loss = []
     model = Seq2Seq()
     pre_trained = False
-    epoch = 10
-    if pre_trained:
-        with open("code_outputs/2017_06_14_09_09_13/model_params.save", "rb") as params:
-            model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
@@ -503,20 +498,6 @@ def run(out_dir):
         mini_batch = [train_data[ind] for ind in batch_indices]
         mini_batch = sorted(mini_batch, key=lambda d: d[2])
         samples = None
-        if i % 10000 is 0:
-            update_kwargs['learning_rate'] /= 2
-
-        if draw_sample:
-            unique_target = []
-            for m in mini_batch:
-                unique_target += m[1]
-            unique_target = np.unique(unique_target)
-
-            num_samples = 8000 - len(unique_target)
-            candidate = np.arange(30004)
-            candidate = np.delete(candidate, unique_target, None)
-            samples = np.random.choice(a=candidate, size=num_samples, replace=False)
-            samples = np.concatenate([unique_target, samples])
 
         mini_batch = np.array(mini_batch)
         mini_batchs = np.split(mini_batch, sample_groups)
@@ -551,8 +532,7 @@ def run(out_dir):
             training_loss.append(loss)
 
             if i % 250 == 0:
-                print("training time " + str(iter_time)
-                      + " sec with sentence length " + str(l)
+                print("training time " + str(iter_time) + " sec with sentence length " + str(l)
                       + "training loss : " + str(loss))
 
         if i % 500 == 0:
