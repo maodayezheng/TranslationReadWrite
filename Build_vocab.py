@@ -55,16 +55,3 @@ with open("SentenceData/translation/10sentenceTest/vocab_de", "w") as de:
         de.write(e[0]+'\n')
         if count == 40000:
             break
-"""
-with open("SentenceData/translation/selected/en.txt", "w") as en:
-    count = 0
-    for e in selected_en:
-        count += 1
-        en.write(e)
-
-with open("SentenceData/translation/selected/de.txt", "w") as de:
-    count = 0
-    for d in selected_de:
-        count += 1
-        de.write(d)
-"""

@@ -1,14 +1,18 @@
-from ModelUtils.ParamFreeVAE.Translation.Seq2SeqAttention import test
-
 import sys
 import numpy as np
+import json
 
-sys.setrecursionlimit(5000000)
+with open("SentenceData/dev_idx_small.txt", "r") as dataset:
+    test_data = json.loads(dataset.read())
+mini_batch = test_data[:2000]
+mini_batch = sorted(mini_batch, key=lambda d: d[2])
+print(len(mini_batch))
+data = []
+for m in mini_batch:
+    print(m)
+    if m[2] > 17:
+        data.append(m)
+print(len(data))
 
-np.set_printoptions(threshold=1000000)
-main_dir = sys.argv[1]
-out_dir = sys.argv[2]
-
-if __name__ == '__main__':
-    test(out_dir)
-
+with open("SentenceData/dev_1000.txt", "w") as dataset:
+    dataset.write(json.dumps(data[:1000]))

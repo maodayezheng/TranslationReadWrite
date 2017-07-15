@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Following problems are observed from version 3:
 
@@ -320,7 +321,7 @@ class DeepReluTransReadWrite(object):
         # Complementary Sum for softmax approximation
         # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
         # Check the likelihood on full vocab
-        final_canvas = canvases[-1]
+        final_canvas = canvases[15]
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
         final_canvas = final_canvas.dimshuffle((1, 0, 2))
@@ -498,16 +499,18 @@ def decode():
             de_vocab.append(line.strip("\n"))
     with open("code_outputs/2017_06_21_12_13_53/final_model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
-    with open("SentenceData/dev_idx_small.txt", "r") as dataset:
+    with open("SentenceData/subset/selected_idx.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
-    mini_batch = test_data[:2000]
+    mini_batch = test_data
     mini_batch = sorted(mini_batch, key=lambda d: d[2])
     mini_batch = np.array(mini_batch)
-    mini_batchs = np.split(mini_batch, 20)
+    #mini_batchs = np.split(mini_batch, 20)
     batch_size = mini_batch.shape[0]
     decode = model.decode_fn()
     bleu_score = []
-    for m in mini_batchs:
+    reference = []
+    translation = []
+    for m in [mini_batch]:
         l = m[-1, -1]
         true_l = m[:, -1]
 
@@ -530,7 +533,7 @@ def decode():
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
         force_max, prediction = decode(source, target, true_l)
-        for n in range(10):
+        for n in range(2):
             s = source[n, 1:]
             t = target[n, 1:]
             f = force_max[:, n]
@@ -560,18 +563,24 @@ def decode():
                     break
                 gred.append(de_vocab[idx])
                 p_string += (de_vocab[idx] + " ")
-
-            print("Sour : " + s_string)
-            print("Refe : " + t_string)
-            print("Forc : " + f_string)
-            print("Pred : " + p_string)
-            bleu = nltk.translate.bleu([ref], gred)
-            print("BLEU : " + str(bleu))
-            bleu_score.append(bleu)
+            try:
+                print("Sour : " + s_string)
+                print("Refe : " + t_string)
+                reference.append(t_string)
+                print("Forc : " + f_string)
+                print("Pred : " + p_string)
+                translation.append(p_string)
+            except:
+                print(" Find bad sentence ")
+                pass
             print("")
-    aver_bleu = np.mean(bleu_score)
-    print("The aver blue score is ")
-    print(aver_bleu)
+
+    with open("Translations/DeepRelu/ref.txt", "w") as doc:
+        for line in reference:
+            doc.write(line+"\n")
+    with open("Translations/DeepRelu/pred.txt", "w") as doc:
+        for line in translation:
+            doc.write(line+"\n")
 
 
 def run(out_dir):

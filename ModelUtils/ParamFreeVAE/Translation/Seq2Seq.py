@@ -379,6 +379,8 @@ def decode():
     mini_batchs = np.split(mini_batch, 20)
     decode = model.decode_fn()
     bleu_score = []
+    reference = []
+    translation = []
     for m in mini_batchs:
         l = m[-1, -1]
 
@@ -436,13 +438,19 @@ def decode():
             print("Refe : " + t_string)
             print("Forc : " + f_string)
             print("Pred : " + p_string)
-            bleu = nltk.translate.bleu([ref], gred)
-            print("BLEU : " + str(bleu))
-            bleu_score.append(bleu)
+            reference.append(t_string)
+            translation.append(p_string)
             print("")
     aver_bleu = np.mean(bleu_score)
     print("The aver blue score is ")
     print(aver_bleu)
+    with open("Translations/Seq2Seq/ref.txt", "w") as doc:
+        for line in reference:
+            doc.write(line+"\n")
+    with open("Translations/Seq2Seq/pred.txt", "w") as doc:
+        for line in translation:
+            doc.write(line+"\n")
+
 
 def run(out_dir):
     print("Run Seq2Seq model ")
