@@ -23,12 +23,12 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class Seq2Seq(object):
-    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=256, hid_dim=512):
+    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=512, hid_dim=1024):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 31
-        self.output_score_dim = 256
+        self.output_score_dim = 512
         self.embedding_dim = embed_dim
 
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -85,7 +85,7 @@ class Seq2Seq(object):
         """
         n = target.shape[0]
         # Encoding mask
-        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+        encode_mask = T.cast(T.neq(source, 2), "float32")[:, 1:]
         source_input_embedding = get_output(self.input_embedding, source[:, 1:])
         n, l = encode_mask.shape
         encode_mask = encode_mask.reshape((n, l, 1))
@@ -98,7 +98,7 @@ class Seq2Seq(object):
                                                sequences=[source_input_embedding, encode_mask])
 
         # Decoding mask
-        decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
+        decode_mask = T.cast(T.neq(target, 2), "float32")[:, 1:]
 
         # Decoding RNN
         decode_init = T.concatenate([h_e_1[-1], h_e_2[-1]], axis=-1)
@@ -463,14 +463,14 @@ def run(out_dir):
     validation = model.elbo_fn()
     train_data = None
 
-    with open("SentenceData/data_idx_small.txt", "r") as dataset:
+    with open("SentenceData/BPE/idx.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
     validation_data = None
-    with open("SentenceData/dev_idx_small.txt", "r") as dev:
+    with open("SentenceData/BPE/valid_idx.txt", "r") as dev:
         validation_data = json.loads(dev.read())
 
-    validation_data = sorted(validation_data, key=lambda d: d[2])
+    validation_data = sorted(validation_data, key=lambda d: max(len(d[0]), len(d[1])))
     len_valid = len(validation_data)
     splits = len_valid % 50
     validation_data = validation_data[:-splits]
@@ -482,17 +482,16 @@ def run(out_dir):
 
     validation_pair = []
     for m in validation_data:
-        l = m[-1, -1]
+        l = max(len(m[-1, 0]), len(m[-1, 1]))
         source = None
         target = None
-        true_l = m[:, -1]
         for datapoint in m:
             s = np.array(datapoint[0])
             t = np.array(datapoint[1])
             if len(s) != l:
-                s = np.append(s, [-1] * (l - len(s)))
+                s = np.append(s, [2] * (l - len(s)))
             if len(t) != l:
-                t = np.append(t, [-1] * (l - len(t)))
+                t = np.append(t, [2] * (l - len(t)))
             if source is None:
                 source = s.reshape((1, s.shape[0]))
             else:
@@ -502,7 +501,7 @@ def run(out_dir):
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        validation_pair.append([source, target, true_l])
+        validation_pair.append([source, target])
 
     # calculate required iterations
     data_size = len(train_data)
@@ -515,24 +514,23 @@ def run(out_dir):
     for i in range(iters):
         batch_indices = np.random.choice(len(train_data), batch_size * sample_groups, replace=False)
         mini_batch = [train_data[ind] for ind in batch_indices]
-        mini_batch = sorted(mini_batch, key=lambda d: d[2])
+        mini_batch = sorted(mini_batch, key=lambda d: max(len(d[0]), len(d[1])))
         samples = None
 
         mini_batch = np.array(mini_batch)
         mini_batchs = np.split(mini_batch, sample_groups)
         for m in mini_batchs:
-            l = m[-1, -1]
+            l = max(len(m[-1, 0]), len(m[-1, 1]))
             source = None
             target = None
-            true_l = m[:, -1]
             start = time.clock()
             for datapoint in m:
                 s = np.array(datapoint[0])
                 t = np.array(datapoint[1])
                 if len(s) != l:
-                    s = np.append(s, [-1] * (l - len(s)))
+                    s = np.append(s, [2] * (l - len(s)))
                 if len(t) != l:
-                    t = np.append(t, [-1] * (l - len(t)))
+                    t = np.append(t, [2] * (l - len(t)))
                 if source is None:
                     source = s.reshape((1, s.shape[0]))
                 else:
@@ -543,7 +541,7 @@ def run(out_dir):
                     target = np.concatenate([target, t.reshape((1, t.shape[0]))])
             output = None
             if draw_sample:
-                output = optimiser(source, target, samples, true_l)
+                print(" No operation ")
             else:
                 output = optimiser(source, target)
             iter_time = time.clock() - start

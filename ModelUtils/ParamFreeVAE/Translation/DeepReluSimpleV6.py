@@ -24,14 +24,14 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class DeepReluTransReadWrite(object):
-    def __init__(self, training_batch_size=25, source_vocab_size=40004, target_vocab_size=40004,
-                 embed_dim=620, hid_dim=1000, source_seq_len=50, target_seq_len=50):
+    def __init__(self, training_batch_size=25, source_vocab_size=37007, target_vocab_size=37007,
+                 embed_dim=512, hid_dim=1024, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
         self.hid_size = hid_dim
         self.max_len = 31
-        self.output_score_dim = 500
+        self.output_score_dim = 512
         self.embedding_dim = embed_dim
 
         # Init the word embeddings.
@@ -146,7 +146,7 @@ class DeepReluTransReadWrite(object):
         read_attention_bias = self.address_bias[:l]
         read_attention_bias = read_attention_bias.reshape((1, l))
         write_attention_bias = self.address_bias[self.max_len:]
-        write_attention_bias = write_attention_bias.reshape((1, l))
+        write_attention_bias = write_attention_bias.reshape((1, self.max_len))
         start = h_init[:, :self.output_score_dim]
         read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
         write_attention_init = T.nnet.relu(T.tanh(T.dot(start, write_attention_weight) + write_attention_bias))
@@ -171,7 +171,6 @@ class DeepReluTransReadWrite(object):
         a_c = a_c.reshape((n, l, self.output_score_dim))
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
-        final_canvas = final_canvas.dimshuffle((1, 0, 2))
         output_embedding = output_embedding.dimshuffle((1, 0, 2))
         # Get sample embedding
         sample_embed = self.target_output_embedding.W
@@ -203,16 +202,16 @@ class DeepReluTransReadWrite(object):
         loss = decode_mask * T.log(prob + 1e-5)
         loss = -T.mean(T.sum(loss, axis=1))
 
-        return loss, read_attention * encode_mask.reshape((1, n, l)), write_attention * d_m[:, :-1].reshape((1, n, l))
+        return loss
 
     def step(self, t_s, h1, h2, canvas, r_a, w_a, ref, r_a_w, w_a_w, r_a_b, w_a_b):
         n = h1.shape[0]
-        l = canvas.shape[1]
         # Reading position information
         read_attention = r_a
         write_attention = w_a
         # Read from ref
-        pos = read_attention.reshape((n, l, 1))
+        r_l = read_attention.shape[1]
+        pos = read_attention.reshape((n, r_l, 1))
         selection = pos * ref
         selection = T.sum(selection, axis=1)
 
@@ -239,7 +238,8 @@ class DeepReluTransReadWrite(object):
         o = get_output(self.out_mlp, h)
         a = o[:, :self.output_score_dim]
         c = o[:, self.output_score_dim:]
-        pos = write_attention.reshape((n, l, 1))
+        w_l = write_attention.shape[1]
+        pos = write_attention.reshape((n, w_l, 1))
         new_canvas = canvas * (1.0 - pos) + c.reshape((n, 1, self.hid_size)) * pos
         canvas = new_canvas * t_s + canvas * (1.0 - t_s)
 
@@ -386,9 +386,9 @@ class DeepReluTransReadWrite(object):
         source = T.imatrix('source')
         target = T.imatrix('target')
         true_l = T.ivector('true_l')
-        reconstruction_loss, read_attention, write_attention = self.symbolic_elbo(source, target, None, true_l)
+        reconstruction_loss = self.symbolic_elbo(source, target, None, true_l)
         elbo_fn = theano.function(inputs=[source, target, true_l],
-                                  outputs=[reconstruction_loss, read_attention, write_attention],
+                                  outputs=[reconstruction_loss],
                                   allow_input_downcast=True)
         return elbo_fn
 
@@ -413,7 +413,7 @@ class DeepReluTransReadWrite(object):
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
-        reconstruction_loss, read_attention, write_attetion = self.symbolic_elbo(source, target, samples, true_l)
+        reconstruction_loss = self.symbolic_elbo(source, target, samples, true_l)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         scaled_grads = lasagne.updates.total_norm_constraint(grads, 5)
@@ -425,14 +425,14 @@ class DeepReluTransReadWrite(object):
                 u.set_value(v.get_value())
         if draw_sample:
             optimiser = theano.function(inputs=[source, target, samples, true_l],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        outputs=[reconstruction_loss],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
             return optimiser, updates
         else:
             optimiser = theano.function(inputs=[source, target, true_l],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        outputs=[reconstruction_loss],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
@@ -531,8 +531,6 @@ def decode():
     with open("SentenceData/vocab_de", "r", encoding="utf8") as v:
         for line in v:
             de_vocab.append(line.strip("\n"))
-    with open("code_outputs/2017_06_21_12_13_53/final_model_params.save", "rb") as params:
-        model.set_param_values(cPickle.load(params))
     with open("SentenceData/dev_idx_small.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
     mini_batch = test_data[:2000]
@@ -591,7 +589,7 @@ def decode():
 
 
 def run(out_dir):
-    print("Run the Relu read and  write v5 ")
+    print("Run the Relu read and  write v6 ")
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
@@ -606,14 +604,14 @@ def run(out_dir):
     validation = model.elbo_fn()
     train_data = None
 
-    with open("SentenceData/data_idx_small.txt", "r") as dataset:
+    with open("SentenceData/BPE/idx.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
     validation_data = None
-    with open("SentenceData/dev_idx_small.txt", "r") as dev:
+    with open("SentenceData/BPE/valid_idx.txt", "r") as dev:
         validation_data = json.loads(dev.read())
 
-    validation_data = sorted(validation_data, key=lambda d: d[2])
+    validation_data = sorted(validation_data, key=lambda d: max(len(d[0]), len(d[1])))
     len_valid = len(validation_data)
     splits = len_valid % 50
     validation_data = validation_data[:-splits]
@@ -625,14 +623,15 @@ def run(out_dir):
 
     validation_pair = []
     for m in validation_data:
-        l = m[-1, -1]
+        l = max(len(m[-1, 0]), len(m[-1, 1]))
         start = time.clock()
         source = None
         target = None
-        true_l = m[:, -1]
+        true_l = []
         for datapoint in m:
             s = np.array(datapoint[0])
             t = np.array(datapoint[1])
+            true_l.append(len(s))
             if len(s) != l:
                 s = np.append(s, [-1] * (l - len(s)))
             if len(t) != l:
@@ -659,7 +658,7 @@ def run(out_dir):
     for i in range(iters):
         batch_indices = np.random.choice(len(train_data), batch_size * sample_groups, replace=False)
         mini_batch = [train_data[ind] for ind in batch_indices]
-        mini_batch = sorted(mini_batch, key=lambda d: d[2])
+        mini_batch = sorted(mini_batch, key=lambda d: max(len(d[0]), len(d[1])))
         samples = None
         if i % 10000 is 0:
             update_kwargs['learning_rate'] /= 2
@@ -682,14 +681,15 @@ def run(out_dir):
         read_attention = None
         write_attention = None
         for m in mini_batchs:
-            l = m[-1, -1]
+            l = max(len(m[-1, 0]), len(m[-1, 1]))
             source = None
             target = None
-            true_l = m[:, -1]
+            true_l = []
             start = time.clock()
             for datapoint in m:
                 s = np.array(datapoint[0])
                 t = np.array(datapoint[1])
+                true_l.append(len(s))
                 if len(s) != l:
                     s = np.append(s, [-1] * (l - len(s)))
                 if len(t) != l:
@@ -719,22 +719,13 @@ def run(out_dir):
         if i % 500 == 0:
             valid_loss = 0
             p = 0
-            v_r = None
-            v_w = None
             for pair in validation_pair:
                 p += 1
-                v_l, v_r, v_w = validation(pair[0], pair[1], pair[2])
+                [v_l] = validation(pair[0], pair[1], pair[2])
                 valid_loss += v_l
 
             print("The loss on testing set is : " + str(valid_loss / p))
             validation_loss.append(valid_loss / p)
-            if i % 2000 == 0:
-                for n in range(1):
-                    for t in range(v_r.shape[0]):
-                        print("======")
-                        print(" Source " + str(v_r[t, n]))
-                        print(" Target " + str(v_w[t, n]))
-                        print("")
 
         if i % 2000 == 0 and iters is not 0:
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
