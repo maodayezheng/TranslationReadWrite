@@ -47,12 +47,13 @@ class DeepReluTransReadWrite(object):
         self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
-        self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size + self.output_score_dim, self.output_score_dim)
-        self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size + self.output_score_dim, self.output_score_dim)
-        self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size + self.output_score_dim, self.output_score_dim)
+        self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size + self.output_score_dim, self.hid_size)
+        self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size + self.output_score_dim, self.hid_size)
+        self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size + self.output_score_dim,
+                                                  self.hid_size)
 
         # RNN output mapper
-        self.out_mlp = self.mlp(self.hid_size * 2, self.hid_size+self.output_score_dim, activation=tanh)
+        self.out_mlp = self.mlp(self.hid_size, 2*self.output_score_dim, activation=tanh)
         # attention parameters
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, 2 * self.max_len)).astype(theano.config.floatX)
         self.attention_weight = theano.shared(name="attention_weight", value=v)
@@ -143,9 +144,8 @@ class DeepReluTransReadWrite(object):
         time_steps = - time_steps.reshape((max_time_steps, 1)) + true_l.reshape((1, n)) - 1
         time_steps = T.cast(T.ge(time_steps, 0), "float32")
         time_steps = time_steps.reshape((max_time_steps, n, 1, 1))
-        ([h_t_1, h_t_2, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[h_init, h_init,
-                                                   canvas_init, read_attention_init, write_attention_init],
+        ([h_t_1, canvases, read_attention, write_attention], update) \
+            = theano.scan(self.step, outputs_info=[h_init, canvas_init, read_attention_init, write_attention_init],
                           non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
                                          read_attention_bias, write_attention_bias],
                           sequences=[time_steps])
@@ -160,7 +160,6 @@ class DeepReluTransReadWrite(object):
         output_embedding = output_embedding.dimshuffle((1, 0, 2))
         # Get sample embedding
         sample_embed = self.target_output_embedding.W
-        h_init = T.zeros((n, self.output_score_dim))
         ([h, s, sample_score], update) = theano.scan(self.decoding_step, outputs_info=[h_init, None, None],
                                                      non_sequences=[sample_embed],
                                                      sequences=[output_embedding, final_canvas])

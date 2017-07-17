@@ -42,10 +42,10 @@ class Seq2SeqAttention(object):
 
         # Init decoding RNNs
         self.gru_decode_gate = self.mlp(self.embedding_dim + self.hid_size + self.output_score_dim,
-                                        self.output_score_dim * 2,
+                                        self.hid_size * 2,
                                         activation=sigmoid)
         self.gru_decode_candidate = self.mlp(self.embedding_dim + self.hid_size + self.output_score_dim,
-                                             self.output_score_dim,
+                                             self.hid_size,
                                              activation=tanh)
 
         # Init Attention Params
@@ -62,7 +62,8 @@ class Seq2SeqAttention(object):
         self.attetion_v = theano.shared(value=v, name="attention_v")
 
         # Init output layer
-        self.out_mlp = self.mlp(self.output_score_dim, self.output_score_dim)
+        self.encode_out_mlp = self.mlp(self.hid_size, self.output_score_dim)
+        self.score_mlp = self.mlp(self.hid_size, self.output_score_dim)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -345,9 +346,6 @@ class Seq2SeqAttention(object):
         gru_encode1_gate_param = lasagne.layers.get_all_params(self.gru_encode1_gate)
         gru_encode1_candidate_param = lasagne.layers.get_all_params(self.gru_encode1_candidate)
 
-        gru_encode2_gate_param = lasagne.layers.get_all_params(self.gru_encode2_gate)
-        gru_encode2_candiadte_param = lasagne.layers.get_all_params(self.gru_encode2_candidate)
-
         gru_decode_gate_param = lasagne.layers.get_all_params(self.gru_decode_gate)
         gru_decode_candidate_param = lasagne.layers.get_all_params(self.gru_decode_candidate)
 
@@ -356,7 +354,6 @@ class Seq2SeqAttention(object):
         return target_output_embedding_param + target_input_embedding_param + \
                gru_decode_candidate_param + gru_decode_gate_param + \
                out_param + source_input_embedding_param + gru_encode1_gate_param + gru_encode1_candidate_param +\
-               gru_encode2_gate_param + gru_encode2_candiadte_param + \
                [self.attetion_v, self.attention_s, self.attention_h_1, self.attention_h_2]
 
     def get_param_values(self):
@@ -367,8 +364,6 @@ class Seq2SeqAttention(object):
         # get params of encoding rnn
         gru_encode1_candidate_param = lasagne.layers.get_all_param_values(self.gru_encode1_candidate)
         gru_encode1_gate_param = lasagne.layers.get_all_param_values(self.gru_encode1_gate)
-        gru_encode2_candidate_param = lasagne.layers.get_all_param_values(self.gru_encode2_candidate)
-        gru_encode2_gate_param = lasagne.layers.get_all_param_values(self.gru_encode2_gate)
         gru_decode_candidate_param = lasagne.layers.get_all_param_values(self.gru_decode_candidate)
         gru_decode_gate_param = lasagne.layers.get_all_param_values(self.gru_decode_gate)
 
@@ -376,7 +371,6 @@ class Seq2SeqAttention(object):
 
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
                 gru_encode1_candidate_param, gru_encode1_gate_param,
-                gru_encode2_candidate_param, gru_encode2_gate_param,
                 gru_decode_candidate_param, gru_decode_gate_param, out_param,
                 self.attention_h_1.get_value(), self.attention_h_2.get_value(),
                 self.attention_s.get_value(), self.attetion_v.get_value()]
@@ -387,8 +381,6 @@ class Seq2SeqAttention(object):
         lasagne.layers.set_all_param_values(self.target_output_embedding, params[2])
         lasagne.layers.set_all_param_values(self.gru_encode1_candidate, params[3])
         lasagne.layers.set_all_param_values(self.gru_encode1_gate, params[4])
-        lasagne.layers.set_all_param_values(self.gru_encode2_candidate, params[5])
-        lasagne.layers.set_all_param_values(self.gru_encode2_gate, params[6])
         lasagne.layers.set_all_param_values(self.gru_decode_candidate, params[7])
         lasagne.layers.set_all_param_values(self.gru_decode_gate, params[8])
         lasagne.layers.set_all_param_values(self.out_mlp, params[9])

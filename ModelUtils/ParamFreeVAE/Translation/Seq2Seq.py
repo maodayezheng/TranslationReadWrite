@@ -42,13 +42,14 @@ class Seq2Seq(object):
 
         # Init decoding RNNs
         self.gru_decode_gate = self.mlp(self.embedding_dim + self.output_score_dim + self.hid_size,
-                                        self.output_score_dim*2, activation=sigmoid)
+                                        self.hid_size*2, activation=sigmoid)
 
         self.gru_decode_candidate = self.mlp(self.embedding_dim + self.hid_size + self.output_score_dim,
-                                             self.output_score_dim, activation=tanh)
+                                             self.hid_size, activation=tanh)
 
         # Init output layer
-        self.out_mlp = self.mlp(self.output_score_dim, self.output_score_dim)
+        self.encode_out_mlp = self.mlp(self.hid_size, self.output_score_dim)
+        self.score_mlp = self.mlp(self.hid_size, self.output_score_dim)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
