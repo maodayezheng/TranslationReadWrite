@@ -47,10 +47,6 @@ class DeepReluTransReadWrite(object):
         self.gru_reset_1 = self.gru_reset(self.embedding_dim + self.hid_size, self.hid_size)
         self.gru_candidate_1 = self.gru_candidate(self.embedding_dim + self.hid_size, self.hid_size)
 
-        self.gru_update_2 = self.gru_update(self.embedding_dim + self.hid_size * 2, self.hid_size)
-        self.gru_reset_2 = self.gru_reset(self.embedding_dim + self.hid_size * 2, self.hid_size)
-        self.gru_candidate_2 = self.gru_candidate(self.embedding_dim + self.hid_size * 2, self.hid_size)
-
         self.gru_update_3 = self.gru_update(self.embedding_dim + self.hid_size + self.output_score_dim, self.output_score_dim)
         self.gru_reset_3 = self.gru_reset(self.embedding_dim + self.hid_size + self.output_score_dim, self.output_score_dim)
         self.gru_candidate_3 = self.gru_candidate(self.embedding_dim + self.hid_size + self.output_score_dim, self.output_score_dim)
@@ -215,16 +211,7 @@ class DeepReluTransReadWrite(object):
         h1 = (1.0 - u1) * h1 + u1 * c1
 
         # Decoding GRU layer 2
-
-        h_in = T.concatenate([h1, h2, selection], axis=1)
-        u2 = get_output(self.gru_update_2, h_in)
-        r2 = get_output(self.gru_reset_2, h_in)
-        reset_h2 = h2 * r2
-        c_in = T.concatenate([h1, reset_h2, selection], axis=1)
-        c2 = get_output(self.gru_candidate_2, c_in)
-        h2 = (1.0 - u2) * h2 + u2 * c2
-
-        h = T.concatenate([h1, h2], axis=-1)
+        h = h1
         o = get_output(self.out_mlp, h)
         a = o[:, :self.output_score_dim]
         c = o[:, self.output_score_dim:]
