@@ -21,12 +21,12 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class Seq2Seq(object):
-    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=512, hid_dim=1024):
+    def __init__(self, source_vocab_size=200, target_vocab_size=200, embed_dim=64, hid_dim=128):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 31
-        self.output_score_dim = 512
+        self.output_score_dim = 64
         self.embedding_dim = embed_dim
 
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -36,9 +36,6 @@ class Seq2Seq(object):
         # Init encoding RNNs
         self.gru_encode1_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size * 2, activation=sigmoid)
         self.gru_encode1_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
-
-        # Init decoding init layer
-        self.decode_init_layer = self.mlp(self.hid_size, self.hid_size, activation=tanh)
 
         # Init decoding RNNs
         self.gru_decode_gate = self.mlp(self.embedding_dim + self.output_score_dim + self.hid_size,
@@ -90,15 +87,15 @@ class Seq2Seq(object):
 
         # Encoding RNN
         h_init = T.zeros((n, self.hid_size))
-        ([h_e_1], update) = theano.scan(self.source_encode_step, outputs_info=[h_init],
-                                        sequences=[source_input_embedding, encode_mask])
+        (h_e_1, update) = theano.scan(self.source_encode_step, outputs_info=[h_init],
+                                      sequences=[source_input_embedding, encode_mask])
 
         # Decoding mask
         decode_mask = T.cast(T.neq(target, 2), "float32")[:, 1:]
 
         # Decoding RNN
         decode_init = h_e_1[-1]
-        decode_init = get_output(self.decode_init_layer, decode_init)
+        decode_init = get_output(self.encode_out_mlp, decode_init)
         target_input = target[:, :-1]
         n, l = target_input.shape
         target_input = target_input.reshape((n*l, ))
@@ -289,17 +286,16 @@ class Seq2Seq(object):
         gru_encode1_gate_param = lasagne.layers.get_all_params(self.gru_encode1_gate)
         gru_encode1_candidate_param = lasagne.layers.get_all_params(self.gru_encode1_candidate)
 
-        decode_init_param = lasagne.layers.get_all_params(self.decode_init_layer)
-
         gru_decode_gate_param = lasagne.layers.get_all_params(self.gru_decode_gate)
         gru_decode_candidate_param = lasagne.layers.get_all_params(self.gru_decode_candidate)
 
-        out_param = lasagne.layers.get_all_params(self.out_mlp)
+        encode_out_param = lasagne.layers.get_all_params(self.encode_out_mlp)
+        score_param = lasagne.layers.get_all_params(self.score_mlp)
 
         return target_output_embedding_param + target_input_embedding_param + \
                gru_decode_candidate_param + gru_decode_gate_param + \
-               out_param + source_input_embedding_param + gru_encode1_gate_param + gru_encode1_candidate_param +\
-               decode_init_param
+               encode_out_param + source_input_embedding_param + gru_encode1_gate_param + gru_encode1_candidate_param +\
+               score_param
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
@@ -312,14 +308,13 @@ class Seq2Seq(object):
         gru_decode_candidate_param = lasagne.layers.get_all_param_values(self.gru_decode_candidate)
         gru_decode_gate_param = lasagne.layers.get_all_param_values(self.gru_decode_gate)
 
-        decode_init_param = lasagne.layers.get_all_param_values(self.decode_init_layer)
-
-        out_param = lasagne.layers.get_all_param_values(self.out_mlp)
+        encode_out_param = lasagne.layers.get_all_param_values(self.encode_out_mlp)
+        score_param = lasagne.layers.get_all_params(self.score_mlp)
 
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
                 gru_encode1_candidate_param, gru_encode1_gate_param,
                 gru_decode_candidate_param, gru_decode_gate_param,
-                decode_init_param, out_param]
+                encode_out_param, score_param]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -329,8 +324,53 @@ class Seq2Seq(object):
         lasagne.layers.set_all_param_values(self.gru_encode1_gate, params[4])
         lasagne.layers.set_all_param_values(self.gru_decode_candidate, params[5])
         lasagne.layers.set_all_param_values(self.gru_decode_gate, params[6])
-        lasagne.layers.set_all_param_values(self.decode_init_layer, params[7])
-        lasagne.layers.set_all_param_values(self.out_mlp, params[8])
+        lasagne.layers.set_all_param_values(self.encode_out_mlp, params[7])
+        lasagne.layers.set_all_param_values(self.score_mlp, params[8])
+
+
+def test():
+    model = Seq2Seq()
+    update_kwargs = {'learning_rate': 1e-4}
+    draw_sample = False
+    optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
+    with open("SentenceData/idx.txt", "r") as dataset:
+        train_data = json.loads(dataset.read())
+
+        mini_batch = train_data[:100]
+        mini_batch = sorted(mini_batch, key=lambda d: max(len(d[0]), len(d[1])))
+        samples = None
+
+        mini_batch = np.array(mini_batch)
+        mini_batchs = np.split(mini_batch, 10)
+        training_loss = []
+        for m in mini_batchs:
+            l = max(len(m[-1, 0]), len(m[-1, 1]))
+            source = None
+            target = None
+            start = time.clock()
+            for datapoint in m:
+                s = np.array(datapoint[0])
+                t = np.array(datapoint[1])
+                if len(s) != l:
+                    s = np.append(s, [2] * (l - len(s)))
+                if len(t) != l:
+                    t = np.append(t, [2] * (l - len(t)))
+                if source is None:
+                    source = s.reshape((1, s.shape[0]))
+                else:
+                    source = np.concatenate([source, s.reshape((1, s.shape[0]))])
+                if target is None:
+                    target = t.reshape((1, t.shape[0]))
+                else:
+                    target = np.concatenate([target, t.reshape((1, t.shape[0]))])
+            output = None
+            if draw_sample:
+                print(" No operation ")
+            else:
+                output = optimiser(source, target)
+            iter_time = time.clock() - start
+            loss = output[0]
+            training_loss.append(loss)
 
 
 def decode():
