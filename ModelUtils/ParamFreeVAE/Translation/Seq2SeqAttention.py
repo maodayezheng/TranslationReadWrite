@@ -204,7 +204,7 @@ class Seq2SeqAttention(object):
         return h1
 
     def score_eval_step(self, h, embeddings):
-        h = get_output(self.out_mlp, h)
+        h = get_output(self.score_mlp, h)
         score = T.dot(h, embeddings.T)
         return h, score
 
