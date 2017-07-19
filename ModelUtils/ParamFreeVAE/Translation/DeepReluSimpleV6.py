@@ -187,16 +187,15 @@ class DeepReluTransReadWrite(object):
         s_l = source.shape[1]
         r_a = read_attention * encode_mask.reshape((1, n, s_l))
         w_a = write_attention
-        return loss, r_a, w_a
+        return loss, r_a, w_a, start, stop
 
     def step(self, t_s, h1, canvas, start, stop, r_a, w_a, ref, r_p, w_p):
         n = h1.shape[0]
         l = canvas.shape[1]
         # Reading position information
-        read_attention = T.nnet.relu(r_p - start[:, 0].reshape((n, 1)))*T.nnet.relu(stop[:, 0].reshape((n, 1)) - r_p)
-        write_attention = T.nnet.relu(w_p - start[:, 1].reshape((n, 1)))*T.nnet.relu(stop[:, 1].reshape((n, 1)) - w_p)
-        read_attention = T.nnet.relu(read_attention - r_a)
-        write_attention = T.nnet.relu(write_attention - w_a)
+        read_attention = T.nnet.relu(r_p - r_a - start[:, 0].reshape((n, 1)))*T.nnet.relu(stop[:, 0].reshape((n, 1)) - r_a - r_p)
+        write_attention = T.nnet.relu(w_p - w_a - start[:, 1].reshape((n, 1)))*T.nnet.relu(stop[:, 1].reshape((n, 1)) - w_a- w_p)
+
 
         # Read from ref
         l = read_attention.shape[1]
@@ -225,7 +224,7 @@ class DeepReluTransReadWrite(object):
 
         attention = T.nnet.sigmoid(T.dot(a, self.attention_weight) + self.attention_bias)
         start = attention[:, :2]
-        stop = attention[:, 2:] * (1.0 - start)
+        stop = start + attention[:, 2:] * (1.0 - start)
 
         return h1, canvas, start, stop, read_attention, write_attention
 
@@ -374,7 +373,7 @@ class DeepReluTransReadWrite(object):
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
-        reconstruction_loss, read_attention, write_attetion = self.symbolic_elbo(source, target, samples)
+        reconstruction_loss, read_attention, write_attetion, start, stop = self.symbolic_elbo(source, target, samples)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         scaled_grads = lasagne.updates.total_norm_constraint(grads, 5)
@@ -386,14 +385,14 @@ class DeepReluTransReadWrite(object):
                 u.set_value(v.get_value())
         if draw_sample:
             optimiser = theano.function(inputs=[source, target, samples],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        outputs=[reconstruction_loss, read_attention, write_attetion, start, stop],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
             return optimiser, updates
         else:
             optimiser = theano.function(inputs=[source, target],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        outputs=[reconstruction_loss, read_attention, write_attetion, start, stop],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
