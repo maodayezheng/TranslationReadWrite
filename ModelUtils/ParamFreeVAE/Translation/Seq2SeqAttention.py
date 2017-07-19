@@ -95,8 +95,8 @@ class Seq2SeqAttention(object):
         """
         n = target.shape[0]
         # Encoding mask
-        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
-        source_input_embedding = get_output(self.input_embedding, source[:, 1:])
+        encode_mask = T.cast(T.gt(source, -1), "float32")
+        source_input_embedding = get_output(self.input_embedding, source)
         n, l = encode_mask.shape
         encode_mask = encode_mask.reshape((n, l, 1))
         encode_mask = encode_mask.dimshuffle((1, 0, 2))
