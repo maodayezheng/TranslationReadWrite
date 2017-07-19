@@ -191,11 +191,9 @@ class DeepReluTransReadWrite(object):
 
     def step(self, t_s, h1, canvas, start, stop, r_a, w_a, ref, r_p, w_p):
         n = h1.shape[0]
-        l = canvas.shape[1]
         # Reading position information
         read_attention = T.nnet.relu(r_p - r_a - start[:, 0].reshape((n, 1)))*T.nnet.relu(stop[:, 0].reshape((n, 1)) - r_a - r_p)
-        write_attention = T.nnet.relu(w_p - w_a - start[:, 1].reshape((n, 1)))*T.nnet.relu(stop[:, 1].reshape((n, 1)) - w_a- w_p)
-
+        write_attention = T.nnet.relu(w_p - w_a - start[:, 1].reshape((n, 1)))*T.nnet.relu(stop[:, 1].reshape((n, 1)) - w_a - w_p)
 
         # Read from ref
         l = read_attention.shape[1]
