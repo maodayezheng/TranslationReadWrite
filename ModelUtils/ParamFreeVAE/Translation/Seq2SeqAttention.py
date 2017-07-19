@@ -23,13 +23,13 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class Seq2SeqAttention(object):
-    def __init__(self, source_vocab_size=40004, target_vocab_size=40004,
-                 embed_dim=620, hid_dim=1000, source_seq_len=50, target_seq_len=50):
+    def __init__(self, source_vocab_size=37007, target_vocab_size=37007,
+                 embed_dim=128, hid_dim=128, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 31
-        self.output_score_dim = 500
+        self.output_score_dim = 128
         self.embedding_dim = embed_dim
 
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -49,7 +49,7 @@ class Seq2SeqAttention(object):
                                              activation=tanh)
 
         # Init Attention Params
-        v = np.random.uniform(-0.05, 0.05, (self.hid_size*2, self.hid_size)).astype(theano.config.floatX)
+        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.hid_size)).astype(theano.config.floatX)
         self.attention_h_1 = theano.shared(value=v, name="attention_h_1")
 
         v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.output_score_dim)).astype(theano.config.floatX)
@@ -104,8 +104,8 @@ class Seq2SeqAttention(object):
 
         # Encoding RNN
         h_init = T.zeros((n, self.hid_size))
-        ([h_e_1], update) = theano.scan(self.source_encode_step, outputs_info=[h_init],
-                                        sequences=[source_input_embedding, encode_mask])
+        (h_e_1, update) = theano.scan(self.source_encode_step, outputs_info=[h_init],
+                                      sequences=[source_input_embedding, encode_mask])
 
         decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
 
@@ -124,7 +124,7 @@ class Seq2SeqAttention(object):
         target_input_embedding = get_output(self.target_input_embedding, target_input)
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
-        h_init = T.zeros((n, self.output_score_dim))
+        h_init = get_output(self.encode_out_mlp, h_e_1[-1])
         (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[h_init],
                                       sequences=[target_input_embedding],
                                       non_sequences=[attention_c1, attention_c2, encode_mask])
@@ -350,10 +350,12 @@ class Seq2SeqAttention(object):
         gru_decode_candidate_param = lasagne.layers.get_all_params(self.gru_decode_candidate)
 
         encode_out_param = lasagne.layers.get_all_params(self.encode_out_mlp)
+        score_param = lasagne.layers.get_all_params(self.score_mlp)
 
         return target_output_embedding_param + target_input_embedding_param + \
                gru_decode_candidate_param + gru_decode_gate_param + \
-               encode_out_param + source_input_embedding_param + gru_encode1_gate_param + gru_encode1_candidate_param +\
+               encode_out_param + source_input_embedding_param + gru_encode1_gate_param + gru_encode1_candidate_param + \
+               score_param+ \
                [self.attetion_v, self.attention_s, self.attention_h_1, self.attention_h_2]
 
     def get_param_values(self):
@@ -388,6 +390,52 @@ class Seq2SeqAttention(object):
         self.attention_h_2.set_value(params[11])
         self.attention_s.set_value(params[12])
         self.attetion_v.set_value(params[13])
+
+
+def test():
+    model = Seq2SeqAttention()
+    update_kwargs = {'learning_rate': 1e-4}
+    draw_sample = False
+    optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
+    with open("SentenceData/idx.txt", "r") as dataset:
+        train_data = json.loads(dataset.read())
+
+        mini_batch = train_data[:100]
+        mini_batch = sorted(mini_batch, key=lambda d: max(len(d[0]), len(d[1])))
+        samples = None
+
+        mini_batch = np.array(mini_batch)
+        mini_batchs = np.split(mini_batch, 10)
+        training_loss = []
+        for m in mini_batchs:
+            l = max(len(m[-1, 0]), len(m[-1, 1]))
+            source = None
+            target = None
+            start = time.clock()
+            for datapoint in m:
+                s = np.array(datapoint[0])
+                t = np.array(datapoint[1])
+                if len(s) != l:
+                    s = np.append(s, [2] * (l - len(s)))
+                if len(t) != l:
+                    t = np.append(t, [2] * (l - len(t)))
+                if source is None:
+                    source = s.reshape((1, s.shape[0]))
+                else:
+                    source = np.concatenate([source, s.reshape((1, s.shape[0]))])
+                if target is None:
+                    target = t.reshape((1, t.shape[0]))
+                else:
+                    target = np.concatenate([target, t.reshape((1, t.shape[0]))])
+            output = None
+            if draw_sample:
+                print(" No operation ")
+            else:
+                output = optimiser(source, target)
+            iter_time = time.clock() - start
+            loss = output[0]
+            print(loss)
+            training_loss.append(loss)
 
 
 def decode():
