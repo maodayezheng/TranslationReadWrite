@@ -24,12 +24,12 @@ random = MRG_RandomStreams(seed=1234)
 
 class Seq2SeqAttention(object):
     def __init__(self, source_vocab_size=37007, target_vocab_size=37007,
-                 embed_dim=128, hid_dim=128, source_seq_len=50, target_seq_len=50):
+                 embed_dim=512, hid_dim=1024, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 31
-        self.output_score_dim = 128
+        self.output_score_dim = 512
         self.embedding_dim = embed_dim
 
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -49,21 +49,21 @@ class Seq2SeqAttention(object):
                                              activation=tanh)
 
         # Init Attention Params
-        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.hid_size)).astype(theano.config.floatX)
+        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.output_score_dim)).astype(theano.config.floatX)
         self.attention_h_1 = theano.shared(value=v, name="attention_h_1")
 
-        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.output_score_dim)).astype(theano.config.floatX)
+        v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, self.output_score_dim)).astype(theano.config.floatX)
         self.attention_h_2 = theano.shared(value=v, name="attention_h_2")
 
-        v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, self.output_score_dim)).astype(theano.config.floatX)
+        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.output_score_dim)).astype(theano.config.floatX)
         self.attention_s = theano.shared(value=v, name="attention_s")
 
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, )).astype(theano.config.floatX)
         self.attetion_v = theano.shared(value=v, name="attention_v")
 
         # Init output layer
-        self.encode_out_mlp = self.mlp(self.hid_size, self.output_score_dim)
-        self.score_mlp = self.mlp(self.hid_size, self.output_score_dim)
+        self.encode_out_mlp = self.mlp(self.hid_size, self.hid_size)
+        self.score_mlp = self.mlp(self.hid_size + self.embedding_dim + self.output_score_dim, self.output_score_dim)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -116,7 +116,7 @@ class Seq2SeqAttention(object):
         attention_c1 = attention_candidate.reshape((n*l, d))
         attention_c1 = T.dot(attention_c1, self.attention_h_1)
         attention_c2 = T.dot(attention_c1, self.attention_h_2)
-        attention_c1 = attention_c1.reshape((l, n, self.hid_size))
+        attention_c1 = attention_c1.reshape((l, n, self.output_score_dim))
         attention_c2 = attention_c2.reshape((l, n, self.output_score_dim))
         target_input = target[:, :-1]
         n, l = target_input.shape
@@ -125,11 +125,12 @@ class Seq2SeqAttention(object):
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
         h_init = get_output(self.encode_out_mlp, h_e_1[-1])
-        (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[h_init],
+        ([h_t_2, attention_content], update) = theano.scan(self.target_decode_step, outputs_info=[h_init, None],
                                       sequences=[target_input_embedding],
                                       non_sequences=[attention_c1, attention_c2, encode_mask])
 
-        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_2],
+        score_eva_in = T.concatenate([h_t_2, attention_content, target_input_embedding], axis=-1)
+        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[score_eva_in],
                                            non_sequences=[self.target_output_embedding.W],
                                            outputs_info=[None, None])
         h = h.dimshuffle((1, 0, 2))
@@ -180,15 +181,15 @@ class Seq2SeqAttention(object):
         # Decoding GRU layer 1
         h_in = T.concatenate([h1, target_embedding, attention_content], axis=1)
         gate = get_output(self.gru_decode_gate, h_in)
-        u1 = gate[:, :self.output_score_dim]
-        r1 = gate[:, self.output_score_dim:]
+        u1 = gate[:, :self.hid_size]
+        r1 = gate[:, self.hid_size:]
         reset_h1 = h1 * r1
 
         c_in = T.concatenate([reset_h1, target_embedding, attention_content], axis=1)
         c1 = get_output(self.gru_decode_candidate, c_in)
         h1 = (1.0 - u1) * h1 + u1 * c1
 
-        return h1
+        return h1, attention_content
 
     def source_encode_step(self, source_embedding, mask, h1):
         # GRU layer 1
@@ -416,9 +417,9 @@ def test():
                 s = np.array(datapoint[0])
                 t = np.array(datapoint[1])
                 if len(s) != l:
-                    s = np.append(s, [2] * (l - len(s)))
+                    s = np.append(s, [-1] * (l - len(s)))
                 if len(t) != l:
-                    t = np.append(t, [2] * (l - len(t)))
+                    t = np.append(t, [-1] * (l - len(t)))
                 if source is None:
                     source = s.reshape((1, s.shape[0]))
                 else:
@@ -548,14 +549,14 @@ def run(out_dir):
     validation = model.elbo_fn()
     train_data = None
 
-    with open("SentenceData/data_idx_small.txt", "r") as dataset:
+    with open("SentenceData/BPE/selected_idx.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
     validation_data = None
-    with open("SentenceData/dev_idx_small.txt", "r") as dev:
+    with open("SentenceData/BPE/newstest2013.tok.bpe.32000.txt", "r") as dev:
         validation_data = json.loads(dev.read())
 
-    validation_data = sorted(validation_data, key=lambda d: d[2])
+    validation_data = sorted(validation_data, key=lambda d: max(len(d[0]), len(d[1])))
     len_valid = len(validation_data)
     splits = len_valid % 50
     validation_data = validation_data[:-splits]
@@ -567,7 +568,7 @@ def run(out_dir):
 
     validation_pair = []
     for m in validation_data:
-        l = m[-1, -1]
+        l = max(len(m[-1, 0]), len(m[-1, 1]))
         source = None
         target = None
         true_l = m[:, -1]
@@ -600,10 +601,8 @@ def run(out_dir):
     for i in range(iters):
         batch_indices = np.random.choice(len(train_data), batch_size * sample_groups, replace=False)
         mini_batch = [train_data[ind] for ind in batch_indices]
-        mini_batch = sorted(mini_batch, key=lambda d: d[2])
+        mini_batch = sorted(mini_batch, key=lambda d: max(len(d[0]), len(d[1])))
         samples = None
-        if i % 10000 is 0:
-            update_kwargs['learning_rate'] /= 2
 
         if draw_sample:
             unique_target = []
@@ -623,7 +622,7 @@ def run(out_dir):
         read_attention = None
         write_attention = None
         for m in mini_batchs:
-            l = m[-1, -1]
+            l = max(len(m[-1, 0]), len(m[-1, 1]))
             source = None
             target = None
             true_l = m[:, -1]

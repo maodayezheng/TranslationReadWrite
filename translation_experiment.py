@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleV6 import test
+from ModelUtils.ParamFreeVAE.Translation.Seq2SeqAttention import run
 
 import sys
 import numpy as np
@@ -11,5 +11,5 @@ out_dir = sys.argv[2]
 srng = RandomStreams(seed=1234)
 
 if __name__ == '__main__':
-    test()
+    run(out_dir)
 
