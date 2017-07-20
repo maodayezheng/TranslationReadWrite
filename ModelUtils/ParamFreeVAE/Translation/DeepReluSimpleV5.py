@@ -625,7 +625,7 @@ def run(out_dir):
         train_data = json.loads(dataset.read())
 
     validation_data = None
-    with open("SentenceData/newstest2013.tok.bpe.32000.txt", "r") as dev:
+    with open("SentenceData/BPE/newstest2013.tok.bpe.32000.txt", "r") as dev:
         validation_data = json.loads(dev.read())
 
     validation_data = sorted(validation_data, key=lambda d: max(len(d[0]), len(d[1])))
