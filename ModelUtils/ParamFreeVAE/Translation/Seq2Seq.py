@@ -457,6 +457,9 @@ def run(out_dir):
     validation_loss = []
     model = Seq2Seq()
     pre_trained = False
+    with open("code_outputs/2017_07_16_11_30_16/model_params.save", "rb") as params:
+        model.set_param_values(cPickle.load(params))
+
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
@@ -508,7 +511,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 50
     sample_groups = 10
-    iters = 40000
+    iters = 16000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
