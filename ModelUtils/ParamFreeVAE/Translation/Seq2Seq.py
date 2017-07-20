@@ -45,8 +45,8 @@ class Seq2Seq(object):
                                              self.hid_size, activation=tanh)
 
         # Init output layer
-        self.encode_out_mlp = self.mlp(self.hid_size, self.output_score_dim)
-        self.score_mlp = self.mlp(self.hid_size, self.output_score_dim)
+        self.encode_out_mlp = self.mlp(self.hid_size, self.hid_size)
+        self.score_mlp = self.mlp(self.hid_size + self.output_score_dim + self.embedding_dim, self.output_score_dim)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -102,13 +102,14 @@ class Seq2Seq(object):
         target_input_embedding = get_output(self.target_input_embedding, target_input)
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
-        h_init = T.zeros((n, self.output_score_dim))
+        h_init = T.zeros((n, self.hid_size))
         (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[h_init],
                                       sequences=[target_input_embedding],
                                       non_sequences=[decode_init])
 
-        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_2],
-                                           non_sequences=[self.target_output_embedding.W],
+        score_in = T.concatenate([h_t_2, target_input_embedding], axis=-1)
+        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[score_in],
+                                           non_sequences=[decode_init, self.target_output_embedding.W],
                                            outputs_info=[None, None])
         h = h.dimshuffle((1, 0, 2))
         score = score.dimshuffle((1, 0, 2))
@@ -160,14 +161,15 @@ class Seq2Seq(object):
 
         return h1
 
-    def score_eval_step(self, h, embeddings):
+    def score_eval_step(self, h, d_in, embeddings):
+        h = T.concatenate([h, d_in], axis=-1)
         h = get_output(self.score_mlp, h)
         score = T.dot(h, embeddings.T)
         return h, score
 
     def greedy_decode_step(self, target_embedding, h1, d1):
         h1 = self.target_decode_step(target_embedding, h1, d1)
-        h, score = self.score_eval_step(h1, self.target_output_embedding.W)
+        h, score = self.score_eval_step(h1, d1, self.target_output_embedding.W)
         prediction = T.argmax(score, axis=-1)
         predict_embedding = get_output(self.target_input_embedding, prediction)
 
