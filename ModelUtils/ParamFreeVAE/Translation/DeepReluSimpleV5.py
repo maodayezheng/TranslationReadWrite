@@ -621,14 +621,14 @@ def run(out_dir):
     validation = model.elbo_fn()
     train_data = None
 
-    with open("SentenceData/data_idx_small.txt", "r") as dataset:
+    with open("SentenceData/BPE/selected_idx.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
     validation_data = None
-    with open("SentenceData/dev_idx_small.txt", "r") as dev:
+    with open("SentenceData/newstest2013.tok.bpe.32000.txt", "r") as dev:
         validation_data = json.loads(dev.read())
 
-    validation_data = sorted(validation_data, key=lambda d: d[2])
+    validation_data = sorted(validation_data, key=lambda d: max(len(d[0]), len(d[1])))
     len_valid = len(validation_data)
     splits = len_valid % 50
     validation_data = validation_data[:-splits]
@@ -640,11 +640,10 @@ def run(out_dir):
 
     validation_pair = []
     for m in validation_data:
-        l = m[-1, -1]
+        l = max(len(m[-1, 0]), len(m[-1, 1]))
         start = time.clock()
         source = None
         target = None
-        true_l = m[:, -1]
         for datapoint in m:
             s = np.array(datapoint[0])
             t = np.array(datapoint[1])
@@ -661,7 +660,7 @@ def run(out_dir):
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        validation_pair.append([source, target, true_l])
+        validation_pair.append([source, target])
 
     # calculate required iterations
     data_size = len(train_data)
@@ -674,10 +673,8 @@ def run(out_dir):
     for i in range(iters):
         batch_indices = np.random.choice(len(train_data), batch_size * sample_groups, replace=False)
         mini_batch = [train_data[ind] for ind in batch_indices]
-        mini_batch = sorted(mini_batch, key=lambda d: d[2])
+        mini_batch = sorted(mini_batch, key=lambda d: max(len(d[0]), len(d[1])))
         samples = None
-        if i % 10000 is 0:
-            update_kwargs['learning_rate'] /= 2
 
         if draw_sample:
             unique_target = []
@@ -697,10 +694,9 @@ def run(out_dir):
         read_attention = None
         write_attention = None
         for m in mini_batchs:
-            l = m[-1, -1]
+            l = max(len(m[-1, 0]), len(m[-1, 1]))
             source = None
             target = None
-            true_l = m[:, -1]
             start = time.clock()
             for datapoint in m:
                 s = np.array(datapoint[0])
@@ -719,9 +715,9 @@ def run(out_dir):
                     target = np.concatenate([target, t.reshape((1, t.shape[0]))])
             output = None
             if draw_sample:
-                output = optimiser(source, target, samples, true_l)
+                output = optimiser(source, target, samples)
             else:
-                output = optimiser(source, target, true_l)
+                output = optimiser(source, target)
             iter_time = time.clock() - start
             loss = output[0]
             training_loss.append(loss)
@@ -738,7 +734,7 @@ def run(out_dir):
             v_w = None
             for pair in validation_pair:
                 p += 1
-                v_l, v_r, v_w = validation(pair[0], pair[1], pair[2])
+                v_l, v_r, v_w = validation(pair[0], pair[1])
                 valid_loss += v_l
 
             print("The loss on testing set is : " + str(valid_loss / p))
