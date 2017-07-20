@@ -63,7 +63,8 @@ class DeepReluTransReadWrite(object):
         self.attention_bias = theano.shared(name="attention_bias", value=v)
 
         # teacher mapper
-        self.score = self.mlp(self.output_score_dim, self.output_score_dim, activation=linear)
+        self.score = self.mlp(self.output_score_dim + self.hid_size + self.embedding_dim,
+                              self.output_score_dim, activation=linear)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -235,7 +236,8 @@ class DeepReluTransReadWrite(object):
         c1 = get_output(self.gru_candidate_3, c_in)
         h1 = (1.0 - u1) * pre_hid_info + u1 * c1
 
-        s = get_output(self.score, h1)
+        score_in = T.concatenate([h1, col, embedding], axis=-1)
+        s = get_output(self.score, score_in)
         sample_score = T.dot(s, s_embedding.T)
 
         return h1, s, sample_score
