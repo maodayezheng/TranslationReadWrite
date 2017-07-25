@@ -21,12 +21,12 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class Seq2Seq(object):
-    def __init__(self, source_vocab_size=200, target_vocab_size=200, embed_dim=64, hid_dim=128):
+    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=512, hid_dim=1024):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 31
-        self.output_score_dim = 64
+        self.output_score_dim = 512
         self.embedding_dim = embed_dim
 
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -45,7 +45,7 @@ class Seq2Seq(object):
                                              self.hid_size, activation=tanh)
 
         # Init output layer
-        self.encode_out_mlp = self.mlp(self.hid_size, self.hid_size)
+        self.encode_out_mlp = self.mlp(self.hid_size, self.output_score_dim)
         self.score_mlp = self.mlp(self.hid_size + self.output_score_dim + self.embedding_dim, self.output_score_dim)
 
     def embedding(self, input_dim, cats, output_dim):
@@ -138,8 +138,8 @@ class Seq2Seq(object):
         # Decoding GRU layer 1
         h_in = T.concatenate([h1, d1, target_embedding], axis=1)
         gate = get_output(self.gru_decode_gate, h_in)
-        u1 = gate[:, :self.output_score_dim]
-        r1 = gate[:, self.output_score_dim:]
+        u1 = gate[:, :self.hid_size]
+        r1 = gate[:, self.hid_size:]
         reset_h1 = h1 * r1
 
         c_in = T.concatenate([reset_h1, d1, target_embedding], axis=1)
@@ -311,7 +311,7 @@ class Seq2Seq(object):
         gru_decode_gate_param = lasagne.layers.get_all_param_values(self.gru_decode_gate)
 
         encode_out_param = lasagne.layers.get_all_param_values(self.encode_out_mlp)
-        score_param = lasagne.layers.get_all_params(self.score_mlp)
+        score_param = lasagne.layers.get_all_param_values(self.score_mlp)
 
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
                 gru_encode1_candidate_param, gru_encode1_gate_param,
@@ -478,8 +478,9 @@ def run(out_dir):
     validation_loss = []
     model = Seq2Seq()
     pre_trained = False
-    with open("code_outputs/2017_07_16_11_30_16/model_params.save", "rb") as params:
-        model.set_param_values(cPickle.load(params))
+    if pre_trained:
+        with open("code_outputs/2017_07_21_13_51_21/final_model_params.save", "rb") as params:
+            model.set_param_values(cPickle.load(params))
 
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
@@ -487,11 +488,11 @@ def run(out_dir):
     validation = model.elbo_fn()
     train_data = None
 
-    with open("SentenceData/BPE/idx.txt", "r") as dataset:
+    with open("SentenceData/BPE/selected_idx.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
     validation_data = None
-    with open("SentenceData/BPE/valid_idx.txt", "r") as dev:
+    with open("SentenceData/BPE/newstest2013.tok.bpe.32000.txt", "r") as dev:
         validation_data = json.loads(dev.read())
 
     validation_data = sorted(validation_data, key=lambda d: max(len(d[0]), len(d[1])))
@@ -513,9 +514,9 @@ def run(out_dir):
             s = np.array(datapoint[0])
             t = np.array(datapoint[1])
             if len(s) != l:
-                s = np.append(s, [2] * (l - len(s)))
+                s = np.append(s, [-1] * (l - len(s)))
             if len(t) != l:
-                t = np.append(t, [2] * (l - len(t)))
+                t = np.append(t, [-1] * (l - len(t)))
             if source is None:
                 source = s.reshape((1, s.shape[0]))
             else:
@@ -532,7 +533,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 50
     sample_groups = 10
-    iters = 16000
+    iters = 40000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
@@ -552,9 +553,9 @@ def run(out_dir):
                 s = np.array(datapoint[0])
                 t = np.array(datapoint[1])
                 if len(s) != l:
-                    s = np.append(s, [2] * (l - len(s)))
+                    s = np.append(s, [-1] * (l - len(s)))
                 if len(t) != l:
-                    t = np.append(t, [2] * (l - len(t)))
+                    t = np.append(t, [-1] * (l - len(t)))
                 if source is None:
                     source = s.reshape((1, s.shape[0]))
                 else:
