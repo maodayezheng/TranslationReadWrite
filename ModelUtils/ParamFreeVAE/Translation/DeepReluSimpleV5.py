@@ -258,6 +258,7 @@ class DeepReluTransReadWrite(object):
         return embedding, h1, s, sample_score, prediction
 
     def beam_search_forward(self, col, score, embedding, pre_hid_info, s_embedding):
+        n = col.shape[0]
         input_info = T.concatenate([embedding, col, pre_hid_info], axis=-1)
         u1 = get_output(self.gru_update_3, input_info)
         r1 = get_output(self.gru_reset_3, input_info)
@@ -268,17 +269,26 @@ class DeepReluTransReadWrite(object):
 
         s = get_output(self.score, h1)
         sample_score = T.dot(s, s_embedding.T)
+        k = sample_score.shape[-1]
+        sample_score = sample_score.reshape((n, 1, k))
         sample_score += score
+        sample_score = sample_score.reshape((n, 10*k))
         sort_index = T.argsort(-sample_score, axis=-1)
+        sample_score = T.sort(-sample_score, axis=-1)
         tops = sort_index[:, :10]
+        sample_score = -sample_score[:, :10]
         tops = T.cast(T.divmod(tops, self.target_vocab_size), "int8")
 
         embedding = get_output(self.target_input_embedding, tops)
-        return sample_score, embedding, h1, s, tops
+        d = embedding.shape[-1]
+        embedding = embedding.reshape((n*10, d))
+        return sample_score, embedding, h1, tops
 
-    def beam_search_backward(self, col, embedding, pre_hid_info, s_embedding):
-        print("Backward beam search")
-
+    def beam_search_backward(self, top, idx):
+        max_idx = top[idx]
+        idx = T.true_div(max_idx, self.target_vocab_size)
+        max_idx = T.divmod(max_idx, self.target_vocab_size)
+        return idx, max_idx
     """
 
 
@@ -348,9 +358,20 @@ class DeepReluTransReadWrite(object):
                                                                     non_sequences=[sample_embed],
                                                                     sequences=[final_canvas])
 
+        ([beam_score, e, h, tops], update) = theano.scan(self.beam_search_forward,
+                                                         outputs_info=[init_embedding, h_init, None, None, None],
+                                                         non_sequences=[sample_embed],
+                                                         sequences=[final_canvas])
+        beam_init = T.argmax(beam_score, axis=-1)
+        tops = tops[:, ::-1]
+        ([b_i, beam_prediction], update) = theano.scan(self.beam_search_backward,
+                                                       outputs_info=[beam_init],
+                                                       sequences=[tops])
+
+        beam_prediction = beam_prediction[:, ::-1]
         force_prediction = T.argmax(force_score, axis=-1)
         return theano.function(inputs=[source, target],
-                               outputs=[force_prediction, prediction],
+                               outputs=[force_prediction, prediction, beam_prediction],
                                allow_input_downcast=True)
 
     def elbo_fn(self):
