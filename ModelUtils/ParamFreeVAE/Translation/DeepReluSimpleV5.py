@@ -257,6 +257,28 @@ class DeepReluTransReadWrite(object):
         embedding = get_output(self.target_input_embedding, prediction)
         return embedding, h1, s, sample_score, prediction
 
+    def beam_search_forward(self, col, score, embedding, pre_hid_info, s_embedding):
+        input_info = T.concatenate([embedding, col, pre_hid_info], axis=-1)
+        u1 = get_output(self.gru_update_3, input_info)
+        r1 = get_output(self.gru_reset_3, input_info)
+        reset_h1 = pre_hid_info * r1
+        c_in = T.concatenate([embedding, col, reset_h1], axis=1)
+        c1 = get_output(self.gru_candidate_3, c_in)
+        h1 = (1.0 - u1) * pre_hid_info + u1 * c1
+
+        s = get_output(self.score, h1)
+        sample_score = T.dot(s, s_embedding.T)
+        sample_score += score
+        sort_index = T.argsort(-sample_score, axis=-1)
+        tops = sort_index[:, :10]
+        tops = T.cast(T.divmod(tops, self.target_vocab_size), "int8")
+
+        embedding = get_output(self.target_input_embedding, tops)
+        return sample_score, embedding, h1, s, tops
+
+    def beam_search_backward(self, col, embedding, pre_hid_info, s_embedding):
+        print("Backward beam search")
+
     """
 
 
