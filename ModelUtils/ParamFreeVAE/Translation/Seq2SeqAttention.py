@@ -126,8 +126,8 @@ class Seq2SeqAttention(object):
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
         h_init = get_output(self.encode_out_mlp, h_e_1[-1])
         ([h_t_2, attention_content], update) = theano.scan(self.target_decode_step, outputs_info=[h_init, None],
-                                      sequences=[target_input_embedding],
-                                      non_sequences=[attention_c1, attention_c2, encode_mask])
+                                                           sequences=[target_input_embedding],
+                                                           non_sequences=[attention_c1, attention_c2, encode_mask])
 
         score_eva_in = T.concatenate([h_t_2, attention_content, target_input_embedding], axis=-1)
         ([h, score], update) = theano.scan(self.score_eval_step, sequences=[score_eva_in],
@@ -210,8 +210,9 @@ class Seq2SeqAttention(object):
         return h, score
 
     def greedy_decode_step(self, target_embedding, h1, a_c1, a_c2, mask):
-        h1 = self.target_decode_step(target_embedding, h1, a_c1, a_c2, mask)
-        h, s = self.score_eval_step(h1, self.target_output_embedding.W)
+        h1, attention_content = self.target_decode_step(target_embedding, h1, a_c1, a_c2, mask)
+        score_in = T.concatenate([h1, attention_content, target_embedding], axis=-1)
+        h, s = self.score_eval_step(score_in, self.target_output_embedding.W)
         prediction = T.argmax(s, axis=-1)
         prediction_embedding = get_output(self.target_input_embedding, prediction)
         return prediction_embedding, h1, prediction
@@ -225,35 +226,30 @@ class Seq2SeqAttention(object):
         """
         source = T.imatrix('source')
         target = T.imatrix('target')
+        n = target.shape[0]
         # Encoding mask
-        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
-        source_input_embedding = get_output(self.input_embedding, source[:, 1:])
+        encode_mask = T.cast(T.gt(source, -1), "float32")
+        source_input_embedding = get_output(self.input_embedding, source)
         n, l = encode_mask.shape
         encode_mask = encode_mask.reshape((n, l, 1))
         encode_mask = encode_mask.dimshuffle((1, 0, 2))
         source_input_embedding = source_input_embedding.dimshuffle((1, 0, 2))
 
-        # Forward Encoding RNN
+        # Encoding RNN
         h_init = T.zeros((n, self.hid_size))
-        (h_e_1, update) = theano.scan(self.forward_encode_step, outputs_info=[h_init],
+        (h_e_1, update) = theano.scan(self.source_encode_step, outputs_info=[h_init],
                                       sequences=[source_input_embedding, encode_mask])
-
-        # Backward Encoding RNN
-        (h_e_2, update) = theano.scan(self.backward_encode_step, outputs_info=[h_init],
-                                      sequences=[source_input_embedding[::-1], encode_mask[::-1]])
-        h_e_2 = h_e_2[::-1]
-        # Decoding mask
 
         decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
 
         # Decoding RNN
-        attention_candidate = T.concatenate([h_e_1, h_e_2], axis=-1)
+        attention_candidate = h_e_1
 
         l, n, d = attention_candidate.shape
         attention_c1 = attention_candidate.reshape((n * l, d))
         attention_c1 = T.dot(attention_c1, self.attention_h_1)
         attention_c2 = T.dot(attention_c1, self.attention_h_2)
-        attention_c1 = attention_c1.reshape((l, n, self.hid_size))
+        attention_c1 = attention_c1.reshape((l, n, self.output_score_dim))
         attention_c2 = attention_c2.reshape((l, n, self.output_score_dim))
         target_input = target[:, :-1]
         n, l = target_input.shape
@@ -261,12 +257,13 @@ class Seq2SeqAttention(object):
         target_input_embedding = get_output(self.target_input_embedding, target_input)
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
-        h_init = T.zeros((n, self.output_score_dim))
-        (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[h_init],
-                                      sequences=[target_input_embedding],
-                                      non_sequences=[attention_c1, attention_c2, encode_mask])
+        h_init = get_output(self.encode_out_mlp, h_e_1[-1])
+        ([h_t_2, attention_content], update) = theano.scan(self.target_decode_step, outputs_info=[h_init, None],
+                                                           sequences=[target_input_embedding],
+                                                           non_sequences=[attention_c1, attention_c2, encode_mask])
 
-        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_2],
+        score_eva_in = T.concatenate([h_t_2, attention_content, target_input_embedding], axis=-1)
+        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[score_eva_in],
                                            non_sequences=[self.target_output_embedding.W],
                                            outputs_info=[None, None])
 

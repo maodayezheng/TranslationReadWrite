@@ -265,58 +265,53 @@ class DeepReluTransReadWrite(object):
     def decode_fn(self):
         source = T.imatrix('source')
         target = T.imatrix('target')
-        true_l = T.ivector('true_l')
         n = source.shape[0]
-        max_time_steps = true_l[-1]
-        l = source[:, 1:].shape[1]
+        s_l = source.shape[1]
         # Get input embedding
-        source_embedding = get_output(self.input_embedding, source[:, 1:])
+        source_embedding = get_output(self.input_embedding, source)
 
         # Create input mask
-        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
+        encode_mask = T.cast(T.gt(source, -1), "float32")
 
         # Create decoding mask
         d_m = T.cast(T.gt(target, -1), "float32")
         decode_mask = d_m[:, 1:]
 
         # Init decoding states
-        canvas_init = T.zeros((n, self.max_len, self.hid_size), dtype="float32")
-        canvas_init = canvas_init[:, :l]
+        canvas_init = T.zeros((n, self.max_len, self.output_score_dim), dtype="float32")
+        t_l = decode_mask.shape[1]
 
         h_init = T.zeros((n, self.hid_size))
-        source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
+        source_embedding = source_embedding * encode_mask.reshape((n, s_l, 1))
+        time_steps = T.cast(encode_mask.dimshuffle((1, 0)), dtype="float32")
 
-        read_attention_weight = self.attention_weight[:, :l]
-        write_attention_weight = self.attention_weight[:, self.max_len:(self.max_len + l)]
-        read_attention_bias = self.attention_bias[:l]
-        read_attention_bias = read_attention_bias.reshape((1, l))
-        write_attention_bias = self.attention_bias[self.max_len:(self.max_len + l)]
-        write_attention_bias = write_attention_bias.reshape((1, l))
-        start = h_init[:, :self.output_score_dim]
-        read_attention_init = T.nnet.relu(T.tanh(T.dot(start, read_attention_weight) + read_attention_bias))
-        write_attention_init = T.nnet.relu(T.tanh(T.dot(start, write_attention_weight) + write_attention_bias))
-        time_steps = T.arange(T.cast(max_time_steps, "int8"))
-        time_steps = - time_steps.reshape((max_time_steps, 1)) + true_l.reshape((1, n)) - 1
-        time_steps = T.cast(T.ge(time_steps, 0), "float32")
-        time_steps = time_steps.reshape((max_time_steps, n, 1, 1))
-        ([h_t_1, h_t_2, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[h_init, h_init,
-                                                   canvas_init, read_attention_init, write_attention_init],
-                          non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
-                                         read_attention_bias, write_attention_bias],
-                          sequences=[time_steps])
+        # Create Pos score
+        read_pos = T.arange(s_l, dtype="float32") + 1.0
+        read_pos = read_pos.reshape((1, s_l)) / (T.sum(encode_mask, axis=-1).reshape((n, 1)) + 1.0)
+
+        write_pos = T.arange(self.max_len, dtype="float32") + 1.0
+        write_pos = write_pos.reshape((1, self.max_len)) / (
+        T.ones((n, 1), dtype="float32") * (float(self.max_len) + 1.0))
+
+        r_a_init = T.zeros((n, s_l))
+        w_a_init = T.zeros((n, self.max_len))
+        ([h_t_1, a_t, canvases, read_attention, write_attention, start, stop], update) \
+            = theano.scan(self.step,
+                          outputs_info=[h_init, h_init[:, :self.output_score_dim], canvas_init, r_a_init, w_a_init,
+                                        None, None],
+                          non_sequences=[source_embedding, read_pos, write_pos],
+                          sequences=[time_steps.reshape((s_l, n, 1, 1))])
 
         # Complementary Sum for softmax approximation
         # Link: http://web4.cs.ucl.ac.uk/staff/D.Barber/publications/AISTATS2017.pdf
         # Check the likelihood on full vocab
-        final_canvas = canvases[15]
+        final_canvas = canvases[-1]
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
         final_canvas = final_canvas.dimshuffle((1, 0, 2))
         output_embedding = output_embedding.dimshuffle((1, 0, 2))
         # Get sample embedding
         sample_embed = self.target_output_embedding.W
-        h_init = T.zeros((n, self.output_score_dim))
         ([h, s, force_score], update) = theano.scan(self.decoding_step, outputs_info=[h_init, None, None],
                                                     non_sequences=[sample_embed],
                                                     sequences=[output_embedding, final_canvas])
@@ -329,7 +324,7 @@ class DeepReluTransReadWrite(object):
                                                                     sequences=[final_canvas])
 
         force_prediction = T.argmax(force_score, axis=-1)
-        return theano.function(inputs=[source, target, true_l],
+        return theano.function(inputs=[source, target],
                                outputs=[force_prediction, prediction],
                                allow_input_downcast=True)
 

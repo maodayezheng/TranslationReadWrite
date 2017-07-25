@@ -187,15 +187,11 @@ class Seq2Seq(object):
 
         # Encoding RNN
         h_init = T.zeros((n, self.hid_size))
-        ([h_e_1, h_e_2], update) = theano.scan(self.source_encode_step, outputs_info=[h_init, h_init],
-                                               sequences=[source_input_embedding, encode_mask])
-
-        # Decoding mask
-        decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
+        (h_e_1, update) = theano.scan(self.source_encode_step, outputs_info=[h_init, h_init],
+                                      sequences=[source_input_embedding, encode_mask])
 
         # Decoding RNN
-        decode_init = T.concatenate([h_e_1[-1], h_e_2[-1]], axis=-1)
-        decode_init = get_output(self.decode_init_layer, decode_init)
+        decode_init = get_output(self.encode_out_mlp, h_e_1[-1])
         target_input = target[:, :-1]
         n, l = target_input.shape
         target_input = target_input.reshape((n * l,))
@@ -574,8 +570,7 @@ def run(out_dir):
             training_loss.append(loss)
 
             if i % 250 == 0:
-                print("training time " + str(iter_time) + " sec with sentence length " + str(l)
-                      + "training loss : " + str(loss))
+                print("training time " + str(iter_time) + " sec with sentence length " + str(l) + "training loss : " + str(loss))
 
         if i % 500 == 0:
             valid_loss = 0
