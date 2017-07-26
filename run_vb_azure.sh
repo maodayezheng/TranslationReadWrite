@@ -1,3 +1,6 @@
+#$ -l h_rt=168:0:0
+#$ -l tmem=15G
+#$ -l h_vmem=15G
 #!/bin/sh
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
