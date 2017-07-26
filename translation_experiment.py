@@ -6,8 +6,7 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 sys.setrecursionlimit(5000000)
 np.set_printoptions(threshold=1000000)
-main_dir = sys.argv[1]
-out_dir = sys.argv[2]
+out_dir = sys.argv[1]
 srng = RandomStreams(seed=1234)
 
 if __name__ == '__main__':
