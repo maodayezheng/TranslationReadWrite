@@ -635,7 +635,6 @@ def run(out_dir):
     validation_loss = []
     model = DeepReluTransReadWrite()
     pre_trained = False
-    epoch = 10
     if pre_trained:
         with open("code_outputs/2017_06_14_09_09_13/model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
@@ -645,11 +644,11 @@ def run(out_dir):
     validation = model.elbo_fn()
     train_data = None
 
-    with open("SentenceData/BPE/selected_idx.txt", "r") as dataset:
+    with open("SentenceData/BPE/train50.tok.bpe.32000.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
     validation_data = None
-    with open("SentenceData/BPE/newstest2013.tok.bpe.32000.txt", "r") as dev:
+    with open("SentenceData/BPE/news2013.tok.bpe.32000.txt", "r") as dev:
         validation_data = json.loads(dev.read())
 
     validation_data = sorted(validation_data, key=lambda d: max(len(d[0]), len(d[1])))
@@ -668,7 +667,6 @@ def run(out_dir):
         start = time.clock()
         source = None
         target = None
-        true_l = m[:, -1]
         for datapoint in m:
             s = np.array(datapoint[0])
             t = np.array(datapoint[1])
@@ -715,14 +713,10 @@ def run(out_dir):
 
         mini_batch = np.array(mini_batch)
         mini_batchs = np.split(mini_batch, sample_groups)
-        loss = None
-        read_attention = None
-        write_attention = None
         for m in mini_batchs:
             l = max(len(m[-1, 0]), len(m[-1, 1]))
             source = None
             target = None
-            true_l = m[:, -1]
             start = time.clock()
             for datapoint in m:
                 s = np.array(datapoint[0])
@@ -751,7 +745,7 @@ def run(out_dir):
             if i % 250 == 0:
                 print("training time " + str(iter_time)
                       + " sec with sentence length " + str(l)
-                      + "training loss : " + str(loss))
+                      + " training loss : " + str(loss))
 
         if i % 500 == 0:
             valid_loss = 0
