@@ -158,7 +158,7 @@ class DeepReluTransReadWrite(object):
 
         r_a_init = T.zeros((n, s_l))
         w_a_init = T.zeros((n, self.max_len))
-        ([h_t_1, h_t_1, a_t, canvases, read_attention, write_attention, start, stop], update) \
+        ([h_t_1, h_t_2, a_t, canvases, read_attention, write_attention, start, stop], update) \
             = theano.scan(self.step, outputs_info=[h_init, h_init, h_init[:, :self.output_score_dim],
                                                    canvas_init, r_a_init, w_a_init, None, None],
                           non_sequences=[source_embedding, read_pos, write_pos],
@@ -175,14 +175,18 @@ class DeepReluTransReadWrite(object):
         attention_c1 = attention_c1.reshape((n, l, self.output_score_dim))
         attention_c2 = attention_c2.reshape((n, l, self.output_score_dim))
 
-        output_embedding = get_output(self.target_input_embedding, target)
-        output_embedding = output_embedding[:, :-1]
-        output_embedding = output_embedding.dimshuffle((1, 0, 2))
+        decode_in_embedding = get_output(self.target_input_embedding, target)
+        decode_in_embedding = decode_in_embedding[:, :-1]
+        decode_in_embedding = decode_in_embedding.dimshuffle((1, 0, 2))
         # Get sample embedding
+        decode_in = get_output(self.decoder_init_mlp, T.concatenate([h_t_1[-1], h_t_2[-1]], axis=-1))
+
         sample_embed = self.target_output_embedding.W
-        ([h, s, sample_score], update) = theano.scan(self.decoding_step, outputs_info=[h_init, None, None],
-                                                     non_sequences=[sample_embed, attention_c1, attention_c2],
-                                                     sequences=[output_embedding])
+        ([h_t_1, h_t_2, s, sample_score], update) = theano.scan(self.decoding_step,
+                                                                outputs_info=[decode_in[:, :self.hid_size],
+                                                                decode_in[:, self.hid_size:], None, None],
+                                                                non_sequences=[sample_embed, attention_c1, attention_c2],
+                                                                sequences=[decode_in_embedding])
 
         # Get sample embedding
         l = sample_score.shape[0]
@@ -258,7 +262,7 @@ class DeepReluTransReadWrite(object):
 
         return h1, h2, a, canvas, read_attention, write_attention, start, stop
 
-    def decoding_step(self, embedding, t_embedding, h1, h2, s_embedding, a_c1, a_c2):
+    def decoding_step(self, embedding, h1, h2, s_embedding, a_c1, a_c2):
         s = T.dot(h1, self.attention_s)
         n, d = s.shape
         s = s.reshape((n, 1, d))
@@ -296,11 +300,6 @@ class DeepReluTransReadWrite(object):
         score_in = T.concatenate([embedding, h1, h2, attention_content], axis=-1)
         s = get_output(self.score, score_in)
         sample_score = T.dot(s, s_embedding.T)
-
-        max_clip = T.max(sample_score, axis=-1)
-        score_clip = zero_grad(max_clip)
-        sample_score = T.exp(sample_score - score_clip.reshape((n, 1)))
-        sample_score = T.sum(sample_score, axis=-1)
 
         return h1, h2, s, sample_score
 
@@ -460,40 +459,52 @@ class DeepReluTransReadWrite(object):
         target_input_embedding_param = lasagne.layers.get_all_params(self.target_input_embedding)
         target_output_embedding_param = lasagne.layers.get_all_params(self.target_output_embedding)
 
-        gru_1_u_param = lasagne.layers.get_all_params(self.gru_update_1)
-        gru_1_r_param = lasagne.layers.get_all_params(self.gru_reset_1)
-        gru_1_c_param = lasagne.layers.get_all_params(self.gru_candidate_1)
-        gru_3_u_param = lasagne.layers.get_all_params(self.gru_update_3)
-        gru_3_r_param = lasagne.layers.get_all_params(self.gru_reset_3)
-        gru_3_c_param = lasagne.layers.get_all_params(self.gru_candidate_3)
+        gru_en_gate_1_param = lasagne.layers.get_all_params(self.gru_en_gate_1)
+        gru_en_candi_1_param = lasagne.layers.get_all_params(self.gru_en_candidate_1)
+        gru_en_gate_2_param = lasagne.layers.get_all_params(self.gru_en_gate_2)
+        gru_en_candi_2_param = lasagne.layers.get_all_params(self.gru_en_candidate_2)
+        gru_de_gate_1_param = lasagne.layers.get_all_params(self.gru_de_gate_1)
+        gru_de_candi_1_param = lasagne.layers.get_all_params(self.gru_de_candidate_1)
+        gru_de_gate_2_param = lasagne.layers.get_all_params(self.gru_de_gate_2)
+        gru_de_candi_2_param = lasagne.layers.get_all_params(self.gru_de_candidate_2)
+
+        decode_init_param = lasagne.layers.get_all_params(self.decoder_init_mlp)
         out_param = lasagne.layers.get_all_params(self.out_mlp)
         score_param = lasagne.layers.get_all_params(self.score)
-        return target_input_embedding_param + target_output_embedding_param + \
-               gru_1_c_param + gru_1_r_param + gru_1_u_param + \
-               gru_3_u_param + gru_3_r_param + gru_3_c_param + \
-               out_param + score_param + input_embedding_param + \
-               [self.attention_weight, self.attention_bias]
+        return input_embedding_param + target_input_embedding_param + target_output_embedding_param + \
+               gru_en_gate_1_param + gru_en_candi_1_param + \
+               gru_en_gate_2_param + gru_en_candi_2_param + \
+               gru_de_gate_1_param + gru_de_candi_1_param + \
+               gru_de_gate_2_param + gru_de_candi_2_param + \
+               out_param + score_param + decode_init_param +\
+               [self.attention_weight, self.attention_bias, self.attention_h_1,
+                self.attention_h_2, self.attention_s, self.attetion_v]
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
         target_input_embedding_param = lasagne.layers.get_all_param_values(self.target_input_embedding)
         target_output_embedding_param = lasagne.layers.get_all_param_values(self.target_output_embedding)
 
-        gru_1_u_param = lasagne.layers.get_all_param_values(self.gru_update_1)
-        gru_1_r_param = lasagne.layers.get_all_param_values(self.gru_reset_1)
-        gru_1_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_1)
-        gru_3_u_param = lasagne.layers.get_all_param_values(self.gru_update_3)
-        gru_3_r_param = lasagne.layers.get_all_param_values(self.gru_reset_3)
-        gru_3_c_param = lasagne.layers.get_all_param_values(self.gru_candidate_3)
+        gru_en_gate_1_param = lasagne.layers.get_all_param_values(self.gru_en_gate_1)
+        gru_en_candi_1_param = lasagne.layers.get_all_param_values(self.gru_en_candidate_1)
+        gru_en_gate_2_param = lasagne.layers.get_all_param_values(self.gru_en_gate_2)
+        gru_en_candi_2_param = lasagne.layers.get_all_param_values(self.gru_en_candidate_2)
+        gru_de_gate_1_param = lasagne.layers.get_all_param_values(self.gru_de_gate_1)
+        gru_de_candi_1_param = lasagne.layers.get_all_param_values(self.gru_de_candidate_1)
+        gru_de_gate_2_param = lasagne.layers.get_all_param_values(self.gru_de_gate_2)
+        gru_de_candi_2_param = lasagne.layers.get_all_param_values(self.gru_de_candidate_2)
 
         out_param = lasagne.layers.get_all_param_values(self.out_mlp)
         score_param = lasagne.layers.get_all_param_values(self.score)
+        decode_init_param = lasagne.layers.get_all_param_values(self.decoder_init_mlp)
 
         return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
-                gru_1_u_param, gru_1_r_param, gru_1_c_param,
-                gru_3_u_param, gru_3_r_param, gru_3_c_param,
-                out_param, score_param,
-                self.attention_weight.get_value(), self.attention_bias.get_value()]
+                gru_en_gate_1_param, gru_en_candi_1_param, gru_en_gate_2_param,
+                gru_en_candi_2_param, gru_de_gate_1_param, gru_de_candi_1_param,
+                gru_de_gate_2_param, gru_de_candi_2_param,  out_param, score_param,
+                decode_init_param, self.attention_weight.get_value(), self.attention_bias.get_value(),
+                self.attention_h_1.get_value(), self.attention_h_2.get_value(),
+                self.attetion_v.get_value(), self.attention_s.get_value()]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
