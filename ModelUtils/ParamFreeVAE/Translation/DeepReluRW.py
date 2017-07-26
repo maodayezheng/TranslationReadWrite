@@ -258,7 +258,7 @@ class DeepReluTransReadWrite(object):
 
         return h1, h2, a, canvas, read_attention, write_attention, start, stop
 
-    def decoding_step(self, embedding, h1, h2, s_embedding, a_c1, a_c2):
+    def decoding_step(self, embedding, t_embedding, h1, h2, s_embedding, a_c1, a_c2):
         s = T.dot(h1, self.attention_s)
         n, d = s.shape
         s = s.reshape((n, 1, d))
@@ -297,7 +297,12 @@ class DeepReluTransReadWrite(object):
         s = get_output(self.score, score_in)
         sample_score = T.dot(s, s_embedding.T)
 
-        return h1, s, sample_score
+        max_clip = T.max(sample_score, axis=-1)
+        score_clip = zero_grad(max_clip)
+        sample_score = T.exp(sample_score - score_clip.reshape((n, 1)))
+        sample_score = T.sum(sample_score, axis=-1)
+
+        return h1, h2, s, sample_score
 
     def greedy_decode(self, col, embedding, pre_hid_info, s_embedding):
         input_info = T.concatenate([embedding, col, pre_hid_info], axis=-1)
