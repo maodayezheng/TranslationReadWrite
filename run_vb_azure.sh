@@ -13,7 +13,7 @@ OUT_DIR=code_outputs/$(date +%Y_%m_%d_%H_%M_%S)
 
 mkdir ${OUT_DIR}
 
-PYTHON_FILE=${1}
+PYTHON_FILE=translation_experiment.py
 
 cp ${PYTHON_FILE} ${OUT_DIR}/${PYTHON_FILE}
 
