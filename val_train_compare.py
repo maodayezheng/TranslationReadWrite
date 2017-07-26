@@ -2,13 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 folder = "code_outputs/"
-date = "2017_07_21_13_51_21/"
+date = "2017_07_25_11_21_32/"
 loss = "training_loss.npy"
 train_loss = np.load(folder+date+loss)
-train_loss = np.mean(train_loss.reshape((80, 5000)), axis=-1)
+train_loss = np.mean(train_loss[:-10].reshape((60, 5000)), axis=-1)
 loss = "validation_loss.npy"
 valid_loss = np.load(folder+date+loss)
-
+print(valid_loss[:-1].shape)
 #attn_loss = np.mean(attn_loss[:-1].reshape((6, 25000)), axis=-1)
 
 plt.plot(-train_loss, label='train_loss', zorder=2)
