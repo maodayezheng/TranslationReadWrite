@@ -2,7 +2,7 @@ import json
 import numpy as np
 
 np.set_printoptions(threshold=1000000)
-max_len = 30
+max_len = 50
 # Read the English Vocab
 vocab = {}
 en_idx = 0
@@ -48,16 +48,16 @@ with open("SentenceData/wmt16_en_de/newstest2013.tok.bpe.32000.en", "r", encodin
             data_pair.append([en_idx, de_idx])
 
 
-with open("SentenceData/newstest2013.tok.bpe.32000.txt", "w") as dataset:
+with open("SentenceData/news2013.tok.bpe.32000.txt", "w") as dataset:
     d = json.dumps(data_pair)
     dataset.write(d)
 
-with open("SentenceData/newstest2013.tok.bpe.32000_en.txt", "w") as en:
+with open("SentenceData/news2013.tok.bpe.32000_en.txt", "w") as en:
     for line in selected_en:
         en.write(line + "\n")
 
 
-with open("SentenceData/newstest2013.tok.bpe.32000_de.txt", "w") as de:
+with open("SentenceData/news2013.tok.bpe.32000_de.txt", "w") as de:
     for line in selected_de:
         de.write(line + "\n")
 
