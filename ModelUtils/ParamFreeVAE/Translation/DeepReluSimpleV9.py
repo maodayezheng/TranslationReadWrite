@@ -61,9 +61,6 @@ class DeepReluTransReadWrite(object):
         v = np.ones((4, )).astype(theano.config.floatX) * 0.05
         self.attention_bias = theano.shared(name="attention_bias", value=v)
 
-        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.output_score_dim)).astype(theano.config.floatX)
-        self.attention_h_1 = theano.shared(value=v, name="attention_h_1")
-
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, self.output_score_dim)).astype(theano.config.floatX)
         self.attention_h_2 = theano.shared(value=v, name="attention_h_2")
 
@@ -162,15 +159,13 @@ class DeepReluTransReadWrite(object):
         # Check the likelihood on full vocab
         final_canvas = canvases[-1]
         n, l, d = final_canvas.shape
-        attention_c = final_canvas.reshape((n*l, d))
-        attention_c1 = T.dot(attention_c, self.attention_h_1)
+        attention_c1 = final_canvas.reshape((n*l, d))
         attention_c2 = T.dot(attention_c1, self.attention_h_2)
         attention_c1 = attention_c1.reshape((n, l, self.output_score_dim))
         attention_c2 = attention_c2.reshape((n, l, self.output_score_dim))
 
         output_embedding = get_output(self.target_input_embedding, target)
         output_embedding = output_embedding[:, :-1]
-        final_canvas = final_canvas.dimshuffle((1, 0, 2))
         output_embedding = output_embedding.dimshuffle((1, 0, 2))
         # Get sample embedding
         sample_embed = self.target_output_embedding.W
@@ -439,7 +434,8 @@ class DeepReluTransReadWrite(object):
                gru_1_c_param + gru_1_r_param + gru_1_u_param + \
                gru_3_u_param + gru_3_r_param + gru_3_c_param + \
                out_param + score_param + input_embedding_param + \
-               [self.attention_weight, self.attention_bias]
+               [self.attention_weight, self.attention_bias, self.attention_h_2, self.attention_s,
+                self.attetion_v]
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
@@ -460,7 +456,8 @@ class DeepReluTransReadWrite(object):
                 gru_1_u_param, gru_1_r_param, gru_1_c_param,
                 gru_3_u_param, gru_3_r_param, gru_3_c_param,
                 out_param, score_param,
-                self.attention_weight.get_value(), self.attention_bias.get_value()]
+                self.attention_weight.get_value(), self.attention_bias.get_value(),
+                self.attention_h_2.get_value(), self.attetion_v.get_value(), self.attention_s.get_value()]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -630,7 +627,7 @@ def decode():
 
 
 def run(out_dir):
-    print("Run the Relu read and  write v6 ")
+    print("Run the Relu read and  write v9 ")
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
