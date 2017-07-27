@@ -683,10 +683,11 @@ def run(out_dir):
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
+    print(" Start create the model ")
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
     validation = model.elbo_fn()
+    print(" Start load Data ")
     train_data = None
-
     with open("SentenceData/BPE/train50.tok.bpe.32000.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
@@ -733,7 +734,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 50
     sample_groups = 10
-    iters = 2
+    iters = 10
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
