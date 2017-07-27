@@ -193,8 +193,8 @@ class DeepReluTransReadWrite(object):
         attention = T.nnet.sigmoid(T.dot(a_p, self.attention_weight) + self.attention_bias)
         start = attention[:, :2]
         stop = start + attention[:, 2:] * (1.0 - start)
-        read_attention = T.nnet.relu(r_p - r_a - start[:, 0].reshape((n, 1)))*T.nnet.relu(stop[:, 0].reshape((n, 1)) - r_a - r_p)
-        write_attention = T.nnet.relu(w_p - w_a - start[:, 1].reshape((n, 1)))*T.nnet.relu(stop[:, 1].reshape((n, 1)) - w_a - w_p)
+        read_attention = T.sqrt(T.nnet.relu(r_p - start[:, 0].reshape((n, 1)))*T.nnet.relu(stop[:, 0].reshape((n, 1)) - r_p))
+        write_attention = T.sqrt(T.nnet.relu(w_p - start[:, 1].reshape((n, 1)))*T.nnet.relu(stop[:, 1].reshape((n, 1)) - w_p))
 
         # Read from ref
         l = read_attention.shape[1]
