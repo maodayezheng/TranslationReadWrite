@@ -1,4 +1,4 @@
-#$ -l h_rt=168:0:0
+#$ -l h_rt=150:0:0
 #$ -l tmem=15G
 #$ -l h_vmem=15G
 #$ -P gpu
@@ -23,7 +23,7 @@ echo $PWD
 
 mkdir ${OUT_DIR}
 
-PYTHON_FILE=translation_experiment.py
+PYTHON_FILE=test.py
 
 cp ${PYTHON_FILE} ${OUT_DIR}/${PYTHON_FILE}
 
