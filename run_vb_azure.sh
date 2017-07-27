@@ -23,7 +23,7 @@ echo $PWD
 
 mkdir ${OUT_DIR}
 
-PYTHON_FILE=test.py
+PYTHON_FILE=translation_experiment.py
 
 cp ${PYTHON_FILE} ${OUT_DIR}/${PYTHON_FILE}
 
