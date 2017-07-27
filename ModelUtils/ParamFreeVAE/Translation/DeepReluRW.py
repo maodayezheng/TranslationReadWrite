@@ -30,13 +30,13 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=37007, target_vocab_size=37007,
-                 embed_dim=512, hid_dim=1024, source_seq_len=50, target_seq_len=50):
+                 embed_dim=4, hid_dim=8, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
         self.hid_size = hid_dim
         self.max_len = 51
-        self.output_score_dim = 512
+        self.output_score_dim = 4
         self.embedding_dim = embed_dim
 
         # Init the word embeddings.
@@ -673,6 +673,7 @@ def decode():
 
 def run(out_dir):
     print("Run the Relu read and  write final model ")
+    print("param_save at " + out_dir)
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
@@ -682,10 +683,11 @@ def run(out_dir):
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
+    print(" Start create the model ")
     optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
     validation = model.elbo_fn()
+    print(" Start load Data ")
     train_data = None
-
     with open("SentenceData/BPE/train50.tok.bpe.32000.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
@@ -732,7 +734,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 50
     sample_groups = 10
-    iters = 60000
+    iters = 10
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
@@ -784,7 +786,7 @@ def run(out_dir):
             loss = output[0]
             training_loss.append(loss)
 
-            if i % 250 == 0:
+            if i % 25 == 0:
                 print("training time " + str(iter_time)
                       + " sec with sentence length " + str(l)
                       + " training loss : " + str(loss))
