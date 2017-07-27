@@ -7,6 +7,7 @@
 #$ -j y
 #$ -N FinalModel
 
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "${SOURCE}" ]; do
   DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
