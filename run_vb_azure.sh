@@ -2,7 +2,7 @@
 #$ -l tmem=15G
 #$ -l h_vmem=15G
 #$ -P gpu
-#$ -l gpu=1,gpu_titanxp=1
+#$ -l gpu=1,gpu_P100_16=1
 #$ -S /bin/bash
 #$ -j y
 #$ -N Test
@@ -27,4 +27,4 @@ PYTHON_FILE=test.py
 
 cp ${PYTHON_FILE} ${OUT_DIR}/${PYTHON_FILE}
 
-python -u ${PYTHON_FILE} ${DIR} ${OUT_DIR} | tee ${OUT_DIR}/out.txt
+THEANO_FLAGS=mode=Mode,device=cuda0,floatX=float32 python -u ${PYTHON_FILE} ${DIR} ${OUT_DIR} | tee ${OUT_DIR}/out.txt

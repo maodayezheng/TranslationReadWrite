@@ -597,7 +597,7 @@ def decode():
 
 
 def run(out_dir):
-    print("Run the Relu read and  write v6 ")
+    print("Run the Relu Prod")
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
