@@ -811,7 +811,7 @@ def run(out_dir):
                         print(" Target " + str(v_w[t, n]))
                         print("")
 
-        if i % 2000 == 0 and iters != 0:
+        if i % 2000 == 0 and i != 0:
             print(" Save parameter at " + str(iters) + " iteration")
             print("")
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
