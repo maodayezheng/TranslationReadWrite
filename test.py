@@ -1,6 +1,12 @@
 import sys
 import numpy as np
 import json
+import theano.tensor as T
+import theano
 
-a = np.array([2,3,4,5,6,8])
-print(a[2:4])
+v = np.random.uniform(-0.05, 0.05, (10, 4)).astype(theano.config.floatX)
+w = theano.shared(name="attention_weight", value=v)
+a = T.ones((5, 10))*w
+f = theano.function(inputs=[], outputs=[a])
+r = f()
+print(r)
