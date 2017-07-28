@@ -27,7 +27,7 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=37007, target_vocab_size=37007,
-                 embed_dim=512, hid_dim=512, source_seq_len=50, target_seq_len=50):
+                 embed_dim=256, hid_dim=512, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
@@ -195,8 +195,8 @@ class DeepReluTransReadWrite(object):
         stop = start + attention[:, 2:] * (1.0 - start)
         read_attention = T.sqrt(T.nnet.relu(r_p - start[:, 0].reshape((n, 1)))*T.nnet.relu(stop[:, 0].reshape((n, 1)) - r_p))
         write_attention = T.sqrt(T.nnet.relu(w_p - start[:, 1].reshape((n, 1)))*T.nnet.relu(stop[:, 1].reshape((n, 1)) - w_p))
-        read_attention = read_attention / (T.sum(read_attention, axis=-1, keepdims=True) + 1e-6)
-        write_attention = write_attention / (T.sum(write_attention, axis=-1, keepdims=True) + 1e-6)
+        read_attention = read_attention / (T.sum(read_attention, axis=-1, keepdims=True) + 1e-5)
+        write_attention = write_attention / (T.sum(write_attention, axis=-1, keepdims=True) + 1e-5)
         # Read from ref
         l = read_attention.shape[1]
         pos = read_attention.reshape((n, l, 1))
