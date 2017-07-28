@@ -7,7 +7,8 @@
 #$ -j y
 #$ -N Test
 
-export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+source $SET_CUDA_DEVICE
+
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "${SOURCE}" ]; do
   DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
