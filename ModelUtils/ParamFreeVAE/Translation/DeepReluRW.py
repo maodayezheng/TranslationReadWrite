@@ -30,13 +30,13 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=37007, target_vocab_size=37007,
-                 embed_dim=512, hid_dim=512, source_seq_len=50, target_seq_len=50):
+                 embed_dim=500, hid_dim=1000, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
         self.hid_size = hid_dim
         self.max_len = 51
-        self.output_score_dim = 1024
+        self.output_score_dim = 500
         self.embedding_dim = embed_dim
 
         # Init the word embeddings.
@@ -697,11 +697,11 @@ def run(out_dir):
 
     validation_data = sorted(validation_data, key=lambda d: max(len(d[0]), len(d[1])))
     len_valid = len(validation_data)
-    splits = len_valid % 50
+    splits = len_valid % 25
     validation_data = validation_data[:-splits]
     validation_data = np.array(validation_data)
     print(" The chosen validation size : " + str(len(validation_data)))
-    g = int(len(validation_data) / 50)
+    g = int(len(validation_data) / 25)
     print(" The chosen validation groups : " + str(g))
     validation_data = np.split(validation_data, g)
 
@@ -732,9 +732,9 @@ def run(out_dir):
     # calculate required iterations
     data_size = len(train_data)
     print(" The training data size : " + str(data_size))
-    batch_size = 50
+    batch_size = 25
     sample_groups = 10
-    iters = 10
+    iters = 36000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
@@ -786,7 +786,7 @@ def run(out_dir):
             loss = output[0]
             training_loss.append(loss)
 
-            if i % 25 == 0:
+            if i % 1000 == 0:
                 print("training time " + str(iter_time)
                       + " sec with sentence length " + str(l)
                       + " training loss : " + str(loss))
@@ -803,7 +803,7 @@ def run(out_dir):
 
             print("The loss on testing set is : " + str(valid_loss / p))
             validation_loss.append(valid_loss / p)
-            if i % 2000 == 0:
+            if i % 6000 == 0:
                 for n in range(1):
                     for t in range(v_r.shape[0]):
                         print("======")
@@ -812,7 +812,7 @@ def run(out_dir):
                         print("")
 
         if i % 2000 == 0 and i != 0:
-            print(" Save parameter at " + str(iters) + " iteration")
+            print(" Save parameter at " + str(i) + " iteration")
             print("")
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
             np.save(os.path.join(out_dir, 'validation_loss'), validation_loss)
