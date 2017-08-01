@@ -322,13 +322,28 @@ class DeepReluTransReadWrite(object):
         tops = T.argsort(sample_score, axis=-1)
         tops = tops[:, :beam]
         beams, tops = T.divmod(tops, self.target_vocab_size)
-        beams = T.cast(beams, "int8")
-        beams = beams.reshape((n*beam, ))
-        tops = T.cast(tops, "int8")
-        h1 = h1[beams, :]
-        h2 = h2[beams, :]
-        a_c1 = a_c1[beams, :, :]
-        a_c2 = a_c2[beams, :, :]
+        rows = T.arange(n).reshape((n, 1))
+
+        h1 = h1.reshape((n, beam, self.hid_size))
+        h1 = h1[rows, beams]
+        h1 = h1.reshape((n*beam, self.hid_size))
+
+        h2 = h2.reshape((n, beam, self.hid_size))
+        h2 = h2[rows, beams]
+        h2 = h2.reshape((n*beam, self.hid_size))
+
+        l = a_c1.shape[1]
+        d = a_c1.shape[-1]
+        a_c1 = a_c1.reshape((n, beam, l, d))
+        a_c1 = a_c1[rows, beams]
+        a_c1 = a_c1.reshape((n*beam, l, d))
+
+        l = a_c2.shape[1]
+        d = a_c2.shape[-1]
+        a_c2 = a_c2.reshape((n, beam, l, d))
+        a_c2 = a_c2[rows, beams]
+        a_c2 = a_c2.reshape((n*beam, l, d))
+
         sample_score = T.sort(sample_score, axis=-1)
         sample_score = sample_score[:, :beam]
         embedding = get_output(self.target_input_embedding, tops.reshape((n*beam, )))
@@ -336,11 +351,9 @@ class DeepReluTransReadWrite(object):
 
     def beam_backward(self, top_k, idx):
         n = idx.shape[0]
-        prediction = top_k[T.arange(n), idx]
+        prediction = top_k[T.arange(n).reshape((n, 1)), idx.reshape((n, 1))]
         idx, prediction = T.divmod(prediction, self.target_vocab_size)
-        idx = T.cast(idx.reshape((n,)), "int8")
-        prediction = T.cast(prediction, "int8")
-        return idx, prediction
+        return idx.reshape((n, )), prediction.reshape((n, ))
 
     """
 
@@ -438,11 +451,11 @@ class DeepReluTransReadWrite(object):
                                                                                           None],
                                                                             non_sequences=[sample_embed],
                                                                             n_steps=51)
-        tops = tops[:, ::-1]
-        init_idx = T.zeros((n, ), dtype="int8")
+        tops = tops[::-1]
+        init_idx = T.zeros((n, ), dtype="int64")
         ([idx, best_beam], update) = theano.scan(self.beam_backward, outputs_info=[init_idx, None], sequences=[tops])
         force_prediction = T.argmax(force_score, axis=-1)
-        best_beam = best_beam[:, ::-1]
+        best_beam = best_beam[::-1]
         return theano.function(inputs=[source, target],
                                outputs=[force_prediction, prediction, best_beam],
                                allow_input_downcast=True)
