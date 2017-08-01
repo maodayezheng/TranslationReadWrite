@@ -302,47 +302,45 @@ class DeepReluTransReadWrite(object):
         return h1, h2, s, sample_score
 
     def greedy_decode(self, embedding, h1, h2, s_embedding, a_c1, a_c2):
-        s = T.dot(h1, self.attention_s)
-        n, d = s.shape
-        s = s.reshape((n, 1, d))
-        attention_score = T.tanh(s + a_c2)
-        n, l, d = attention_score.shape
-        attention_score = attention_score.reshape((l * n, d))
-        attention_score = T.dot(attention_score, self.attetion_v)
-        attention_score = attention_score.reshape((n, l))
-        max_clip = zero_grad(T.max(attention_score, axis=-1))
-        attention_score = T.exp(attention_score - max_clip.reshape((n, 1)))
-        denorm = T.sum(attention_score, axis=-1)
-        attention_score = attention_score / denorm.reshape((n, 1))
-        attention_content = T.sum(attention_score.reshape((n, l, 1)) * a_c1, axis=1)
-
-        # Decoding GRU layer 1
-        input_info = T.concatenate([embedding, h1, attention_content], axis=-1)
-        gate1 = get_output(self.gru_de_gate_1, input_info)
-        u1 = gate1[:, :self.hid_size]
-        r1 = gate1[:, self.hid_size:]
-        reset_h1 = h1 * r1
-        c_in = T.concatenate([embedding, reset_h1, attention_content], axis=-1)
-        c1 = get_output(self.gru_de_candidate_1, c_in)
-        h1 = (1.0 - u1) * h1 + u1 * c1
-
-        # Decoding GRU layer 2
-        input_info = T.concatenate([embedding, h1, h2, attention_content], axis=-1)
-        gate2 = get_output(self.gru_de_gate_2, input_info)
-        u2 = gate2[:, :self.hid_size]
-        r2 = gate2[:, self.hid_size:]
-        reset_h2 = h2 * r2
-        c_in = T.concatenate([embedding, h1, reset_h2, attention_content], axis=1)
-        c2 = get_output(self.gru_de_candidate_2, c_in)
-        h2 = (1.0 - u2) * h2 + u2 * c2
-        h = get_output(self.decode_out_mlp, T.concatenate([h1, h2], axis=-1))
-        score_in = T.concatenate([embedding, h, attention_content], axis=-1)
-        s = get_output(self.score, score_in)
-        sample_score = T.dot(s, s_embedding.T)
+        h1, h2, s, sample_score = self.decoding_step(embedding, h1, h2, s_embedding, a_c1, a_c2)
         prediction = T.argmax(sample_score, axis=-1)
         embedding = get_output(self.target_input_embedding, prediction)
 
         return embedding, h1, h2, s, prediction
+
+    def beam_forward(self, embedding, score, h1, h2, a_c1, a_c2, s_embedding):
+        # embedding => (N*B)xD
+        # score => (N*B)
+        # h1, h2 => (N*B)xH
+        # a_c1, a_c2 => (N*B)xLxC
+
+        h1, h2, s, sample_score = self.decoding_step(embedding, h1, h2, s_embedding, a_c1, a_c2)
+        n, beam = score.shape
+        k = sample_score.shape[1]
+        sample_score = score.reshape((n, beam, 1)) - sample_score.reshape((n, beam, k))
+        sample_score = sample_score.reshape((n, beam*k))
+        tops = T.argsort(sample_score, axis=-1)
+        tops = tops[:, :beam]
+        beams, tops = T.divmod(tops, self.target_vocab_size)
+        beams = T.cast(beams, "int8")
+        beams = beams.reshape((n*beam, ))
+        tops = T.cast(tops, "int8")
+        h1 = h1[beams, :]
+        h2 = h2[beams, :]
+        a_c1 = a_c1[beams, :, :]
+        a_c2 = a_c2[beams, :, :]
+        sample_score = T.sort(sample_score, axis=-1)
+        sample_score = sample_score[:, :beam]
+        embedding = get_output(self.target_input_embedding, tops.reshape((n*beam, )))
+        return embedding, sample_score, h1, h2, a_c1, a_c2, tops
+
+    def beam_backward(self, top_k, idx):
+        n = idx.shape[0]
+        prediction = top_k[T.arange(n), idx]
+        idx = T.cast(T.int_div(prediction, self.target_vocab_size), "int8")
+        idx = idx.reshape((n, ))
+        prediction = T.cast(T.divmod(prediction, self.target_vocab_size), "int8")
+        return idx, prediction
 
     """
 
@@ -414,18 +412,39 @@ class DeepReluTransReadWrite(object):
                                                                               attention_c2],
                                                                sequences=[decode_in_embedding])
 
-        # Greedy Step
+        # Greedy Decode
         init_embedding = decode_in_embedding[0]
         ([e, h, s, sample_score, prediction], update) = theano.scan(self.greedy_decode,
-                                                                    outputs_info=[init_embedding, decode_in[:, :self.hid_size],
+                                                                    outputs_info=[init_embedding,
+                                                                                  decode_in[:, :self.hid_size],
                                                                                   decode_in[:, self.hid_size:], None, None],
                                                                     non_sequences=[sample_embed, attention_c1,
                                                                                    attention_c2],
                                                                     n_steps=51)
 
+        # Beam Search
+        beam_size = 2
+        score_init = T.zeros((n, beam_size))
+        init_embedding = T.tile(init_embedding, (beam_size, 1))
+        beam_decode_init1 = T.tile(decode_in[:, :self.hid_size], (beam_size, 1))
+        beam_decode_init2 = T.tile(decode_in[:, self.hid_size:], (beam_size, 1))
+        attention_c1 = T.tile(attention_c1, (beam_size, 1, 1))
+        attention_c2 = T.tile(attention_c2, (beam_size, 1, 1))
+        ([e, sample_score, h1, h2, a_c1, a_c2, tops], update) = theano.scan(self.beam_forward,
+                                                                            outputs_info=[init_embedding, score_init,
+                                                                                          beam_decode_init1,
+                                                                                          beam_decode_init2,
+                                                                                          attention_c1, attention_c2,
+                                                                                          None],
+                                                                            non_sequences=[sample_embed],
+                                                                            n_steps=51)
+        tops = tops[:, ::-1]
+        init_idx = T.zeros((n, ), dtype="int8")
+        ([idx, best_beam], update) = theano.scan(self.beam_backward, outputs_info=[init_idx, None], sequences=[tops])
         force_prediction = T.argmax(force_score, axis=-1)
+        best_beam = best_beam[:, ::-1]
         return theano.function(inputs=[source, target],
-                               outputs=[force_prediction, prediction],
+                               outputs=[force_prediction, prediction, best_beam],
                                allow_input_downcast=True)
 
     def elbo_fn(self):
@@ -667,7 +686,7 @@ def decode():
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        force_max, prediction = decode(source, target)
+        force_max, prediction, best_beam = decode(source, target)
         for n in range(int(len(test_data)/20)):
             s = source[n, 1:]
             t = target[n, 1:]
