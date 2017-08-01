@@ -2,7 +2,7 @@
 #$ -l tmem=15G
 #$ -l h_vmem=15G
 #$ -P gpu
-#$ -l gpu=1,,gpu_titanxp=1
+#$ -l gpu=1,gpu_titanxp=1
 #$ -S /bin/bash
 #$ -j y
 #$ -N Test
