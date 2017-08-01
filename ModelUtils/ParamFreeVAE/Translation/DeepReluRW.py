@@ -337,9 +337,9 @@ class DeepReluTransReadWrite(object):
     def beam_backward(self, top_k, idx):
         n = idx.shape[0]
         prediction = top_k[T.arange(n), idx]
-        idx = T.cast(T.int_div(prediction, self.target_vocab_size), "int8")
-        idx = idx.reshape((n, ))
-        prediction = T.cast(T.divmod(prediction, self.target_vocab_size), "int8")
+        idx, prediction = T.divmod(prediction, self.target_vocab_size)
+        idx = T.cast(idx.reshape((n,)), "int8")
+        prediction = T.cast(prediction, "int8")
         return idx, prediction
 
     """
@@ -687,11 +687,13 @@ def decode():
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
         force_max, prediction, best_beam = decode(source, target)
+        print(best_beam.shape)
         for n in range(int(len(test_data)/20)):
             s = source[n, 1:]
             t = target[n, 1:]
             f = force_max[:, n]
             p = prediction[:, n]
+            b = best_beam[:, n]
 
             s_string = ""
             for s_idx in s:
@@ -704,6 +706,7 @@ def decode():
                 if t_idx == 1 or t_idx ==-1:
                     break
                 t_string += (vocab[t_idx] + " ")
+            print("Refe " + t_string)
             refe_sen.append(t_string)
             f_string = ""
             for p_idx in f:
@@ -716,7 +719,14 @@ def decode():
                 if idx == 1:
                     break
                 p_string += (vocab[idx] + " ")
+            print("Gred " + p_string)
             gred_sen.append(p_string)
+            b_string = ""
+            for idx in b:
+                if idx ==1:
+                    break
+                b_string += (vocab[idx] + " ")
+            print("Beam " + b_string)
             print("")
 
     with open("Translations/source.txt", "w") as doc:
