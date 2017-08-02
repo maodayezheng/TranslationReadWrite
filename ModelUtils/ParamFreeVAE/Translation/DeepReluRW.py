@@ -30,13 +30,13 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=37007, target_vocab_size=37007,
-                 embed_dim=128, hid_dim=256, source_seq_len=50, target_seq_len=50):
+                 embed_dim=512, hid_dim=512, source_seq_len=50, target_seq_len=50):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
         self.hid_size = hid_dim
         self.max_len = 51
-        self.output_score_dim = 128
+        self.output_score_dim = 512
         self.embedding_dim = embed_dim
 
         # Init the word embeddings.
@@ -751,6 +751,15 @@ def decode():
 
 def run(out_dir):
     print("Run the Relu read and  write final model ")
+    print(" eps num : 6 ")
+    print(" itr num : 36000*3")
+    print(" bac siz : 25")
+    print(" enc num : 2")
+    print(" dec num : 2")
+    print(" hid siz : 512")
+    print(" emb siz : 512")
+    print(" out siz : 512")
+    print(" max sen : 51")
     print("param_save at " + out_dir)
     training_loss = []
     validation_loss = []
@@ -812,7 +821,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 36000
+    iters = 36000*3
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
