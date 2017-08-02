@@ -21,12 +21,12 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class Seq2Seq(object):
-    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=16, hid_dim=16):
+    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=512, hid_dim=512):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 51
-        self.output_score_dim = 16
+        self.output_score_dim = 512
         self.embedding_dim = embed_dim
 
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -372,7 +372,6 @@ class Seq2Seq(object):
             lasagne.layers.set_all_param_values(self.decoder_init_mlp, params[14])
 
 
-
 def test():
     model = Seq2Seq()
     update_kwargs = {'learning_rate': 1e-4}
@@ -517,6 +516,16 @@ def decode():
 
 def run(out_dir):
     print("Run Seq2Seq model ")
+    print(" eps num : 6 ")
+    print(" itr num : 36000*2")
+    print(" bac siz : 25")
+    print(" enc num : 2")
+    print(" dec num : 2")
+    print(" hid siz : 512")
+    print(" emb siz : 512")
+    print(" out siz : 512")
+    print(" max sen : 51")
+    print("param_save at " + out_dir)
     training_loss = []
     validation_loss = []
     model = Seq2Seq()
@@ -574,9 +583,9 @@ def run(out_dir):
     # calculate required iterations
     data_size = len(train_data)
     print(" The training data size : " + str(data_size))
-    batch_size = 50
+    batch_size = 25
     sample_groups = 10
-    iters = 40000
+    iters = 36000*2
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):

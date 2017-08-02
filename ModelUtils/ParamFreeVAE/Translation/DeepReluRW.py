@@ -752,7 +752,7 @@ def decode():
 def run(out_dir):
     print("Run the Relu read and  write final model ")
     print(" eps num : 6 ")
-    print(" itr num : 36000*3")
+    print(" itr num : 36000*2")
     print(" bac siz : 25")
     print(" enc num : 2")
     print(" dec num : 2")
