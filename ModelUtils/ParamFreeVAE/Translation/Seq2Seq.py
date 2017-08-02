@@ -21,12 +21,12 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class Seq2Seq(object):
-    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=512, hid_dim=512):
+    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=16, hid_dim=16):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
         self.max_len = 51
-        self.output_score_dim = 512
+        self.output_score_dim = 16
         self.embedding_dim = embed_dim
 
         self.input_embedding = self.embedding(source_vocab_size, source_vocab_size, self.embedding_dim)
@@ -531,11 +531,11 @@ def run(out_dir):
     validation = model.elbo_fn()
     train_data = None
 
-    with open("SentenceData/BPE/selected_idx.txt", "r") as dataset:
+    with open("SentenceData/BPE/train50.tok.bpe.32000.txt", "r") as dataset:
         train_data = json.loads(dataset.read())
 
     validation_data = None
-    with open("SentenceData/BPE/newstest2013.tok.bpe.32000.txt", "r") as dev:
+    with open("SentenceData/BPE/news2013.tok.bpe.32000.txt", "r") as dev:
         validation_data = json.loads(dev.read())
 
     validation_data = sorted(validation_data, key=lambda d: max(len(d[0]), len(d[1])))
@@ -616,7 +616,7 @@ def run(out_dir):
             loss = output[0]
             training_loss.append(loss)
 
-            if i % 250 == 0:
+            if i % 1000 == 0:
                 print("training time " + str(iter_time) + " sec with sentence length " + str(l) + "training loss : " + str(loss))
 
         if i % 500 == 0:
