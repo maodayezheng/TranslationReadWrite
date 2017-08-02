@@ -317,7 +317,7 @@ class DeepReluTransReadWrite(object):
         h1, h2, s, sample_score = self.decoding_step(embedding, h1, h2, s_embedding, a_c1, a_c2)
         n, beam = score.shape
         k = sample_score.shape[1]
-        sample_score = score.reshape((n, beam, 1)) - sample_score.reshape((n, beam, k))
+        sample_score = score.reshape((n, beam, 1)) + sample_score.reshape((n, beam, k))
         sample_score = sample_score.reshape((n, beam*k))
         tops = T.argsort(sample_score, axis=-1)
         tops = tops[:, :beam]
@@ -332,22 +332,9 @@ class DeepReluTransReadWrite(object):
         h2 = h2[rows, beams]
         h2 = h2.reshape((n*beam, self.hid_size))
 
-        l = a_c1.shape[1]
-        d = a_c1.shape[-1]
-        a_c1 = a_c1.reshape((n, beam, l, d))
-        a_c1 = a_c1[rows, beams]
-        a_c1 = a_c1.reshape((n*beam, l, d))
-
-        l = a_c2.shape[1]
-        d = a_c2.shape[-1]
-        a_c2 = a_c2.reshape((n, beam, l, d))
-        a_c2 = a_c2[rows, beams]
-        a_c2 = a_c2.reshape((n*beam, l, d))
-
-        sample_score = T.sort(sample_score, axis=-1)
         sample_score = sample_score[:, :beam]
         embedding = get_output(self.target_input_embedding, tops.reshape((n*beam, )))
-        return embedding, sample_score, h1, h2, a_c1, a_c2, tops
+        return embedding, sample_score, h1, h2, tops
 
     def beam_backward(self, top_k, idx):
         n = idx.shape[0]
@@ -436,21 +423,28 @@ class DeepReluTransReadWrite(object):
                                                                     n_steps=51)
 
         # Beam Search
-        beam_size = 2
-        score_init = T.zeros((n, beam_size))
-        init_embedding = T.tile(init_embedding, (beam_size, 1))
-        beam_decode_init1 = T.tile(decode_in[:, :self.hid_size], (beam_size, 1))
-        beam_decode_init2 = T.tile(decode_in[:, self.hid_size:], (beam_size, 1))
+        # Init first step of Beam search
+        beam_size = 5
+        h1, h2, s, sample_score = self.decoding_step(init_embedding, decode_in[:, :self.hid_size],
+                                                     decode_in[:, self.hid_size:], sample_embed, attention_c1,
+                                                     attention_c2)
+        p1 = T.argsort(-sample_score, axis=-1)
+        p1 = p1[:, :beam_size]
+        score_init = T.sort(-sample_score, axis=-1)
+        score_init = - score_init[:, :beam_size]
+        init_embedding = get_output(self.target_input_embedding, p1.reshape((n*beam_size, )))
+        beam_decode_init1 = T.tile(h1, (beam_size, 1))
+        beam_decode_init2 = T.tile(h2, (beam_size, 1))
         attention_c1 = T.tile(attention_c1, (beam_size, 1, 1))
         attention_c2 = T.tile(attention_c2, (beam_size, 1, 1))
-        ([e, sample_score, h1, h2, a_c1, a_c2, tops], update) = theano.scan(self.beam_forward,
-                                                                            outputs_info=[init_embedding, score_init,
-                                                                                          beam_decode_init1,
-                                                                                          beam_decode_init2,
-                                                                                          attention_c1, attention_c2,
-                                                                                          None],
-                                                                            non_sequences=[sample_embed],
-                                                                            n_steps=51)
+        ([e, sample_score, h1, h2, tops], update) = theano.scan(self.beam_forward,
+                                                                outputs_info=[init_embedding, score_init,
+                                                                              beam_decode_init1, beam_decode_init2, None],
+                                                                non_sequences=[attention_c1, attention_c2, sample_embed
+                                                                               ],
+                                                                n_steps=50)
+
+        tops = T.concatenate([p1.reshape((1, n, beam_size)), tops], axis=0)
         tops = tops[::-1]
         init_idx = T.zeros((n, ), dtype="int64")
         ([idx, best_beam], update) = theano.scan(self.beam_backward, outputs_info=[init_idx, None], sequences=[tops])
@@ -700,7 +694,6 @@ def decode():
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
         force_max, prediction, best_beam = decode(source, target)
-        print(best_beam.shape)
         for n in range(int(len(test_data)/20)):
             s = source[n, 1:]
             t = target[n, 1:]
