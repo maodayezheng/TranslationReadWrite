@@ -21,11 +21,11 @@ random = MRG_RandomStreams(seed=1234)
 
 
 class Seq2Seq(object):
-    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=512, hid_dim=1024):
+    def __init__(self, source_vocab_size=37007, target_vocab_size=37007, embed_dim=512, hid_dim=512):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.hid_size = hid_dim
-        self.max_len = 31
+        self.max_len = 51
         self.output_score_dim = 512
         self.embedding_dim = embed_dim
 
@@ -33,20 +33,23 @@ class Seq2Seq(object):
         self.target_input_embedding = self.embedding(target_vocab_size, target_vocab_size, self.embedding_dim)
         self.target_output_embedding = self.embedding(target_vocab_size, target_vocab_size, self.output_score_dim)
 
-        # Init encoding RNNs
-        self.gru_encode1_gate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size * 2, activation=sigmoid)
-        self.gru_encode1_candidate = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
+        self.gru_en_gate_1 = self.mlp(self.embedding_dim + self.hid_size, 2 * self.hid_size, activation=sigmoid)
+        self.gru_en_candidate_1 = self.mlp(self.embedding_dim + self.hid_size, self.hid_size, activation=tanh)
 
-        # Init decoding RNNs
-        self.gru_decode_gate = self.mlp(self.embedding_dim + self.output_score_dim + self.hid_size,
-                                        self.hid_size*2, activation=sigmoid)
+        self.gru_en_gate_2 = self.mlp(self.embedding_dim + self.hid_size * 2, 2 * self.hid_size, activation=sigmoid)
+        self.gru_en_candidate_2 = self.mlp(self.embedding_dim + self.hid_size * 2, self.hid_size, activation=tanh)
 
-        self.gru_decode_candidate = self.mlp(self.embedding_dim + self.hid_size + self.output_score_dim,
-                                             self.hid_size, activation=tanh)
+        self.gru_de_gate_1 = self.mlp(self.embedding_dim + self.hid_size * 2, 2 * self.hid_size, activation=sigmoid)
+        self.gru_de_candidate_1 = self.mlp(self.embedding_dim + self.hid_size * 2, self.hid_size, activation=tanh)
+
+        self.gru_de_gate_2 = self.mlp(self.embedding_dim + self.hid_size * 3, 2 * self.hid_size, activation=sigmoid)
+        self.gru_de_candidate_2 = self.mlp(self.embedding_dim + self.hid_size * 3, self.hid_size, activation=tanh)
 
         # Init output layer
-        self.encode_out_mlp = self.mlp(self.hid_size, self.output_score_dim)
-        self.score_mlp = self.mlp(self.hid_size + self.output_score_dim + self.embedding_dim, self.output_score_dim)
+        self.encode_out_mlp = self.mlp(self.hid_size*2, self.hid_size, activation=tanh)
+        self.decode_init_mlp = self.mlp(self.hid_size*2, self.hid_size*2, activation=tanh)
+        self.decode_out_mlp = self.mlp(self.hid_size*2, self.hid_size, activation=tanh)
+        self.score_mlp = self.mlp(self.hid_size*2 + self.embedding_dim, self.output_score_dim)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -134,32 +137,53 @@ class Seq2Seq(object):
 
         return loss
 
-    def target_decode_step(self, target_embedding, h1, d1):
+    def target_decode_step(self, target_embedding, h1, h2, d1):
         # Decoding GRU layer 1
         h_in = T.concatenate([h1, d1, target_embedding], axis=1)
-        gate = get_output(self.gru_decode_gate, h_in)
+        gate = get_output(self.gru_de_gate_1, h_in)
         u1 = gate[:, :self.hid_size]
         r1 = gate[:, self.hid_size:]
         reset_h1 = h1 * r1
 
         c_in = T.concatenate([reset_h1, d1, target_embedding], axis=1)
-        c1 = get_output(self.gru_decode_candidate, c_in)
+        c1 = get_output(self.gru_de_candidate_1, c_in)
         h1 = (1.0 - u1) * h1 + u1 * c1
 
-        return h1
+        h_in = T.concatenate([h1, h2, d1, target_embedding], axis=1)
+        gate = get_output(self.gru_de_gate_2, h_in)
+        u2 = gate[:, :self.hid_size]
+        r2 = gate[:, self.hid_size:]
+        reset_h2 = h2 * r2
 
-    def source_encode_step(self, source_embedding, mask, h1):
+        c_in = T.concatenate([h1, reset_h2, d1, target_embedding], axis=1)
+        c2 = get_output(self.gru_de_candidate_2, c_in)
+        h2 = (1.0 - u1) * h2 + u2 * c2
+
+        o = T.concatenate([h1, h2], axis=-1)
+        o = get_output(self.decode_out_mlp, o)
+        return h1, h2, o
+
+    def source_encode_step(self, source_embedding, mask, h1, h2):
         # GRU layer 1
         h_in = T.concatenate([h1, source_embedding], axis=1)
-        gate = get_output(self.gru_encode1_gate, h_in)
+        gate = get_output(self.gru_en_gate_1, h_in)
         u1 = gate[:, :self.hid_size]
         r1 = gate[:, self.hid_size:]
         reset_h1 = h1 * r1
         c_in = T.concatenate([reset_h1, source_embedding], axis=1)
-        c1 = get_output(self.gru_encode1_candidate, c_in)
+        c1 = get_output(self.gru_en_candidate_1, c_in)
         h1 = mask * ((1.0 - u1) * h1 + u1 * c1) + (1.0 - mask) * h1
 
-        return h1
+        h_in = T.concatenate([h1, h2, source_embedding], axis=1)
+        gate = get_output(self.gru_en_gate_2, h_in)
+        u2 = gate[:, :self.hid_size]
+        r2 = gate[:, self.hid_size:]
+        reset_h2 = h2 * r2
+        c_in = T.concatenate([h1, reset_h2, source_embedding], axis=1)
+        c2 = get_output(self.gru_en_candidate_2, c_in)
+        h2 = mask * ((1.0 - u2) * h2 + u2 * c2) + (1.0 - mask) * h2
+
+        return h1, h2
 
     def score_eval_step(self, h, d_in, embeddings):
         h = T.concatenate([h, d_in], axis=-1)
