@@ -61,6 +61,8 @@ class DeepReluTransReadWrite(object):
         self.encode_out_mlp = self.mlp(self.hid_size*2, self.hid_size + self.output_score_dim, activation=tanh)
         self.decoder_init_mlp = self.mlp(self.hid_size*2, self.hid_size*2, activation=tanh)
         self.decode_out_mlp = self.mlp(self.hid_size*2, self.hid_size, activation=tanh)
+        self.score = self.mlp(2 * self.hid_size + self.embedding_dim, self.output_score_dim,
+                              activation=linear)
 
         # attention parameters
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, 4)).astype(theano.config.floatX)
@@ -77,10 +79,6 @@ class DeepReluTransReadWrite(object):
 
         v = np.random.uniform(-0.05, 0.05, (self.output_score_dim,)).astype(theano.config.floatX)
         self.attetion_v = theano.shared(value=v, name="attention_v")
-
-        # teacher mapper
-        self.score = self.mlp(2*self.hid_size + self.embedding_dim, self.output_score_dim,
-                              activation=linear)
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -878,8 +876,7 @@ def run(out_dir):
             training_loss.append(loss)
 
             if i % 1000 == 0:
-                print("training time " + str(iter_time)
-                      + " sec with sentence length " + str(l)
+                print("training time " + str(iter_time) + " sec with sentence length " + str(l)
                       + " training loss : " + str(loss))
 
         if i % 500 == 0:
