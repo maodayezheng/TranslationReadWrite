@@ -1,6 +1,6 @@
 #$ -l h_rt=150:0:0
-#$ -l tmem=18G
-#$ -l h_vmem=18G
+#$ -l tmem=10G
+#$ -l h_vmem=20G
 #$ -P gpu
 #$ -l gpu=1,gpu_titanxp=1
 #$ -S /bin/bash
