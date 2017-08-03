@@ -764,9 +764,9 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
-    pre_trained = False
+    pre_trained = True
     if pre_trained:
-        with open("code_outputs/2017_06_14_09_09_13/model_params.save", "rb") as params:
+        with open("code_outputs/2017_08_02_16_37_40/model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
