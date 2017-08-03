@@ -585,9 +585,9 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = Seq2SeqAttention()
-    pre_trained = False
+    pre_trained = True
     if pre_trained:
-        with open("code_outputs/2017_06_14_09_09_13/model_params.save", "rb") as params:
+        with open("code_outputs/2017_08_03_07_05_22/model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
@@ -640,7 +640,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 36000*2
+    iters = 34000*2
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
@@ -712,7 +712,8 @@ def run(out_dir):
             print("The loss on testing set is : " + str(valid_loss / p))
             validation_loss.append(valid_loss / p)
 
-        if i % 2000 == 0 and iters is not 0:
+        if i % 2000 == 0 and i is not 0:
+            print("Params saved at " + str(i))
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
             np.save(os.path.join(out_dir, 'validation_loss'), validation_loss)
             with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:
