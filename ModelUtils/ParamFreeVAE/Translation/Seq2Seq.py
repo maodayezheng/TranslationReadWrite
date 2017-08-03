@@ -529,7 +529,7 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = Seq2Seq()
-    pre_trained = False
+    pre_trained = True
     if pre_trained:
         with open("code_outputs/2017_08_02_17_16_29/model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
