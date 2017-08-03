@@ -30,13 +30,13 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=37007, target_vocab_size=37007,
-                 embed_dim=512, hid_dim=512):
+                 embed_dim=500, hid_dim=1000):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
         self.hid_size = hid_dim
         self.max_len = 51
-        self.output_score_dim = 512
+        self.output_score_dim = 500
         self.embedding_dim = embed_dim
 
         # Init the word embeddings.
@@ -317,6 +317,8 @@ class DeepReluTransReadWrite(object):
         h1, h2, s, sample_score = self.decoding_step(embedding, h1, h2, s_embedding, a_c1, a_c2)
         n, beam = score.shape
         k = sample_score.shape[1]
+        tops = T.argmax(sample_score.reshape((n, beam, k)), axis=-1)
+        """
         sample_score = score.reshape((n, beam, 1)) + sample_score.reshape((n, beam, k))
         sample_score = sample_score.reshape((n, beam*k))
         tops = T.argsort(sample_score, axis=-1)
@@ -331,10 +333,10 @@ class DeepReluTransReadWrite(object):
         h2 = h2.reshape((n, beam, self.hid_size))
         h2 = h2[rows, beams]
         h2 = h2.reshape((n*beam, self.hid_size))
-
-        sample_score = sample_score[:, :beam]
+        """
+        #sample_score = sample_score[:, :beam]
         embedding = get_output(self.target_input_embedding, tops.reshape((n*beam, )))
-        return embedding, sample_score, h1, h2, tops
+        return embedding, score, h1, h2, tops
 
     def beam_backward(self, top_k, idx):
         n = idx.shape[0]
@@ -445,13 +447,13 @@ class DeepReluTransReadWrite(object):
                                                                 n_steps=50)
 
         tops = T.concatenate([p1.reshape((1, n, beam_size)), tops], axis=0)
-        tops = tops[::-1]
+        #tops = tops[::-1]
         init_idx = T.zeros((n, ), dtype="int64")
-        ([idx, best_beam], update) = theano.scan(self.beam_backward, outputs_info=[init_idx, None], sequences=[tops])
+        #([idx, best_beam], update) = theano.scan(self.beam_backward, outputs_info=[init_idx, None], sequences=[tops])
         force_prediction = T.argmax(force_score, axis=-1)
-        best_beam = best_beam[::-1]
+        #best_beam = best_beam[::-1]
         return theano.function(inputs=[source, target],
-                               outputs=[force_prediction, prediction, best_beam],
+                               outputs=[force_prediction, prediction, tops],
                                allow_input_downcast=True)
 
     def elbo_fn(self):
@@ -635,7 +637,7 @@ def test():
                     target = np.concatenate([target, t.reshape((1, t.shape[0]))])
             output = None
             if draw_sample:
-                print(" No operation ")
+                print("No operation ")
             else:
                 output = optimiser(source, target)
             iter_time = time.clock() - start
@@ -666,7 +668,7 @@ def decode():
     test_data = np.array(test_data)
     splits = len(test_data) % 20
     test_data = test_data[:-splits]
-    print(" Selected " + str(len(test_data)) + " testing data")
+    print("Selected " + str(len(test_data)) + " testing data")
     mini_batchs = np.split(test_data, 20)
     decode = model.decode_fn()
     sour_sen = []
@@ -709,7 +711,7 @@ def decode():
             sour_sen.append(s_string)
             t_string = ""
             for t_idx in t:
-                if t_idx == 1 or t_idx ==-1:
+                if t_idx == 1 or t_idx == -1:
                     break
                 t_string += (vocab[t_idx] + " ")
             print("Refe " + t_string)
@@ -727,12 +729,14 @@ def decode():
                 p_string += (vocab[idx] + " ")
             print("Gred " + p_string)
             gred_sen.append(p_string)
-            b_string = ""
-            for idx in b:
-                if idx ==1:
-                    break
-                b_string += (vocab[idx] + " ")
-            print("Beam " + b_string)
+            for s in range(5):
+                b_s = b[:, s]
+                b_string = ""
+                for idx in b_s:
+                    if idx == 1:
+                        break
+                    b_string += (vocab[idx] + " ")
+                print("Beam " + b_string)
             print("")
 
     with open("Translations/source.txt", "w") as doc:
@@ -899,7 +903,7 @@ def run(out_dir):
                         print("")
 
         if i % 2000 == 0 and i != 0:
-            print(" Save parameter at " + str(i) + " iteration")
+            print("Save parameter at " + str(i) + " iteration")
             print("")
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
             np.save(os.path.join(out_dir, 'validation_loss'), validation_loss)
