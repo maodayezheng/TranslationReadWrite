@@ -311,9 +311,9 @@ class DeepReluTransReadWrite(object):
         # score => (N*B)
         # h1, h2 => (N*B)xH
         # a_c1, a_c2 => (N*B)xLxC
-        ([h1, h2, s, sample_score]) = theano.scan(self.decoding_step, sequences=[embedding, h1, h2],
-                                                  non_sequences=[s_embedding, a_c1, a_c2],
-                                                  outputs_info=[None, None, None, None])
+        ([h1, h2, s, sample_score], updates) = theano.scan(self.decoding_step, sequences=[embedding, h1, h2],
+                                                           non_sequences=[s_embedding, a_c1, a_c2],
+                                                           outputs_info=[None, None, None, None])
 
         #n, beam = score.shape
         tops = T.argmax(sample_score, axis=-1)
@@ -436,17 +436,21 @@ class DeepReluTransReadWrite(object):
         score_init = T.sort(-sample_score, axis=-1)
         score_init = - score_init[:, :beam_size]
         init_embedding = get_output(self.target_input_embedding, p1.reshape((n*beam_size, )))
+        init_embedding = init_embedding.reshape((n, beam_size, self.embedding_dim))
+        init_embedding = init_embedding.dimshuffle((1, 0, 2))
         beam_decode_init1 = T.tile(h1, (beam_size, 1))
+        beam_decode_init1 = beam_decode_init1.reshape((n, beam_size, self.hid_size))
+        beam_decode_init1 = beam_decode_init1.dimshuffle((1, 0, 2))
         beam_decode_init2 = T.tile(h2, (beam_size, 1))
-        attention_c1 = T.tile(attention_c1, (beam_size, 1, 1))
-        attention_c2 = T.tile(attention_c2, (beam_size, 1, 1))
+        beam_decode_init2 = beam_decode_init2.reshape((n, beam_size, self.hid_size))
+        beam_decode_init2 = beam_decode_init2.dimshuffle((1, 0, 2))
         ([e, sample_score, h1, h2, tops], update) = theano.scan(self.beam_forward,
                                                                 outputs_info=[init_embedding, score_init,
                                                                               beam_decode_init1, beam_decode_init2, None],
                                                                 non_sequences=[attention_c1, attention_c2, sample_embed
                                                                                ],
                                                                 n_steps=50)
-
+        tops = tops.dimshuffle((0, 2, 1))
         tops = T.concatenate([p1.reshape((1, n, beam_size)), tops], axis=0)
         #tops = tops[::-1]
         init_idx = T.zeros((n, ), dtype="int64")
