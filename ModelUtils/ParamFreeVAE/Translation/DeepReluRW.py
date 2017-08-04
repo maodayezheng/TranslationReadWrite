@@ -311,11 +311,12 @@ class DeepReluTransReadWrite(object):
         # score => (N*B)
         # h1, h2 => (N*B)xH
         # a_c1, a_c2 => (N*B)xLxC
+        ([h1, h2, s, sample_score]) = theano.scan(self.decoding_step, sequences=[embedding, h1, h2],
+                                                  non_sequences=[s_embedding, a_c1, a_c2],
+                                                  outputs_info=[None, None, None, None])
 
-        h1, h2, s, sample_score = self.decoding_step(embedding, h1, h2, s_embedding, a_c1, a_c2)
-        n, beam = score.shape
-        k = sample_score.shape[1]
-        tops = T.argmax(sample_score.reshape((n, beam, k)), axis=-1)
+        #n, beam = score.shape
+        tops = T.argmax(sample_score, axis=-1)
         """
         sample_score = score.reshape((n, beam, 1)) + sample_score.reshape((n, beam, k))
         sample_score = sample_score.reshape((n, beam*k))
@@ -333,7 +334,9 @@ class DeepReluTransReadWrite(object):
         h2 = h2.reshape((n*beam, self.hid_size))
         """
         #sample_score = sample_score[:, :beam]
-        embedding = get_output(self.target_input_embedding, tops.reshape((n*beam, )))
+        b, n = tops.shape
+        embedding = get_output(self.target_input_embedding, tops.reshape((n*b, )))
+        embedding = embedding.reshape((b, n, self.embedding_dim))
         return embedding, score, h1, h2, tops
 
     def beam_backward(self, top_k, idx):
