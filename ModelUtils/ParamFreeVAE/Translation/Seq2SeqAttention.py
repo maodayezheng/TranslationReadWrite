@@ -123,9 +123,11 @@ class Seq2SeqAttention(object):
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
         decode_init = get_output(self.decode_init_mlp, T.concatenate([h_e_1[-1], h_e_2[-1]], axis=-1))
+        o_init = T.zeros((n, self.hid_size))
         ([h_d_1, h_d_2, d_o, attention_content], update) = theano.scan(self.target_decode_step,
                                                                        outputs_info=[decode_init[:, :self.hid_size],
-                                                                                     decode_init[:, self.hid_size:], None, None],
+                                                                                     decode_init[:, self.hid_size:],
+                                                                                     o_init, None],
                                                                        sequences=[target_input_embedding],
                                                                        non_sequences=[attention_c1, attention_c2, encode_mask])
 
@@ -156,12 +158,12 @@ class Seq2SeqAttention(object):
 
         return loss
 
-    def target_decode_step(self, target_embedding, h1, h2, a_c1, a_c2, mask):
+    def target_decode_step(self, target_embedding, h1, h2, o, a_c1, a_c2, mask):
         # a_c1 for feed in RNN
         # a_c2 for calculate score
 
         # Calculate attention score
-        s = T.dot(h1, self.attention_s)
+        s = T.dot(o, self.attention_s)
         n, d = s.shape
         s = s.reshape((1, n, d))
         attention_score = T.tanh(s + a_c2)
@@ -645,7 +647,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 34000*2
+    iters = 36000*2
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):

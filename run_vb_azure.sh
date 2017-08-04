@@ -5,7 +5,7 @@
 #$ -l gpu=1,gpu_titanx=1
 #$ -S /bin/bash
 #$ -j y
-#$ -N DeepReluRWNorm
+#$ -N DeepReluRW
 
 source $SET_CUDA_DEVICE
 
