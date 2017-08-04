@@ -1,11 +1,11 @@
 #$ -l h_rt=150:0:0
 #$ -l tmem=15G
-#$ -l h_vmem=15G
+#$ -l h_vmem=30G
 #$ -P gpu
-#$ -l gpu=1,gpu_P100_16=1
+#$ -l gpu=1,gpu_P100=1
 #$ -S /bin/bash
 #$ -j y
-#$ -N Test
+#$ -N DeepReluRW
 
 source $SET_CUDA_DEVICE
 
@@ -24,7 +24,7 @@ echo $PWD
 
 mkdir ${OUT_DIR}
 
-PYTHON_FILE=test.py
+PYTHON_FILE=translation_experiment.py
 
 cp ${PYTHON_FILE} ${OUT_DIR}/${PYTHON_FILE}
 

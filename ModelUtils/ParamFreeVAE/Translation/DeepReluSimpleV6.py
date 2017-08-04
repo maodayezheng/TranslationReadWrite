@@ -27,7 +27,7 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=37007, target_vocab_size=37007,
-                 embed_dim=256, hid_dim=512, source_seq_len=50, target_seq_len=50):
+                 embed_dim=512, hid_dim=512):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
@@ -740,7 +740,7 @@ def run(out_dir):
                         print(" Target " + str(v_w[t, n]))
                         print("")
 
-        if i % 2000 == 0 and iters is not 0:
+        if i % 2000 == 0 and i is not 0:
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
             np.save(os.path.join(out_dir, 'validation_loss'), validation_loss)
             with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:
