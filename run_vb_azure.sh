@@ -5,7 +5,7 @@
 #$ -l gpu=1,gpu_titanx=1
 #$ -S /bin/bash
 #$ -j y
-#$ -N DeepReluRW
+#$ -N Seq2SeqAttention
 
 source $SET_CUDA_DEVICE
 

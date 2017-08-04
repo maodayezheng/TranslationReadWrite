@@ -592,7 +592,7 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = Seq2SeqAttention()
-    pre_trained = True
+    pre_trained = False
     if pre_trained:
         with open("code_outputs/2017_08_03_07_05_22/model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
@@ -647,7 +647,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 36000*2
+    iters = 30000*2
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
