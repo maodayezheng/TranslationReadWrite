@@ -30,13 +30,13 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=37007, target_vocab_size=37007,
-                 embed_dim=500, hid_dim=1000):
+                 embed_dim=512, hid_dim=512):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
         self.hid_size = hid_dim
         self.max_len = 51
-        self.output_score_dim = 500
+        self.output_score_dim = 512
         self.embedding_dim = embed_dim
 
         # Init the word embeddings.
