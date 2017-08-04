@@ -14,7 +14,7 @@ Features of this Model:
 
 import theano.tensor as T
 import theano
-from lasagne.layers import EmbeddingLayer, InputLayer, get_output
+from lasagne.layers import EmbeddingLayer, InputLayer, get_output, DropoutLayer
 import lasagne
 from lasagne.nonlinearities import linear, sigmoid, tanh
 from theano.gradient import zero_grad
@@ -485,18 +485,18 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
         lasagne.layers.set_all_param_values(self.target_input_embedding, params[1])
         lasagne.layers.set_all_param_values(self.target_output_embedding, params[2])
-        lasagne.layers.set_all_param_values(self.gru_de_gate_1, params[7])
-        lasagne.layers.set_all_param_values(self.gru_de_candidate_1, params[8])
-        lasagne.layers.set_all_param_values(self.gru_de_gate_2, params[9])
-        lasagne.layers.set_all_param_values(self.gru_de_candidate_2, params[10])
-        lasagne.layers.set_all_param_values(self.encode_out_mlp, params[11])
-        lasagne.layers.set_all_param_values(self.score, params[12])
-        lasagne.layers.set_all_param_values(self.decode_out_mlp, params[13])
-        self.attention_weight.set_value(params[15])
-        self.attention_bias.set_value(params[16])
-        self.attention_h_2.set_value(params[17])
-        self.attetion_v.set_value(params[18])
-        self.attention_s.set_value(params[19])
+        lasagne.layers.set_all_param_values(self.gru_de_gate_1, params[3])
+        lasagne.layers.set_all_param_values(self.gru_de_candidate_1, params[4])
+        lasagne.layers.set_all_param_values(self.gru_de_gate_2, params[5])
+        lasagne.layers.set_all_param_values(self.gru_de_candidate_2, params[6])
+        lasagne.layers.set_all_param_values(self.encode_out_mlp, params[7])
+        lasagne.layers.set_all_param_values(self.score, params[8])
+        lasagne.layers.set_all_param_values(self.decode_out_mlp, params[9])
+        self.attention_weight.set_value(params[10])
+        self.attention_bias.set_value(params[11])
+        self.attention_h_2.set_value(params[12])
+        self.attetion_v.set_value(params[13])
+        self.attention_s.set_value(params[14])
 
 
 """
