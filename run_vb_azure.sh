@@ -2,7 +2,7 @@
 #$ -l tmem=15G
 #$ -l h_vmem=30G
 #$ -P gpu
-#$ -l gpu=1,gpu_titanxp=1
+#$ -l gpu=1,gpu_titanxp=1,hostname=tesla1
 #$ -S /bin/bash
 #$ -j y
 #$ -N Seq2SeqAttention
