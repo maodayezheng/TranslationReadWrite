@@ -173,7 +173,7 @@ class DeepReluTransReadWrite(object):
         # Get sample embedding
         decode_in = get_output(self.decoder_init_mlp, T.concatenate([h_t_1[-1], h_t_2[-1]], axis=-1))
         sample_embed = self.target_output_embedding.W
-        ([h_t_1, h_t_2, s, sample_score], update) = theano.scan(self.decoding_step,
+        ([h_t_1, h_t_2, o, s, sample_score], update) = theano.scan(self.decoding_step,
                                                                 outputs_info=[decode_in[:, :self.hid_size],
                                                                               decode_in[:, self.hid_size:], h_init,
                                                                               None, None],
