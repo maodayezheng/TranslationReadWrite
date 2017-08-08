@@ -178,11 +178,13 @@ class DeepReluTransReadWrite(object):
         decode_in = get_output(self.decoder_init_mlp, T.concatenate([h_t_1[-1], h_t_2[-1]], axis=-1))
 
         sample_embed = self.target_output_embedding.W
-        ([h_t_1, h_t_2, s, sample_score], update) = theano.scan(self.decoding_step,
-                                                                outputs_info=[decode_in[:, :self.hid_size],
-                                                                decode_in[:, self.hid_size:], None, None],
-                                                                non_sequences=[sample_embed, attention_c1, attention_c2],
-                                                                sequences=[decode_in_embedding])
+        ([h_t_1, h_t_2, o, s, sample_score], update) = theano.scan(self.decoding_step,
+                                                                   outputs_info=[decode_in[:, :self.hid_size],
+                                                                                 decode_in[:, self.hid_size:],
+                                                                                 h_init, None, None],
+                                                                   non_sequences=[sample_embed,
+                                                                                  attention_c1, attention_c2],
+                                                                   sequences=[decode_in_embedding])
 
         # Get sample embedding
         l = sample_score.shape[0]
@@ -260,8 +262,8 @@ class DeepReluTransReadWrite(object):
 
         return h1, h2, a, canvas, read_attention, write_attention, start, stop
 
-    def decoding_step(self, embedding, h1, h2, s_embedding, a_c1, a_c2):
-        s = T.dot(h1, self.attention_s)
+    def decoding_step(self, embedding, h1, h2, o, s_embedding, a_c1, a_c2):
+        s = T.dot(o, self.attention_s)
         n, d = s.shape
         s = s.reshape((n, 1, d))
         attention_score = T.tanh(s + a_c2)
@@ -299,7 +301,7 @@ class DeepReluTransReadWrite(object):
         s = get_output(self.score, score_in)
         sample_score = T.dot(s, s_embedding.T)
 
-        return h1, h2, s, sample_score
+        return h1, h2, o, s, sample_score
 
     def greedy_decode(self, embedding, h1, h2, s_embedding, a_c1, a_c2):
         h1, h2, s, sample_score = self.decoding_step(embedding, h1, h2, s_embedding, a_c1, a_c2)
@@ -756,7 +758,6 @@ def decode():
 def run(out_dir):
     print("Run the Relu read and  write normalized version ")
     print(" eps num : 6 ")
-    print(" itr num : 36000*2")
     print(" bac siz : 25")
     print(" enc num : 2")
     print(" dec num : 2")
@@ -768,9 +769,10 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
-    pre_trained = False
+    pre_trained = True
     if pre_trained:
-        with open("code_outputs/2017_08_02_16_37_40/model_params.save", "rb") as params:
+        with open("code_outputs/2017_08_07_08_46_49/model_params.save", "rb") as params:
+            print("Params restored at 2017_08_07_08_46_49")
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
@@ -825,7 +827,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 36000*2
+    iters = 30000*2 - 24000 - 6000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):

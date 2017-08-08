@@ -762,7 +762,6 @@ def decode():
 def run(out_dir):
     print("Run the Relu read and  write final model ")
     print(" eps num : 6 ")
-    print(" itr num : 36000*2")
     print(" bac siz : 25")
     print(" enc num : 2")
     print(" dec num : 2")
@@ -774,9 +773,10 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
-    pre_trained = False
+    pre_trained = True
     if pre_trained:
-        with open("code_outputs/2017_08_02_16_37_40/model_params.save", "rb") as params:
+        with open("code_outputs/2017_08_07_08_57_04/model_params.save", "rb") as params:
+            print("Params restored at 2017_08_07_08_57_04")
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
@@ -831,7 +831,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 30000*2
+    iters = 30000*2 -28000 - 6000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
