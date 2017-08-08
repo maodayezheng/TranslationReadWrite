@@ -5,6 +5,7 @@ code_outputs
 BookCorpus
 pics
 sentenceData
+Translations
 DataUtils
 *.pdf
 *.pyc
