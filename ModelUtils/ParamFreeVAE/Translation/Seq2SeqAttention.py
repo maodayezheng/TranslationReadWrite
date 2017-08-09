@@ -236,13 +236,13 @@ class Seq2SeqAttention(object):
         score = T.dot(h, embeddings.T)
         return h, score
 
-    def greedy_decode_step(self, target_embedding, h1, a_c1, a_c2, mask):
-        h1, attention_content = self.target_decode_step(target_embedding, h1, a_c1, a_c2, mask)
-        score_in = T.concatenate([h1, attention_content, target_embedding], axis=-1)
+    def greedy_decode_step(self, target_embedding, h1, h2, o, a_c1, a_c2, mask):
+        h1, h2, o, attention_content = self.target_decode_step(target_embedding, h1, h2, o, a_c1, a_c2, mask)
+        score_in = T.concatenate([o, attention_content, target_embedding], axis=-1)
         h, s = self.score_eval_step(score_in, self.target_output_embedding.W)
         prediction = T.argmax(s, axis=-1)
         prediction_embedding = get_output(self.target_input_embedding, prediction)
-        return prediction_embedding, h1, prediction
+        return prediction_embedding, h1, h2, o, prediction
 
     def decode_fn(self):
 
@@ -264,17 +264,16 @@ class Seq2SeqAttention(object):
 
         # Encoding RNN
         h_init = T.zeros((n, self.hid_size))
-        (h_e_1, update) = theano.scan(self.source_encode_step, outputs_info=[h_init],
-                                      sequences=[source_input_embedding, encode_mask])
+        ([h_e_1, h_e_2, e_o], update) = theano.scan(self.source_encode_step, outputs_info=[h_init, h_init, None],
+                                                    sequences=[source_input_embedding, encode_mask])
 
         decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
 
         # Decoding RNN
-        attention_candidate = h_e_1
+        attention_candidate = e_o
 
         l, n, d = attention_candidate.shape
         attention_c1 = attention_candidate.reshape((n * l, d))
-        attention_c1 = T.dot(attention_c1, self.attention_h_1)
         attention_c2 = T.dot(attention_c1, self.attention_h_2)
         attention_c1 = attention_c1.reshape((l, n, self.output_score_dim))
         attention_c2 = attention_c2.reshape((l, n, self.output_score_dim))
@@ -284,21 +283,29 @@ class Seq2SeqAttention(object):
         target_input_embedding = get_output(self.target_input_embedding, target_input)
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
-        h_init = get_output(self.encode_out_mlp, h_e_1[-1])
-        ([h_t_2, attention_content], update) = theano.scan(self.target_decode_step, outputs_info=[h_init, None],
-                                                           sequences=[target_input_embedding],
-                                                           non_sequences=[attention_c1, attention_c2, encode_mask])
+        decode_init = get_output(self.decode_init_mlp, T.concatenate([h_e_1[-1], h_e_2[-1]], axis=-1))
+        o_init = T.zeros((n, self.hid_size))
 
-        score_eva_in = T.concatenate([h_t_2, attention_content, target_input_embedding], axis=-1)
+        ([h_d_1, h_d_2, d_o, attention_content], update) = theano.scan(self.target_decode_step,
+                                                                       outputs_info=[decode_init[:, :self.hid_size],
+                                                                                     decode_init[:, self.hid_size:],
+                                                                                     o_init, None],
+                                                                       sequences=[target_input_embedding],
+                                                                       non_sequences=[attention_c1, attention_c2,
+                                                                                      encode_mask])
+
+        score_eva_in = T.concatenate([d_o, attention_content, target_input_embedding], axis=-1)
         ([h, score], update) = theano.scan(self.score_eval_step, sequences=[score_eva_in],
                                            non_sequences=[self.target_output_embedding.W],
                                            outputs_info=[None, None])
 
         force_prediction = T.argmax(score, axis=-1)
         init_embedding = target_input_embedding[-1]
-        ([e, h, greedy_p], update) = theano.scan(self.greedy_decode_step, outputs_info=[init_embedding, h_init, None],
-                                                 non_sequences=[attention_c1, attention_c2, encode_mask],
-                                                 n_steps=31)
+        ([e, h1, h2, o, greedy_p], update) = theano.scan(self.greedy_decode_step,
+                                                         outputs_info=[init_embedding, decode_init[:, :self.hid_size],
+                                                                       decode_init[:, self.hid_size:], o_init, None],
+                                                         non_sequences=[attention_c1, attention_c2, encode_mask],
+                                                         n_steps=51)
 
         return theano.function(inputs=[source, target],
                                outputs=[force_prediction, greedy_p],
@@ -487,30 +494,32 @@ def decode():
     print("Decoding the sequence Attention model ")
     test_data = None
     model = Seq2SeqAttention()
-    de_vocab = []
-    en_vocab = []
+    vocab = []
 
-    with open("SentenceData/vocab_en", "r", encoding="utf8") as v:
+    with open("SentenceData/BPE/vocab.bpe.32000", "r", encoding="utf8") as v:
         for line in v:
-            en_vocab.append(line.strip("\n"))
+            vocab.append(line.strip("\n"))
 
-    with open("SentenceData/vocab_de", "r", encoding="utf8") as v:
-        for line in v:
-            de_vocab.append(line.strip("\n"))
-    with open("code_outputs/2017_07_06_08_37_10/final_model_params.save", "rb") as params:
+    with open("code_outputs/2017_08_07_19_51_35/model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
-    with open("SentenceData/dev_idx_small.txt", "r") as dataset:
+    with open("SentenceData/BPE/news2013.tok.bpe.32000.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
-    mini_batch = test_data[:2000]
-    mini_batch = sorted(mini_batch, key=lambda d: d[2])
-    mini_batch = np.array(mini_batch)
-    mini_batchs = np.split(mini_batch, 20)
+    chosen = []
+    for t in test_data:
+        if 5 <= len(t[0]) <= 50:
+            chosen.append(t)
+    test_data = sorted(chosen, key=lambda d: max(len(d[0]), len(d[1])))
+    test_data = np.array(test_data)
+    splits = len(test_data) % 20
+    test_data = test_data[:-splits]
+    print("Selected " + str(len(test_data)) + " testing data")
+    mini_batchs = np.split(test_data, 20)
     decode = model.decode_fn()
-    bleu_score = []
-    reference = []
-    translation = []
+    refe_sen = []
+    forc_sen = []
+    gred_sen =[]
     for m in mini_batchs:
-        l = m[-1, -1]
+        l = max(len(m[-1, 0]), len(m[-1, 1]))
 
         source = None
         target = None
@@ -531,50 +540,42 @@ def decode():
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
         force_max, prediction = decode(source, target)
-        for n in range(10):
-            s = source[n, 1:]
+        for n in range(int(len(test_data) / 20)):
             t = target[n, 1:]
             f = force_max[:, n]
             p = prediction[:, n]
 
-            s_string = ""
-            for s_idx in s:
-                if s_idx == 1:
-                    break
-                s_string += (en_vocab[s_idx] + " ")
             t_string = ""
-            ref = []
             for t_idx in t:
-                if t_idx == 1:
+                if t_idx == 1 or t_idx == -1:
                     break
-                ref.append(de_vocab[t_idx])
-                t_string += (de_vocab[t_idx] + " ")
+                t_string += (vocab[t_idx] + " ")
+            print("Refe " + t_string)
+            refe_sen.append(t_string)
             f_string = ""
             for p_idx in f:
                 if p_idx == 1:
                     break
-                f_string += (de_vocab[p_idx] + " ")
+                f_string += (vocab[p_idx] + " ")
+            forc_sen.append(f_string)
             p_string = ""
-            gred = []
             for idx in p:
                 if idx == 1:
                     break
-                gred.append(de_vocab[idx])
-                p_string += (de_vocab[idx] + " ")
-
-            print("Sour : " + s_string)
-            print("Refe : " + t_string)
-            print("Forc : " + f_string)
-            print("Pred : " + p_string)
-            reference.append(t_string)
-            translation.append(p_string)
+                p_string += (vocab[idx] + " ")
+            print("Gred " + p_string)
+            gred_sen.append(p_string)
             print("")
-    with open("Translations/Attention/ref.txt", "w") as doc:
-        for line in reference:
-            doc.write(line+"\n")
-    with open("Translations/Attention/pred.txt", "w") as doc:
-        for line in translation:
-            doc.write(line+"\n")
+
+    with open("Translations/reference.txt", "w") as doc:
+        for line in refe_sen:
+            doc.write(line + "\n")
+    with open("Translations/force.txt", "w") as doc:
+        for line in forc_sen:
+            doc.write(line + "\n")
+    with open("Translations/greedy.txt", "w") as doc:
+        for line in gred_sen:
+            doc.write(line + "\n")
 
 
 def run(out_dir):

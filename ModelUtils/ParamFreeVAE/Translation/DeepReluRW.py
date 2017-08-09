@@ -300,12 +300,12 @@ class DeepReluTransReadWrite(object):
 
         return h1, h2, o, s, sample_score
 
-    def greedy_decode(self, embedding, h1, h2, s_embedding, a_c1, a_c2):
-        h1, h2, s, sample_score = self.decoding_step(embedding, h1, h2, s_embedding, a_c1, a_c2)
+    def greedy_decode(self, embedding, h1, h2, o, s_embedding, a_c1, a_c2):
+        h1, h2,o, s, sample_score = self.decoding_step(embedding, h1, h2, o, s_embedding, a_c1, a_c2)
         prediction = T.argmax(sample_score, axis=-1)
         embedding = get_output(self.target_input_embedding, prediction)
 
-        return embedding, h1, h2, s, prediction
+        return embedding, h1, h2, o, s, prediction
 
     def beam_forward(self, embedding, score, h1, h2, a_c1, a_c2, s_embedding):
         # embedding => (N*B)xD
@@ -407,27 +407,30 @@ class DeepReluTransReadWrite(object):
         decode_in_embedding = decode_in_embedding.dimshuffle((1, 0, 2))
         # Get sample embedding
         decode_in = get_output(self.decoder_init_mlp, T.concatenate([h_t_1[-1], h_t_2[-1]], axis=-1))
-
+        o_init = T.zeros((n, self.hid_size))
         sample_embed = self.target_output_embedding.W
-        ([h_t_1, h_t_2, s, force_score], update) = theano.scan(self.decoding_step,
+        ([h_t_1, h_t_2, o, s, force_score], update) = theano.scan(self.decoding_step,
                                                                outputs_info=[decode_in[:, :self.hid_size],
-                                                                             decode_in[:, self.hid_size:], None, None],
+                                                                             decode_in[:, self.hid_size:],
+                                                                             o_init, None, None],
                                                                non_sequences=[sample_embed, attention_c1,
                                                                               attention_c2],
                                                                sequences=[decode_in_embedding])
 
         # Greedy Decode
         init_embedding = decode_in_embedding[0]
-        ([e, h, s, sample_score, prediction], update) = theano.scan(self.greedy_decode,
+        ([e, h, s, o,  sample_score, prediction], update) = theano.scan(self.greedy_decode,
                                                                     outputs_info=[init_embedding,
                                                                                   decode_in[:, :self.hid_size],
-                                                                                  decode_in[:, self.hid_size:], None, None],
+                                                                                  decode_in[:, self.hid_size:],
+                                                                                  o_init, None, None],
                                                                     non_sequences=[sample_embed, attention_c1,
                                                                                    attention_c2],
                                                                     n_steps=51)
 
         # Beam Search
         # Init first step of Beam search
+        """
         beam_size = 5
         h1, h2, s, sample_score = self.decoding_step(init_embedding, decode_in[:, :self.hid_size],
                                                      decode_in[:, self.hid_size:], sample_embed, attention_c1,
@@ -458,8 +461,10 @@ class DeepReluTransReadWrite(object):
         #([idx, best_beam], update) = theano.scan(self.beam_backward, outputs_info=[init_idx, None], sequences=[tops])
         force_prediction = T.argmax(force_score, axis=-1)
         #best_beam = best_beam[::-1]
+        """
+        force_prediction = T.argmax(force_score, axis=-1)
         return theano.function(inputs=[source, target],
-                               outputs=[force_prediction, prediction, tops],
+                               outputs=[force_prediction, prediction],
                                allow_input_downcast=True)
 
     def elbo_fn(self):
@@ -662,7 +667,7 @@ def decode():
         for line in v:
             vocab.append(line.strip("\n"))
 
-    with open("code_outputs/2017_07_28_16_32_13/model_params.save", "rb") as params:
+    with open("code_outputs/2017_08_07_08_57_04/model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/BPE/news2013.tok.bpe.32000.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
@@ -701,13 +706,12 @@ def decode():
             else:
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
-        force_max, prediction, best_beam = decode(source, target)
+        force_max, prediction = decode(source, target)
         for n in range(int(len(test_data)/20)):
             s = source[n, 1:]
             t = target[n, 1:]
             f = force_max[:, n]
             p = prediction[:, n]
-            b = best_beam[:, n]
 
             s_string = ""
             for s_idx in s:
@@ -735,14 +739,6 @@ def decode():
                 p_string += (vocab[idx] + " ")
             print("Gred " + p_string)
             gred_sen.append(p_string)
-            for s in range(5):
-                b_s = b[:, s]
-                b_string = ""
-                for idx in b_s:
-                    if idx == 1:
-                        break
-                    b_string += (vocab[idx] + " ")
-                print("Beam " + b_string)
             print("")
 
     with open("Translations/source.txt", "w") as doc:
