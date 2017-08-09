@@ -775,8 +775,8 @@ def run(out_dir):
     model = DeepReluTransReadWrite()
     pre_trained = True
     if pre_trained:
-        with open("code_outputs/2017_08_07_08_57_04/model_params.save", "rb") as params:
-            print("Params restored at 2017_08_07_08_57_04")
+        with open("code_outputs/2017_08_08_19_22_50/model_params.save", "rb") as params:
+            print("Params restored at 2017_08_08_19_22_50")
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
@@ -831,7 +831,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 30000*2 -28000 - 6000
+    iters = 30000*2 - 28000 - 6000 - 10000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
