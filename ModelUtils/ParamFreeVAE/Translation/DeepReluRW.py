@@ -667,7 +667,7 @@ def decode():
         for line in v:
             vocab.append(line.strip("\n"))
 
-    with open("code_outputs/2017_08_07_08_57_04/model_params.save", "rb") as params:
+    with open("code_outputs/2017_08_08_19_22_50/model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/BPE/news2013.tok.bpe.32000.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
@@ -741,16 +741,16 @@ def decode():
             gred_sen.append(p_string)
             print("")
 
-    with open("Translations/source.txt", "w") as doc:
+    with open("Translations/relu_source.txt", "w") as doc:
             for line in sour_sen:
                 doc.write(line + "\n")
-    with open("Translations/reference.txt", "w") as doc:
+    with open("Translations/relu_reference.txt", "w") as doc:
             for line in refe_sen:
                 doc.write(line + "\n")
-    with open("Translations/force.txt", "w") as doc:
+    with open("Translations/relu_force.txt", "w") as doc:
         for line in forc_sen:
             doc.write(line+"\n")
-    with open("Translations/greedy.txt", "w") as doc:
+    with open("Translations/relu_greedy.txt", "w") as doc:
         for line in gred_sen:
             doc.write(line+"\n")
 
