@@ -221,8 +221,8 @@ class DeepReluTransReadWrite(object):
         interval = attention[:, 2:] * (1.0 - start)
         stop = start + interval
         abs_dis = stop + start
-        read_attention = T.nnet.relu(1.0 - T.abs_(2*r_p - abs_dis[:, 0].reshape((n, 1)))/interval.reshape((n, 1)))
-        write_attention = T.nnet.relu(1.0 - T.abs_(2*w_p - abs_dis[:, 1].reshape((n, 1)))/interval.reshape((n, 1)))
+        read_attention = T.nnet.relu(1.0 - T.abs_(2*r_p - abs_dis[:, 0].reshape((n, 1)))/(interval.reshape((n, 1))+ 1e-5))
+        write_attention = T.nnet.relu(1.0 - T.abs_(2*w_p - abs_dis[:, 1].reshape((n, 1)))/(interval.reshape((n, 1))+ 1e-5))
 
         # Read from ref
         l = read_attention.shape[1]
@@ -771,7 +771,7 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
-    pre_trained = True
+    pre_trained = False
     if pre_trained:
         with open("code_outputs/2017_08_08_19_22_50/model_params.save", "rb") as params:
             print("Params restored at 2017_08_08_19_22_50")
