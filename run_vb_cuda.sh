@@ -7,6 +7,7 @@ while [ -h "${SOURCE}" ]; do
   [[ ${SOURCE} != /* ]] && SOURCE="${DIR}/${SOURCE}"
 done
 DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
+source $SET_CUDA_DEVICE
 
 OUT_DIR=code_outputs/$(date +%Y_%m_%d_%H_%M_%S)
 
