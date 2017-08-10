@@ -7,8 +7,6 @@
 #$ -j y
 #$ -N DeepReluAbslute
 
-source $SET_CUDA_DEVICE
-
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "${SOURCE}" ]; do
   DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
