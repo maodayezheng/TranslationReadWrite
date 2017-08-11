@@ -714,13 +714,15 @@ def decode():
 
 def run(out_dir):
     print("Run the Relu read and write Vanilla ")
+    print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
     pre_trained = False
     epoch = 10
     if pre_trained:
-        with open("code_outputs/2017_07_20_11_54_15/model_params.save", "rb") as params:
+        with open("code_outputs/2017_08_07_11_31_01/model_params.save", "rb") as params:
+            print("Params restored from 2017_08_07_11_31_01")
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
@@ -829,7 +831,7 @@ def run(out_dir):
             loss = output[0]
             training_loss.append(loss)
 
-            if i % 250 == 0:
+            if i % 1000 == 0:
                 print("training time " + str(iter_time)
                       + " sec with sentence length " + str(l)
                       + "training loss : " + str(loss))
@@ -846,7 +848,7 @@ def run(out_dir):
 
             print("The loss on testing set is : " + str(valid_loss / p))
             validation_loss.append(valid_loss / p)
-            if i % 2000 == 0:
+            if i % 10000 == 0:
                 for n in range(1):
                     for t in range(v_r.shape[0]):
                         print("======")

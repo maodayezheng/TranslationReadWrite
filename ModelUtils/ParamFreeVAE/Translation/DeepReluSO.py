@@ -895,7 +895,7 @@ def run(out_dir):
 
             print("The loss on testing set is : " + str(valid_loss / p))
             validation_loss.append(valid_loss / p)
-            if i % 6000 == 0:
+            if i % 10000 == 0:
                 for n in range(1):
                     for t in range(v_r.shape[0]):
                         print("======")
