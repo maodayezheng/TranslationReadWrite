@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.DeepReluSO import run
+from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleV5 import run
 import sys
 import numpy as np
 
