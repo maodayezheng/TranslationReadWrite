@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ModelUtils.ParamFreeVAE.Translation.DeepReluRW import decode
+from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleV5 import decode
 
 if __name__ == '__main__':
     decode()
