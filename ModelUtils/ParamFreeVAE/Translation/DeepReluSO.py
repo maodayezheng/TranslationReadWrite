@@ -157,7 +157,7 @@ class DeepReluTransReadWrite(object):
         r_a_init = T.zeros((n, s_l))
         w_a_init = T.zeros((n, self.max_len))
         ([h_t_1, h_t_2, a_t, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[h_init, h_init, h_init[:, :self.output_score_dim],
+            = theano.scan(self.step, outputs_info=[h_init, h_init, h_init[:, :self.key_dim],
                                                    canvas_init, r_a_init, w_a_init],
                           non_sequences=[source_embedding, read_pos, write_pos],
                           sequences=[time_steps.reshape((s_l, n, 1, 1))])
