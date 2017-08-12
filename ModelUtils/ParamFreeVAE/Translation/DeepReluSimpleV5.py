@@ -776,7 +776,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 60000
+    iters = 20000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):

@@ -251,8 +251,8 @@ class DeepReluTransReadWrite(object):
 
         h_in = T.concatenate([h1, h2], axis=-1)
         o = get_output(self.encode_out_mlp, h_in)
-        a = o[:, :self.output_score_dim]
-        c = o[:, self.output_score_dim:]
+        a = o[:, :self.key_dim]
+        c = o[:, self.key_dim:]
         l = write_attention.shape[1]
         pos = write_attention.reshape((n, l, 1))
         new_canvas = canvas * (1.0 - pos) + c.reshape((n, 1, self.hid_size)) * pos
