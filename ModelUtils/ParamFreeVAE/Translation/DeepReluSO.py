@@ -37,6 +37,7 @@ class DeepReluTransReadWrite(object):
         self.hid_size = hid_dim
         self.max_len = 51
         self.output_score_dim = 512
+        self.key_dim = 128
         self.embedding_dim = embed_dim
 
         # Init the word embeddings.
@@ -58,14 +59,14 @@ class DeepReluTransReadWrite(object):
         self.gru_de_candidate_2 = self.gru_candidate(self.embedding_dim + self.hid_size * 3, self.hid_size)
 
         # RNN output mapper
-        self.encode_out_mlp = self.mlp(self.hid_size*2, self.hid_size + self.output_score_dim, activation=tanh)
+        self.encode_out_mlp = self.mlp(self.hid_size*2, self.hid_size + self.key_dim, activation=tanh)
         self.decoder_init_mlp = self.mlp(self.hid_size*2, self.hid_size*2, activation=tanh)
         self.decode_out_mlp = self.mlp(self.hid_size*2, self.hid_size, activation=tanh)
         self.score = self.mlp(2 * self.hid_size + self.embedding_dim, self.output_score_dim,
                               activation=linear)
 
         # attention parameters
-        v = np.random.uniform(-0.05, 0.05, (self.output_score_dim, 4)).astype(theano.config.floatX)
+        v = np.random.uniform(-0.05, 0.05, (self.key_dim, 4)).astype(theano.config.floatX)
         self.attention_weight = theano.shared(name="attention_weight", value=v)
 
         v = np.ones((4, )).astype(theano.config.floatX) * 0.05
@@ -156,7 +157,7 @@ class DeepReluTransReadWrite(object):
         r_a_init = T.zeros((n, s_l))
         w_a_init = T.zeros((n, self.max_len))
         ([h_t_1, h_t_2, a_t, canvases, read_attention, write_attention], update) \
-            = theano.scan(self.step, outputs_info=[h_init, h_init, h_init[:, :self.output_score_dim],
+            = theano.scan(self.step, outputs_info=[h_init, h_init, h_init[:, :self.key_dim],
                                                    canvas_init, r_a_init, w_a_init],
                           non_sequences=[source_embedding, read_pos, write_pos],
                           sequences=[time_steps.reshape((s_l, n, 1, 1))])
@@ -250,8 +251,8 @@ class DeepReluTransReadWrite(object):
 
         h_in = T.concatenate([h1, h2], axis=-1)
         o = get_output(self.encode_out_mlp, h_in)
-        a = o[:, :self.output_score_dim]
-        c = o[:, self.output_score_dim:]
+        a = o[:, :self.key_dim]
+        c = o[:, self.key_dim:]
         l = write_attention.shape[1]
         pos = write_attention.reshape((n, l, 1))
         new_canvas = canvas * (1.0 - pos) + c.reshape((n, 1, self.hid_size)) * pos
@@ -895,7 +896,7 @@ def run(out_dir):
 
             print("The loss on testing set is : " + str(valid_loss / p))
             validation_loss.append(valid_loss / p)
-            if i % 6000 == 0:
+            if i % 10000 == 0:
                 for n in range(1):
                     for t in range(v_r.shape[0]):
                         print("======")
