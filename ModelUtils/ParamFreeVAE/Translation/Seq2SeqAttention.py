@@ -594,8 +594,8 @@ def run(out_dir):
     model = Seq2SeqAttention()
     pre_trained = True
     if pre_trained:
-        with open("code_outputs/2017_08_07_19_51_35/model_params.save", "rb") as params:
-            print("Params restored at 2017_08_07_19_51_35")
+        with open("code_outputs/2017_08_09_14_52_53/final_model_params.save", "rb") as params:
+            print("Params restored at 2017_08_09_14_52_53")
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
@@ -648,7 +648,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 30000*2 - 48000 - 2000
+    iters = 20000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
