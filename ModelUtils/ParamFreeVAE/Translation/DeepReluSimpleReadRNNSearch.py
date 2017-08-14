@@ -35,6 +35,7 @@ class DeepReluTransReadWrite(object):
         self.hid_size = hid_dim
         self.max_len = 51
         self.output_score_dim = 512
+        self.key_dim = 128
         self.embedding_dim = embed_dim
 
         # Init the word embeddings.
@@ -153,7 +154,7 @@ class DeepReluTransReadWrite(object):
         write_attention_init = T.zeros((n, self.max_len))
         time_steps = T.cast(encode_mask.dimshuffle((1, 0)), dtype="float32")
 
-        ([h_t_1, h_t_2, a_t, canvases, read_attention, write_attention], update) \
+        ([h_t_1, h_t_2, a_t, read_attention, canvases], update) \
             = theano.scan(self.step, outputs_info=[h_init, h_init, a_init, canvas_init,
                                                    read_attention_init, write_attention_init],
                           non_sequences=[source_embedding, read_attention_weight, write_attention_weight,
@@ -204,8 +205,7 @@ class DeepReluTransReadWrite(object):
         loss = -T.mean(T.sum(loss, axis=1))
         s_l = source.shape[1]
         r_a = read_attention * encode_mask.reshape((1, n, s_l))
-        w_a = write_attention
-        return loss, r_a, w_a
+        return loss, r_a
 
     def step(self, t_s, h1, h2, a, r_a, ref, r_a_w, r_a_b):
         n = h1.shape[0]
@@ -226,7 +226,8 @@ class DeepReluTransReadWrite(object):
         reset_h1 = h1 * r1
         c_in = T.concatenate([reset_h1, selection], axis=1)
         c1 = get_output(self.gru_en_candidate_1, c_in)
-        h1 = (1.0 - u1) * h1 + u1 * c1
+        h1_hat = (1.0 - u1) * h1 + u1 * c1
+        h1 = t_s * h1_hat + (1.0 - t_s) * h1
 
         # Encoding GRU layer 2
         h_in = T.concatenate([h1, h2, selection], axis=1)
@@ -236,14 +237,15 @@ class DeepReluTransReadWrite(object):
         reset_h2 = h2 * r2
         c_in = T.concatenate([h1, reset_h2, selection], axis=1)
         c2 = get_output(self.gru_en_candidate_2, c_in)
-        h2 = (1.0 - u2) * h2 + u2 * c2
+        h2_hat = (1.0 - u2) * h2 + u2 * c2
+        h2 = t_s * h2_hat + (1.0 - t_s) * h2
 
         h_in = T.concatenate([h1, h2], axis=-1)
         o = get_output(self.encode_out_mlp, h_in)
-        a = o[:, :self.hid_size]
-        c = o[:, self.hid_size:]
+        a = o[:, :self.key_dim]
+        c = o[:, self.key_dim:]
 
-        return h1, h2, a, c, read_attention
+        return h1, h2, a, read_attention, c
 
     def decoding_step(self, embedding, h1, h2, o, s_embedding, a_c1, a_c2):
         s = T.dot(o, self.attention_s)
