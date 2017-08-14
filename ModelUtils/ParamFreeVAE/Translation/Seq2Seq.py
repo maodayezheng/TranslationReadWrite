@@ -529,7 +529,7 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = Seq2Seq()
-    pre_trained = True
+    pre_trained = False
     if pre_trained:
         with open("code_outputs/2017_08_02_17_16_29/model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
@@ -549,11 +549,11 @@ def run(out_dir):
 
     validation_data = sorted(validation_data, key=lambda d: max(len(d[0]), len(d[1])))
     len_valid = len(validation_data)
-    splits = len_valid % 25
+    splits = len_valid % 20
     validation_data = validation_data[:-splits]
     validation_data = np.array(validation_data)
     print(" The chosen validation size : " + str(len(validation_data)))
-    g = int(len(validation_data) / 25)
+    g = int(len(validation_data) / 20)
     print(" The chosen validation groups : " + str(g))
     validation_data = np.split(validation_data, g)
 
