@@ -564,9 +564,13 @@ def test():
 
     with open("code_outputs/2017_08_12_18_49_30/model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
-    with open("SentenceData/show_idx.txt", "r") as dataset:
+    with open("SentenceData/BPE/news2013.tok.bpe.32000.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
-    test_data = sorted(test_data, key=lambda d: max(len(d[0]), len(d[1])))
+    chosen = []
+    for t in test_data:
+        if 10 == len(t[0]):
+            chosen.append(t)
+    test_data = sorted(chosen, key=lambda d: max(len(d[0]), len(d[1])))
     test_data = np.array(test_data)
     decode = model.decode_fn()
     sour_sen = []
@@ -595,7 +599,7 @@ def test():
 
         force_max, prediction = decode(source, target)
         for n in range(len(test_data)):
-            s = source[n, 1:]
+            s = source[n]
             t = target[n, 1:]
             f = force_max[:, n]
             p = prediction[:, n]
@@ -605,12 +609,14 @@ def test():
                 if s_idx == 1 or s_idx == -1:
                     break
                 s_string += (vocab[s_idx] + " ")
+            print(s_string)
             sour_sen.append(s_string)
             t_string = ""
             for t_idx in t:
                 if t_idx == 1 or t_idx == -1:
                     break
                 t_string += (vocab[t_idx] + " ")
+            print(t_string)
             refe_sen.append(t_string)
             f_string = ""
             for p_idx in f:
