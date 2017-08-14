@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleReadRNN import run
+from ModelUtils.ParamFreeVAE.Translation.Seq2Seq import run
 import sys
 import numpy as np
 
