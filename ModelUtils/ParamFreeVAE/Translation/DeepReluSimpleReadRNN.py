@@ -15,6 +15,7 @@ from lasagne.layers import EmbeddingLayer, InputLayer, get_output
 import lasagne
 from lasagne.nonlinearities import linear, sigmoid, tanh, softmax
 from theano.gradient import zero_grad, grad_clip
+from theano.compile.nanguardmode import NanGuardMode
 import numpy as np
 import json
 import time
@@ -33,7 +34,7 @@ class DeepReluTransReadWrite(object):
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
         self.hid_size = hid_dim
-        self.max_len = 51
+        self.max_len = 52
         self.output_score_dim = 512
         self.key_dim = 128
         self.embedding_dim = embed_dim
@@ -69,15 +70,6 @@ class DeepReluTransReadWrite(object):
 
         v = np.ones((self.max_len,)).astype(theano.config.floatX) * 0.05
         self.attention_bias = theano.shared(name="attention_bias", value=v)
-
-        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.output_score_dim)).astype(theano.config.floatX)
-        self.attention_h_2 = theano.shared(value=v, name="attention_h_2")
-
-        v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.output_score_dim)).astype(theano.config.floatX)
-        self.attention_s = theano.shared(value=v, name="attention_s")
-
-        v = np.random.uniform(-0.05, 0.05, (self.output_score_dim,)).astype(theano.config.floatX)
-        self.attetion_v = theano.shared(value=v, name="attention_v")
 
     def embedding(self, input_dim, cats, output_dim):
         words = np.random.uniform(-0.05, 0.05, (cats, output_dim)).astype("float32")
@@ -127,37 +119,28 @@ class DeepReluTransReadWrite(object):
         read_attention_weight = self.attention_weight[:, :l]
         read_attention_bias = self.attention_bias[:l]
         read_attention_bias = read_attention_bias.reshape((1, l))
-        a_init = h_init[:, :self.output_score_dim]
+        a_init = h_init[:, :self.key_dim]
         read_attention_init = T.zeros((n, l))
         time_steps = T.cast(encode_mask.dimshuffle((1, 0)), dtype="float32")
 
         ([h_t_1, h_t_2, a_t, read_attention, final_canvas], update) \
-            = theano.scan(self.step, outputs_info=[h_init, h_init, a_init, read_attention_init],
+            = theano.scan(self.step, outputs_info=[h_init, h_init, a_init, read_attention_init, None],
                           non_sequences=[source_embedding, read_attention_weight, read_attention_bias],
                           sequences=[time_steps.reshape((l, n, 1))])
 
-        l, n, d = final_canvas.shape
-        attention_c1 = final_canvas.reshape((n * l, d))
-        attention_c2 = T.dot(attention_c1, self.attention_h_2)
-        attention_c1 = attention_c1.reshape((l, n, self.hid_size))
-        attention_c1 = attention_c1.dimshuffle((1, 0, 2))
-        attention_c2 = attention_c2.reshape((l, n, self.output_score_dim))
-        attention_c2 = attention_c2.dimshuffle((1, 0, 2))
-
+        encode_info = final_canvas[-1]
         decode_in_embedding = get_output(self.target_input_embedding, target)
         decode_in_embedding = decode_in_embedding[:, :-1]
         decode_in_embedding = decode_in_embedding.dimshuffle((1, 0, 2))
         # Get sample embedding
         decode_in = get_output(self.decoder_init_mlp, T.concatenate([h_t_1[-1], h_t_2[-1]], axis=-1))
         sample_embed = self.target_output_embedding.W
-        ([h_t_1, h_t_2, o, s, sample_score], update) = theano.scan(self.decoding_step,
-                                                                   outputs_info=[decode_in[:, :self.hid_size],
-                                                                                 decode_in[:, self.hid_size:], h_init,
-                                                                                 None, None],
-                                                                   non_sequences=[sample_embed, attention_c1,
-                                                                                  attention_c2,
-                                                                                  time_steps.dimshuffle((1, 0))],
-                                                                   sequences=[decode_in_embedding])
+        ([h_t_1, h_t_2, s, sample_score], update) = theano.scan(self.decoding_step,
+                                                                outputs_info=[decode_in[:, :self.hid_size],
+                                                                              decode_in[:, self.hid_size:],
+                                                                              None, None],
+                                                                non_sequences=[sample_embed, encode_info],
+                                                                sequences=[decode_in_embedding])
 
         # Get sample embedding
         l = sample_score.shape[0]
@@ -224,47 +207,33 @@ class DeepReluTransReadWrite(object):
 
         return h1, h2, a, read_attention, c
 
-    def decoding_step(self, embedding, h1, h2, o, s_embedding, a_c1, a_c2, a_mask):
-        s = T.dot(o, self.attention_s)
-        n, d = s.shape
-        s = s.reshape((n, 1, d))
-        attention_score = T.tanh(s + a_c2)
-        n, l, d = attention_score.shape
-        attention_score = attention_score.reshape((l * n, d))
-        attention_score = T.dot(attention_score, self.attetion_v)
-        attention_score = attention_score.reshape((n, l))
-        max_clip = zero_grad(T.max(attention_score, axis=-1))
-        attention_score = T.exp(attention_score - max_clip.reshape((n, 1)))
-        attention_score = attention_score * a_mask
-        denorm = T.sum(attention_score, axis=-1)
-        attention_score = attention_score / denorm.reshape((n, 1))
-        attention_content = T.sum(attention_score.reshape((n, l, 1)) * a_c1, axis=1)
+    def decoding_step(self, embedding, h1, h2, s_embedding, encode_info):
 
         # Decoding GRU layer 1
-        input_info = T.concatenate([embedding, h1, attention_content], axis=-1)
+        input_info = T.concatenate([embedding, h1, encode_info], axis=-1)
         gate1 = get_output(self.gru_de_gate_1, input_info)
         u1 = gate1[:, :self.hid_size]
         r1 = gate1[:, self.hid_size:]
         reset_h1 = h1 * r1
-        c_in = T.concatenate([embedding, reset_h1, attention_content], axis=-1)
+        c_in = T.concatenate([embedding, reset_h1, encode_info], axis=-1)
         c1 = get_output(self.gru_de_candidate_1, c_in)
         h1 = (1.0 - u1) * h1 + u1 * c1
 
         # Decoding GRU layer 2
-        input_info = T.concatenate([embedding, h1, h2, attention_content], axis=-1)
+        input_info = T.concatenate([embedding, h1, h2, encode_info], axis=-1)
         gate2 = get_output(self.gru_de_gate_2, input_info)
         u2 = gate2[:, :self.hid_size]
         r2 = gate2[:, self.hid_size:]
         reset_h2 = h2 * r2
-        c_in = T.concatenate([embedding, h1, reset_h2, attention_content], axis=1)
+        c_in = T.concatenate([embedding, h1, reset_h2, encode_info], axis=1)
         c2 = get_output(self.gru_de_candidate_2, c_in)
         h2 = (1.0 - u2) * h2 + u2 * c2
         o = get_output(self.decode_out_mlp, T.concatenate([h1, h2], axis=-1))
-        score_in = T.concatenate([embedding, o, attention_content], axis=-1)
+        score_in = T.concatenate([embedding, o, encode_info], axis=-1)
         s = get_output(self.score, score_in)
         sample_score = T.dot(s, s_embedding.T)
 
-        return h1, h2, o, s, sample_score
+        return h1, h2, s, sample_score
 
     def greedy_decode(self, embedding, h1, h2, o, s_embedding, a_c1, a_c2):
         h1, h2, o, s, sample_score = self.decoding_step(embedding, h1, h2, o, s_embedding, a_c1, a_c2)
@@ -397,9 +366,9 @@ class DeepReluTransReadWrite(object):
         """
         source = T.imatrix('source')
         target = T.imatrix('target')
-        reconstruction_loss, read_attention, write_attention = self.symbolic_elbo(source, target, None)
+        reconstruction_loss, read_attention = self.symbolic_elbo(source, target)
         elbo_fn = theano.function(inputs=[source, target],
-                                  outputs=[reconstruction_loss, read_attention, write_attention],
+                                  outputs=[reconstruction_loss, read_attention],
                                   allow_input_downcast=True)
         return elbo_fn
 
@@ -423,7 +392,7 @@ class DeepReluTransReadWrite(object):
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
-        reconstruction_loss, read_attention, write_attetion = self.symbolic_elbo(source, target, samples)
+        reconstruction_loss, read_attention = self.symbolic_elbo(source, target)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         scaled_grads = lasagne.updates.total_norm_constraint(grads, 5)
@@ -435,14 +404,14 @@ class DeepReluTransReadWrite(object):
                 u.set_value(v.get_value())
         if draw_sample:
             optimiser = theano.function(inputs=[source, target, samples],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        outputs=[reconstruction_loss, read_attention],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
             return optimiser, updates
         else:
             optimiser = theano.function(inputs=[source, target],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        outputs=[reconstruction_loss, read_attention],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
@@ -472,8 +441,7 @@ class DeepReluTransReadWrite(object):
                gru_de_gate_1_param + gru_de_candi_1_param + \
                gru_de_gate_2_param + gru_de_candi_2_param + \
                out_param + score_param + decode_init_param + \
-               decode_out_param + \
-               [self.attention_weight, self.attention_bias, self.attention_h_2, self.attention_s, self.attetion_v]
+               decode_out_param + [self.attention_weight, self.attention_bias]
 
     def get_param_values(self):
         input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
@@ -497,8 +465,7 @@ class DeepReluTransReadWrite(object):
                 gru_en_gate_1_param, gru_en_candi_1_param, gru_en_gate_2_param,
                 gru_en_candi_2_param, gru_de_gate_1_param, gru_de_candi_1_param,
                 gru_de_gate_2_param, gru_de_candi_2_param, out_param, score_param, decode_out_param,
-                decode_init_param, self.attention_weight.get_value(), self.attention_bias.get_value(),
-                self.attention_h_2.get_value(), self.attetion_v.get_value(), self.attention_s.get_value()]
+                decode_init_param, self.attention_weight.get_value(), self.attention_bias.get_value()]
 
     def set_param_values(self, params):
         lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -518,9 +485,6 @@ class DeepReluTransReadWrite(object):
         lasagne.layers.set_all_param_values(self.decoder_init_mlp, params[14])
         self.attention_weight.set_value(params[15])
         self.attention_bias.set_value(params[16])
-        self.attention_h_2.set_value(params[17])
-        self.attetion_v.set_value(params[18])
-        self.attention_s.set_value(params[19])
 
 
 """
@@ -711,7 +675,7 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
-    pre_trained = True
+    pre_trained = False
     epoch = 10
     if pre_trained:
         with open("code_outputs/2017_08_12_21_35_35/model_params.save", "rb") as params:
@@ -827,7 +791,7 @@ def run(out_dir):
             if i % 1000 == 0:
                 print("training time " + str(iter_time)
                       + " sec with sentence length " + str(l)
-                      + "training loss : " + str(loss))
+                      + " training loss : " + str(loss))
 
         if i % 500 == 0:
             valid_loss = 0
@@ -836,7 +800,7 @@ def run(out_dir):
             v_w = None
             for pair in validation_pair:
                 p += 1
-                v_l, v_r, v_w = validation(pair[0], pair[1])
+                v_l, v_r = validation(pair[0], pair[1])
                 valid_loss += v_l
 
             print("The loss on testing set is : " + str(valid_loss / p))
@@ -846,7 +810,6 @@ def run(out_dir):
                     for t in range(v_r.shape[0]):
                         print("======")
                         print(" Source " + str(v_r[t, n]))
-                        print(" Target " + str(v_w[t, n]))
                         print("")
 
         if i % 2000 == 0 and iters is not 0:

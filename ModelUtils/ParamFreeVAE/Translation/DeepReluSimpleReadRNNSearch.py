@@ -127,7 +127,7 @@ class DeepReluTransReadWrite(object):
         read_attention_weight = self.attention_weight[:, :l]
         read_attention_bias = self.attention_bias[:l]
         read_attention_bias = read_attention_bias.reshape((1, l))
-        a_init = h_init[:, :self.output_score_dim]
+        a_init = h_init[:, :self.key_dim]
         read_attention_init = T.zeros((n, l))
         time_steps = T.cast(encode_mask.dimshuffle((1, 0)), dtype="float32")
 
@@ -149,10 +149,11 @@ class DeepReluTransReadWrite(object):
         decode_in_embedding = decode_in_embedding.dimshuffle((1, 0, 2))
         # Get sample embedding
         decode_in = get_output(self.decoder_init_mlp, T.concatenate([h_t_1[-1], h_t_2[-1]], axis=-1))
+        o_init = get_output(self.decode_out_mlp, decode_in)
         sample_embed = self.target_output_embedding.W
         ([h_t_1, h_t_2, o, s, sample_score], update) = theano.scan(self.decoding_step,
                                                                    outputs_info=[decode_in[:, :self.hid_size],
-                                                                                 decode_in[:, self.hid_size:], h_init,
+                                                                                 decode_in[:, self.hid_size:], o_init,
                                                                                  None, None],
                                                                    non_sequences=[sample_embed, attention_c1,
                                                                                   attention_c2,
