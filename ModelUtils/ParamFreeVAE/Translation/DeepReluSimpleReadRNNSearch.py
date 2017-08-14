@@ -33,7 +33,7 @@ class DeepReluTransReadWrite(object):
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
         self.hid_size = hid_dim
-        self.max_len = 51
+        self.max_len = 52
         self.output_score_dim = 512
         self.key_dim = 128
         self.embedding_dim = embed_dim
@@ -132,7 +132,7 @@ class DeepReluTransReadWrite(object):
         time_steps = T.cast(encode_mask.dimshuffle((1, 0)), dtype="float32")
 
         ([h_t_1, h_t_2, a_t, read_attention, final_canvas], update) \
-            = theano.scan(self.step, outputs_info=[h_init, h_init, a_init, read_attention_init],
+            = theano.scan(self.step, outputs_info=[h_init, h_init, a_init, read_attention_init, None],
                           non_sequences=[source_embedding, read_attention_weight, read_attention_bias],
                           sequences=[time_steps.reshape((l, n, 1))])
 
@@ -398,9 +398,9 @@ class DeepReluTransReadWrite(object):
         """
         source = T.imatrix('source')
         target = T.imatrix('target')
-        reconstruction_loss, read_attention, write_attention = self.symbolic_elbo(source, target, None)
+        reconstruction_loss, read_attention = self.symbolic_elbo(source, target)
         elbo_fn = theano.function(inputs=[source, target],
-                                  outputs=[reconstruction_loss, read_attention, write_attention],
+                                  outputs=[reconstruction_loss, read_attention],
                                   allow_input_downcast=True)
         return elbo_fn
 
@@ -424,7 +424,7 @@ class DeepReluTransReadWrite(object):
         samples = None
         if draw_sample:
             samples = T.ivector('samples')
-        reconstruction_loss, read_attention, write_attetion = self.symbolic_elbo(source, target, samples)
+        reconstruction_loss, read_attention = self.symbolic_elbo(source, target)
         params = self.get_params()
         grads = T.grad(reconstruction_loss, params)
         scaled_grads = lasagne.updates.total_norm_constraint(grads, 5)
@@ -436,14 +436,14 @@ class DeepReluTransReadWrite(object):
                 u.set_value(v.get_value())
         if draw_sample:
             optimiser = theano.function(inputs=[source, target, samples],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        outputs=[reconstruction_loss, read_attention],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
             return optimiser, updates
         else:
             optimiser = theano.function(inputs=[source, target],
-                                        outputs=[reconstruction_loss, read_attention, write_attetion],
+                                        outputs=[reconstruction_loss, read_attention],
                                         updates=updates,
                                         allow_input_downcast=True
                                         )
@@ -712,7 +712,7 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
-    pre_trained = True
+    pre_trained = False
     epoch = 10
     if pre_trained:
         with open("code_outputs/2017_08_12_21_35_35/model_params.save", "rb") as params:
@@ -770,7 +770,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 20000
+    iters = 60000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
@@ -834,10 +834,9 @@ def run(out_dir):
             valid_loss = 0
             p = 0
             v_r = None
-            v_w = None
             for pair in validation_pair:
                 p += 1
-                v_l, v_r, v_w = validation(pair[0], pair[1])
+                v_l, v_r = validation(pair[0], pair[1])
                 valid_loss += v_l
 
             print("The loss on testing set is : " + str(valid_loss / p))
@@ -847,7 +846,6 @@ def run(out_dir):
                     for t in range(v_r.shape[0]):
                         print("======")
                         print(" Source " + str(v_r[t, n]))
-                        print(" Target " + str(v_w[t, n]))
                         print("")
 
         if i % 2000 == 0 and iters is not 0:
