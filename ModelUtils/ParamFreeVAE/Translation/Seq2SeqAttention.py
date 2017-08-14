@@ -506,7 +506,7 @@ def decode():
         test_data = json.loads(dataset.read())
     chosen = []
     for t in test_data:
-        if 5 <= len(t[0]) <= 50:
+        if 10 <= len(t[0]) <= 50:
             chosen.append(t)
     test_data = sorted(chosen, key=lambda d: max(len(d[0]), len(d[1])))
     test_data = np.array(test_data)

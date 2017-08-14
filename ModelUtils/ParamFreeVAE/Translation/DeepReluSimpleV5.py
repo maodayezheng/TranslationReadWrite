@@ -555,50 +555,77 @@ The following functions are for training and testing
 
 """
 def test():
+    test_data = None
     model = DeepReluTransReadWrite()
-    update_kwargs = {'learning_rate': 1e-4}
-    draw_sample = False
-    optimiser, updates = model.optimiser(lasagne.updates.adam, update_kwargs, draw_sample)
-    with open("SentenceData/selected_idx.txt", "r") as dataset:
-        train_data = json.loads(dataset.read())
+    vocab = []
+    with open("SentenceData/BPE/vocab.bpe.32000", "r", encoding="utf8") as v:
+        for line in v:
+            vocab.append(line.strip("\n"))
 
-        mini_batch = train_data[:100]
-        mini_batch = sorted(mini_batch, key=lambda d: max(len(d[0]), len(d[1])))
-        samples = None
-
-        mini_batch = np.array(mini_batch)
-        mini_batchs = np.split(mini_batch, 10)
-        training_loss = []
-        for m in mini_batchs:
-            l = max(len(m[-1, 0]), len(m[-1, 1]))
-            source = None
-            target = None
-            start = time.clock()
-            for datapoint in m:
-                s = np.array(datapoint[0])
-                t = np.array(datapoint[1])
-                if len(s) != l:
-                    s = np.append(s, [2] * (l - len(s)))
-                if len(t) != l:
-                    t = np.append(t, [2] * (l - len(t)))
-                if source is None:
-                    source = s.reshape((1, s.shape[0]))
-                else:
-                    source = np.concatenate([source, s.reshape((1, s.shape[0]))])
-                if target is None:
-                    target = t.reshape((1, t.shape[0]))
-                else:
-                    target = np.concatenate([target, t.reshape((1, t.shape[0]))])
-            output = None
-            if draw_sample:
-                print(" No operation ")
+    with open("code_outputs/2017_08_12_18_49_30/model_params.save", "rb") as params:
+        model.set_param_values(cPickle.load(params))
+    with open("SentenceData/show_idx.txt", "r") as dataset:
+        test_data = json.loads(dataset.read())
+    test_data = sorted(test_data, key=lambda d: max(len(d[0]), len(d[1])))
+    test_data = np.array(test_data)
+    decode = model.decode_fn()
+    sour_sen = []
+    refe_sen = []
+    forc_sen = []
+    gred_sen = []
+    for m in [test_data]:
+        l = max(len(m[-1, 0]), len(m[-1, 1]))
+        source = None
+        target = None
+        for datapoint in m:
+            s = np.array(datapoint[0])
+            t = np.array(datapoint[1])
+            if len(s) != l:
+                s = np.append(s, [-1] * (l - len(s)))
+            if len(t) != l:
+                t = np.append(t, [-1] * (l - len(t)))
+            if source is None:
+                source = s.reshape((1, s.shape[0]))
             else:
-                output = optimiser(source, target)
-            iter_time = time.clock() - start
-            loss = output[0]
-            print(loss)
-            training_loss.append(loss)
+                source = np.concatenate([source, s.reshape((1, s.shape[0]))])
+            if target is None:
+                target = t.reshape((1, t.shape[0]))
+            else:
+                target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
+        force_max, prediction = decode(source, target)
+        for n in range(len(test_data)):
+            s = source[n, 1:]
+            t = target[n, 1:]
+            f = force_max[:, n]
+            p = prediction[:, n]
+
+            s_string = ""
+            for s_idx in s:
+                if s_idx == 1 or s_idx == -1:
+                    break
+                s_string += (vocab[s_idx] + " ")
+            sour_sen.append(s_string)
+            t_string = ""
+            for t_idx in t:
+                if t_idx == 1 or t_idx == -1:
+                    break
+                t_string += (vocab[t_idx] + " ")
+            refe_sen.append(t_string)
+            f_string = ""
+            for p_idx in f:
+                if p_idx == 1:
+                    break
+                f_string += (vocab[p_idx] + " ")
+            forc_sen.append(f_string)
+            p_string = ""
+            for idx in p:
+                if idx == 1:
+                    break
+                p_string += (vocab[idx] + " ")
+            print(p_string)
+            gred_sen.append(p_string)
+            print("")
 
 def decode():
     print("Decoding the sequence")
@@ -609,13 +636,13 @@ def decode():
         for line in v:
             vocab.append(line.strip("\n"))
 
-    with open("code_outputs/2017_08_12_18_49_30/final_model_params.save", "rb") as params:
+    with open("code_outputs/2017_08_12_18_49_30/model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/BPE/news2013.tok.bpe.32000.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
     chosen = []
     for t in test_data:
-        if 5 <= len(t[0]) <= 50:
+        if 10 <= len(t[0]) <= 50:
             chosen.append(t)
     test_data = sorted(chosen, key=lambda d: max(len(d[0]), len(d[1])))
     test_data = np.array(test_data)
@@ -660,6 +687,7 @@ def decode():
                 if s_idx == 1 or s_idx == -1:
                     break
                 s_string += (vocab[s_idx] + " ")
+            print("Sour " + s_string)
             sour_sen.append(s_string)
             t_string = ""
             for t_idx in t:
@@ -706,8 +734,8 @@ def run(out_dir):
     pre_trained = True
     epoch = 10
     if pre_trained:
-        with open("code_outputs/2017_08_07_11_31_01/model_params.save", "rb") as params:
-            print("Params restored from 2017_08_07_11_31_01")
+        with open("code_outputs/2017_08_12_21_35_35/model_params.save", "rb") as params:
+            print("Params restored from 2017_08_12_21_35_35")
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
