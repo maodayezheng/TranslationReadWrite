@@ -123,7 +123,7 @@ class Seq2SeqAttention(object):
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
         decode_init = get_output(self.decode_init_mlp, T.concatenate([h_e_1[-1], h_e_2[-1]], axis=-1))
-        o_init = T.zeros((n, self.hid_size))
+        o_init = get_output(self.decode_out_mlp, decode_init)
         ([h_d_1, h_d_2, d_o, attention_content], update) = theano.scan(self.target_decode_step,
                                                                        outputs_info=[decode_init[:, :self.hid_size],
                                                                                      decode_init[:, self.hid_size:],
@@ -592,7 +592,7 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = Seq2SeqAttention()
-    pre_trained = True
+    pre_trained = False
     if pre_trained:
         with open("code_outputs/2017_08_09_14_52_53/final_model_params.save", "rb") as params:
             print("Params restored at 2017_08_09_14_52_53")
@@ -648,7 +648,7 @@ def run(out_dir):
     print(" The training data size : " + str(data_size))
     batch_size = 25
     sample_groups = 10
-    iters = 20000
+    iters = 60000
     print(" The number of iterations : " + str(iters))
 
     for i in range(iters):
