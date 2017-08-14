@@ -131,17 +131,18 @@ class DeepReluTransReadWrite(object):
         read_attention_init = T.zeros((n, l))
         time_steps = T.cast(encode_mask.dimshuffle((1, 0)), dtype="float32")
 
-        ([h_t_1, h_t_2, a_t, read_attention, canvases], update) \
+        ([h_t_1, h_t_2, a_t, read_attention, final_canvas], update) \
             = theano.scan(self.step, outputs_info=[h_init, h_init, a_init, read_attention_init],
                           non_sequences=[source_embedding, read_attention_weight, read_attention_bias],
                           sequences=[time_steps.reshape((l, n, 1))])
 
-        final_canvas = canvases[-1]
-        n, l, d = final_canvas.shape
+        l, n, d = final_canvas.shape
         attention_c1 = final_canvas.reshape((n * l, d))
         attention_c2 = T.dot(attention_c1, self.attention_h_2)
-        attention_c1 = attention_c1.reshape((n, l, self.hid_size))
-        attention_c2 = attention_c2.reshape((n, l, self.output_score_dim))
+        attention_c1 = attention_c1.reshape((l, n, self.hid_size))
+        attention_c1 = attention_c1.dimshuffle((1, 0, 2))
+        attention_c2 = attention_c2.reshape((l, n, self.output_score_dim))
+        attention_c2 = attention_c2.dimshuffle((1, 0, 2))
 
         decode_in_embedding = get_output(self.target_input_embedding, target)
         decode_in_embedding = decode_in_embedding[:, :-1]
