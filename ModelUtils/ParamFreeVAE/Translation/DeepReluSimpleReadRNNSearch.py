@@ -707,7 +707,7 @@ def decode():
 
 
 def run(out_dir):
-    print("Run the Relu read and write Vanilla ")
+    print("Run the Relu Vanilla Read Search")
     print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []
@@ -715,8 +715,8 @@ def run(out_dir):
     pre_trained = False
     epoch = 10
     if pre_trained:
-        with open("code_outputs/2017_08_12_21_35_35/model_params.save", "rb") as params:
-            print("Params restored from 2017_08_12_21_35_35")
+        with open("code_outputs/2017_08_14_16_24_37/model_params.save", "rb") as params:
+            print("Params restored from 2017_08_14_16_24_37")
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
