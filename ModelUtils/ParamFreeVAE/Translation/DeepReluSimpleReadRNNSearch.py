@@ -848,7 +848,8 @@ def run(out_dir):
                         print(" Source " + str(v_r[t, n]))
                         print("")
 
-        if i % 2000 == 0 and iters is not 0:
+        if i % 2000 == 0 and i is not 0:
+            print("Param saved at iteration " + str(i))
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
             np.save(os.path.join(out_dir, 'validation_loss'), validation_loss)
             with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:

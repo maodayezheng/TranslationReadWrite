@@ -754,7 +754,6 @@ def run(out_dir):
             valid_loss = 0
             p = 0
             v_r = None
-            v_w = None
             for pair in validation_pair:
                 p += 1
                 v_l, v_r = validation(pair[0], pair[1])
@@ -769,7 +768,8 @@ def run(out_dir):
                         print(" Source " + str(v_r[t, n]))
                         print("")
 
-        if i % 2000 == 0 and iters is not 0:
+        if i % 2000 == 0 and i is not 0:
+            print("Params saved at iteration " + str(i))
             np.save(os.path.join(out_dir, 'training_loss.npy'), training_loss)
             np.save(os.path.join(out_dir, 'validation_loss'), validation_loss)
             with open(os.path.join(out_dir, 'model_params.save'), 'wb') as f:
