@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.DeepReluIOReadRNN import run
+from ModelUtils.ParamFreeVAE.Translation.DeepReluIOReadRNNSearch import run
 import sys
 import numpy as np
 

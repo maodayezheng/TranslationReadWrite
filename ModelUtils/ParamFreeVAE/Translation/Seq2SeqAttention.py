@@ -17,7 +17,6 @@ import time
 import os
 import pickle as cPickle
 from theano.sandbox.rng_mrg import MRG_RandomStreams
-import nltk
 
 random = MRG_RandomStreams(seed=1234)
 
