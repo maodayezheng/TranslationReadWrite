@@ -116,10 +116,10 @@ class DeepReluTransReadWrite(object):
         h_init = T.zeros((n, self.hid_size))
         source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
 
-        read_attention_weight = self.attention_weight[:, :l]
-        read_attention_bias = self.attention_bias[:l]
-        read_attention_bias = read_attention_bias.reshape((1, l))
-        read_attention_init = T.zeros((n, l))
+        read_attention_weight = self.attention_weight
+        read_attention_bias = self.attention_bias
+        read_attention_bias = read_attention_bias.reshape((1, read_attention_bias.shape[0]))
+        read_attention_init = T.zeros((n, self.key_dim))
         time_steps = T.cast(encode_mask.dimshuffle((1, 0)), dtype="float32")
 
         read_pos = T.arange(l, dtype="float32") + 1.0
