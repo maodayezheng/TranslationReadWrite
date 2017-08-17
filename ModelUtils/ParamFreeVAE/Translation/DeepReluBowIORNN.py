@@ -114,7 +114,7 @@ class DeepReluTransReadWrite(object):
 
         read_attention_weight = self.attention_weight
         read_attention_bias = self.attention_bias
-        read_attention_bias = read_attention_bias.reshape((1, self.key_dim))
+        read_attention_bias = read_attention_bias.reshape((1, 2))
         sample_embed = self.target_output_embedding.W
         decode_in_embedding = get_output(self.target_input_embedding, target)
         decode_in_embedding = decode_in_embedding[:, :-1]
