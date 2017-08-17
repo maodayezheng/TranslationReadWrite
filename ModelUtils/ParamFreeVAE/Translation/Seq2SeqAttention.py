@@ -591,10 +591,10 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = Seq2SeqAttention()
-    pre_trained = False
+    pre_trained = True
     if pre_trained:
-        with open("code_outputs/2017_08_09_14_52_53/final_model_params.save", "rb") as params:
-            print("Params restored at 2017_08_09_14_52_53")
+        with open("code_outputs/2017_08_14_16_31_42/final_model_params.save", "rb") as params:
+            print("Params restored at 2017_08_14_16_31_42")
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
