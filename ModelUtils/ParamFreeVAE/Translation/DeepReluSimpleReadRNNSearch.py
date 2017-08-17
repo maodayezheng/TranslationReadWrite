@@ -105,7 +105,6 @@ class DeepReluTransReadWrite(object):
         """
         Return a symbolic variable, representing the ELBO, for the given minibatch.
         :param num_samples: The number of samples to use to evaluate the ELBO.
-
         :return elbo: The symbolic variable representing the ELBO.
         """
         n = source.shape[0]
