@@ -517,7 +517,7 @@ def decode():
 def run(out_dir):
     print("Run Seq2Seq model ")
     print(" eps num : 6 ")
-    print(" itr num : 60000")
+    print(" itr num : 36000*2")
     print(" bac siz : 25")
     print(" enc num : 2")
     print(" dec num : 2")
@@ -529,9 +529,9 @@ def run(out_dir):
     training_loss = []
     validation_loss = []
     model = Seq2Seq()
-    pre_trained = True
+    pre_trained = False
     if pre_trained:
-        with open("code_outputs/2017_08_14_16_00_57/final_model_params.save", "rb") as params:
+        with open("code_outputs/2017_08_02_17_16_29/model_params.save", "rb") as params:
             model.set_param_values(cPickle.load(params))
 
     update_kwargs = {'learning_rate': 1e-4}
