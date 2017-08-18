@@ -1,4 +1,5 @@
 from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleReadRNN import run
+from ModelUtils.ParamFreeVAE.DynamicLayers.DynamicVallina import run as dynamic_run
 import sys
 import numpy as np
 
@@ -9,4 +10,4 @@ out_dir = sys.argv[2]
 
 if __name__ == '__main__':
     print("Start run trainslation experiment")
-    run(out_dir)
+    dynamic_run(out_dir)
