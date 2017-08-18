@@ -15,7 +15,6 @@ from lasagne.layers import EmbeddingLayer, InputLayer, get_output
 import lasagne
 from lasagne.nonlinearities import linear, sigmoid, tanh, softmax
 from theano.gradient import zero_grad, grad_clip
-from theano.compile.nanguardmode import NanGuardMode
 import numpy as np
 import json
 import time
@@ -499,7 +498,7 @@ def test():
         for line in v:
             vocab.append(line.strip("\n"))
 
-    with open("code_outputs/2017_08_12_18_49_30/model_params.save", "rb") as params:
+    with open("code_outputs/2017_08_15_19_17_04/model_params.save", "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/BPE/news2013.tok.bpe.32000.txt", "r") as dataset:
         test_data = json.loads(dataset.read())
@@ -669,16 +668,16 @@ def decode():
 
 
 def run(out_dir):
-    print("Run the Relu Vanilla Read ")
+    print("Run the Relu Simple Read RNN ")
     print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []
     model = DeepReluTransReadWrite()
-    pre_trained = False
+    pre_trained = True
     epoch = 10
     if pre_trained:
-        with open("code_outputs/2017_08_14_15_58_32/model_params.save", "rb") as params:
-            print("Params restored from 2017_08_14_15_58_32")
+        with open("code_outputs/2017_08_15_19_17_04/model_params.save", "rb") as params:
+            print("Params restored from 2017_08_15_19_17_04")
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
