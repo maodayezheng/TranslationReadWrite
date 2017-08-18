@@ -1,5 +1,5 @@
 from ModelUtils.ParamFreeVAE.Translation.DeepReluSimpleReadRNN import run
-from ModelUtils.ParamFreeVAE.DynamicLayers.DynamicIO import run as dynamic_run
+from ModelUtils.ParamFreeVAE.DynamicLayers.DynamicVallina import run as dynamic_run
 import sys
 import numpy as np
 
