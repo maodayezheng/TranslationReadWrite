@@ -13,9 +13,9 @@ simple_att_loss = np.load(folder + "simple_att_validation_loss.npy")
 
 plt.plot(-io_loss, label='io', zorder=1)
 #plt.plot(-ios_att_loss, label='ios_att', zorder=2)
-plt.plot(-ios_loss, label='ios', zorder=3)
+#plt.plot(-ios_loss, label='ios', zorder=3)
 plt.plot(-seq2seq_loss, label='seq2seq', zorder=4)
-#plt.plot(-seq2seq_att_loss, label='seq2seq_att', zorder=5)
+plt.plot(-seq2seq_att_loss, label='seq2seq_att', zorder=5)
 plt.plot(-simple_loss, label='simple', zorder=6)
 #plt.plot(-simple_att_loss, label='simple_att', zorder=7)
 
