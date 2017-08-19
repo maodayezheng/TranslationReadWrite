@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.DeepReluIORNNSearch import run
+from ModelUtils.ParamFreeVAE.Translation.DeepReluIORNNSearchV2 import run
 from ModelUtils.ParamFreeVAE.DynamicLayers.DynamicVallina import run as dynamic_run
 import sys
 import numpy as np
