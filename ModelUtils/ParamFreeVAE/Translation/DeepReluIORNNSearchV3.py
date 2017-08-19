@@ -200,7 +200,7 @@ class DeepReluTransReadWrite(object):
         attention_score = attention_score.reshape((n, l)) * pos
         max_clip = zero_grad(T.max(attention_score, axis=-1))
         attention_score = T.exp(attention_score - max_clip.reshape((n, 1)))
-        pos_filter = zero_grad(T.cast(T.gt(pos, 1.0), "float32"))
+        pos_filter = zero_grad(T.cast(T.gt(pos, 0.0), "float32"))
         attention_score = attention_score * mask * pos_filter
         denorm = T.sum(attention_score, axis=-1) + 1e-5
         attention_score = attention_score / denorm.reshape((n, 1))
@@ -664,7 +664,7 @@ def decode():
 
 
 def run(out_dir):
-    print("Run the Relu IO read RNN Search version 2")
+    print("Run the Relu IO read RNN Search version 3")
     print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []
