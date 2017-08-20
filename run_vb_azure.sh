@@ -5,7 +5,7 @@
 #$ -l gpu=1,gpu_titanxp=1
 #$ -S /bin/bash
 #$ -j y
-#$ -N DeepReluIORNNSearchV3
+#$ -N DeepReluIORNNSearchV4
 
 source $SET_CUDA_DEVICE
 

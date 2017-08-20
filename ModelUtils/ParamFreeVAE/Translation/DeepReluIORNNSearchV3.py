@@ -13,8 +13,8 @@ import theano.tensor as T
 import theano
 from lasagne.layers import EmbeddingLayer, InputLayer, get_output
 import lasagne
-from lasagne.nonlinearities import linear, sigmoid, tanh, softmax
-from theano.gradient import zero_grad, grad_clip
+from lasagne.nonlinearities import linear, sigmoid, tanh
+from theano.gradient import zero_grad
 import numpy as np
 import json
 import time
