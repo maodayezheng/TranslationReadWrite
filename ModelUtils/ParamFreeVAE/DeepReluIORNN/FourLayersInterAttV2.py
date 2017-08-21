@@ -27,14 +27,14 @@ random = MRG_RandomStreams(seed=1234)
 
 class DeepReluTransReadWrite(object):
     def __init__(self, training_batch_size=25, source_vocab_size=37007, target_vocab_size=37007,
-                 embed_dim=512, hid_dim=512):
+                 embed_dim=4, hid_dim=4):
         self.source_vocab_size = source_vocab_size
         self.target_vocab_size = target_vocab_size
         self.batch_size = training_batch_size
         self.hid_size = hid_dim
         self.max_len = 52
-        self.output_score_dim = 512
-        self.key_dim = 128
+        self.output_score_dim = 4
+        self.key_dim = 2
         self.embedding_dim = embed_dim
 
         # Init the word embeddings.
@@ -142,7 +142,7 @@ class DeepReluTransReadWrite(object):
         key_init = T.tile(self.key_init.reshape((1, self.key_dim)), (n, 1))
         read_pos = T.arange(l, dtype="float32") + 1.0
         read_pos = read_pos.reshape((1, l)) / (T.sum(encode_mask, axis=-1).reshape((n, 1)) + 1.0)
-        time_steps = T.cast(d_m.dimshuffle((1, 0)), dtype="float32")
+        time_steps = T.cast(d_m[:, :-1].dimshuffle((1, 0)), dtype="float32")
 
         ([h1, h2, keys, c, addresses], update) = theano.scan(self.encoding_step, outputs_info=[h_init, h_init, key_init,
                                                                                                None, None],
