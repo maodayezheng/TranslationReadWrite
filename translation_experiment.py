@@ -1,6 +1,6 @@
 from ModelUtils.ParamFreeVAE.Translation.DeepReluIORNNSearchV4 import run
 from ModelUtils.ParamFreeVAE.DynamicLayers.DynamicVallina import run as dynamic_run
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV2 import run as deep_io_run
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersV2 import run as deep_io_run
 import sys
 import numpy as np
 
