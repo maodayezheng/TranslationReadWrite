@@ -105,3 +105,4 @@ if __name__ == '__main__':
                             break
                         sentence += (vocab[t_idx] + " ")
                     print(sentence)
+        group_id += 1
