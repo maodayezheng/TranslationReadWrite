@@ -16,7 +16,6 @@ check_prediction = False
 
 if __name__ == '__main__':
     print("Start testing translation experiment")
-    print("Decoding the sequence")
     test_data = None
     model = DeepReluTransReadWrite()
 
