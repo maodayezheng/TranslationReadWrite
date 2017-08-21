@@ -618,6 +618,7 @@ def test():
             gred_sen.append(p_string)
             print("")
 
+
 def decode():
     print("Decoding the sequence")
     test_data = None
