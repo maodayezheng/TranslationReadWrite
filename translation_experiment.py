@@ -1,6 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.DeepReluIORNNSearchV4 import DeepReluTransReadWrite
-from ModelUtils.ParamFreeVAE.DynamicLayers.DynamicVallina import run as dynamic_run
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersV2 import run as deep_io_run
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV3 import DeepReluTransReadWrite
 import sys
 import time
 import json
@@ -23,7 +21,8 @@ training_data_file = "BPE/train50.tok.bpe.32000.txt"
 show_address = True
 
 if __name__ == '__main__':
-    print("Run the Relu IO read 4 layers RNN")
+    print("Run the Relu IO read 4 layers RNN With Attention ")
+    print("Phrase limitation factor is 0.5")
     print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []
