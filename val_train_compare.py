@@ -12,15 +12,21 @@ vanilla_loss = np.load(folder + "vallina_validation_loss.npy")
 ioe_loss = np.load(folder + "ioe_validation_loss.npy")
 ioe_att_loss = np.load(folder + "ioe_att_validation_loss.npy")
 iod_loss = np.load(folder + "iod_validation_loss.npy")
+io4lv2_loss = np.load(folder + "io4lv2_validation_loss.npy")
+io4lv2_att_loss = np.load(folder + "io4lv2_att_validation_loss.npy")
 
-plt.plot(-io_loss, label='io', zorder=1)
+#plt.plot(-io_loss, label='io', zorder=1)
 plt.plot(-io4l_loss, label='io4l', zorder=2)
 plt.plot(-seq2seq_loss, label='seq2seq', zorder=3)
 #plt.plot(-vanilla_loss, label='vanilla', zorder=4)
 plt.plot(-seq2seq_att_loss, label='seq2seq_att', zorder=5)
 plt.plot(-ioe_loss, label='ioe', zorder=6)
 plt.plot(-iod_loss, label='iod', zorder=7)
-plt.plot(-ioe_att_loss, label='ioe_att', zorder=8)
+#plt.plot(-ioe_att_loss, label='ioe_att', zorder=8)
+plt.plot(-io4lv2_loss, label='io4lv2', zorder=9)
+plt.plot(-io4lv2_att_loss, label='io4lv2_att', zorder=9)
+
+
 
 plt.xlabel('Training elbo (Average over 200 iters) VS Testing elbo (Calculate every 200 time step)')
 plt.ylabel('L(X))')
