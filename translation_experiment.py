@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV5 import DeepReluTransReadWrite
+from ModelUtils.ParamFreeVAE.Translation.Seq2SeqPhrase import Seq2SeqAttention
 import sys
 import time
 import json
@@ -21,12 +21,11 @@ training_data_file = "BPE/train50.tok.bpe.32000.txt"
 show_address = True
 
 if __name__ == '__main__':
-    print("Run the Relu IO read 4 layers RNN With Attention ")
-    print("Phrase limitation factor is 0.5")
+    print("Run the Seq2Seq Phrase Model ")
     print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []
-    model = DeepReluTransReadWrite()
+    model = Seq2SeqAttention()
     if pre_trained:
         with open("code_outputs/" + restore_date + restore_params, "rb") as params:
             print("Params restored from 2017_08_12_21_35_35")

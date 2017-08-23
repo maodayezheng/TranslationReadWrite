@@ -5,7 +5,7 @@
 #$ -l gpu=1,gpu_titanxp=1
 #$ -S /bin/bash
 #$ -j y
-#$ -N FourLayerInterAttV5
+#$ -N Seq2SeqPhrase
 
 source $SET_CUDA_DEVICE
 
