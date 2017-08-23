@@ -5,7 +5,7 @@
 #$ -l gpu=1,gpu_titanxp=1
 #$ -S /bin/bash
 #$ -j y
-#$ -N FourLayerInterAttV4
+#$ -N FourLayerInterAttV5
 
 source $SET_CUDA_DEVICE
 
