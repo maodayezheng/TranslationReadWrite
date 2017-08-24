@@ -266,8 +266,6 @@ class Seq2SeqAttention(object):
         ([h_e_1, h_e_2, e_o], update) = theano.scan(self.source_encode_step, outputs_info=[h_init, h_init, None],
                                                     sequences=[source_input_embedding, encode_mask])
 
-        decode_mask = T.cast(T.gt(target, -1), "float32")[:, 1:]
-
         # Decoding RNN
         attention_candidate = e_o
 
@@ -283,23 +281,9 @@ class Seq2SeqAttention(object):
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
         decode_init = get_output(self.decode_init_mlp, T.concatenate([h_e_1[-1], h_e_2[-1]], axis=-1))
-        o_init = T.zeros((n, self.hid_size))
+        o_init = get_output(self.decode_out_mlp, decode_init)
 
-        ([h_d_1, h_d_2, d_o, attention_content], update) = theano.scan(self.target_decode_step,
-                                                                       outputs_info=[decode_init[:, :self.hid_size],
-                                                                                     decode_init[:, self.hid_size:],
-                                                                                     o_init, None],
-                                                                       sequences=[target_input_embedding],
-                                                                       non_sequences=[attention_c1, attention_c2,
-                                                                                      encode_mask])
-
-        score_eva_in = T.concatenate([d_o, attention_content, target_input_embedding], axis=-1)
-        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[score_eva_in],
-                                           non_sequences=[self.target_output_embedding.W],
-                                           outputs_info=[None, None])
-
-        force_prediction = T.argmax(score, axis=-1)
-        init_embedding = target_input_embedding[-1]
+        init_embedding = target_input_embedding[0]
         ([e, h1, h2, o, greedy_p], update) = theano.scan(self.greedy_decode_step,
                                                          outputs_info=[init_embedding, decode_init[:, :self.hid_size],
                                                                        decode_init[:, self.hid_size:], o_init, None],
@@ -307,7 +291,7 @@ class Seq2SeqAttention(object):
                                                          n_steps=51)
 
         return theano.function(inputs=[source, target],
-                               outputs=[force_prediction, greedy_p],
+                               outputs=[greedy_p],
                                allow_input_downcast=True)
 
     def optimiser(self, update, update_kwargs, draw_sample, saved_update=None):
