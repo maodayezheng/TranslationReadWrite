@@ -14,7 +14,7 @@ import theano
 from lasagne.layers import EmbeddingLayer, InputLayer, get_output
 import lasagne
 from lasagne.nonlinearities import linear, sigmoid, tanh, softmax
-from theano.gradient import zero_grad, grad_clip
+from theano.gradient import zero_grad, grad_clip, disconnected_grad
 import numpy as np
 from theano.sandbox.rng_mrg import MRG_RandomStreams
 
@@ -143,7 +143,7 @@ class DeepReluTransReadWrite(object):
                                                                             read_attention_weight, read_attention_bias],
                                                              sequences=[T.arange(l)])
         # Create attention mask
-        attention_mask = zero_grad(T.sum(addresses, axis=2))
+        attention_mask = disconnected_grad(T.sum(addresses, axis=-1))
         attention_mask = attention_mask.dimshuffle((1, 0))
         attention_mask = T.cast(T.gt(attention_mask, 0.0), "float32")
         attention_mask *= encode_mask
@@ -199,7 +199,7 @@ class DeepReluTransReadWrite(object):
         offset = address[:, 0].reshape((n, 1))
         scale = address[:, 1].reshape((n, 1)) + 1e-5
         length = address[:, 2].reshape((n, 1)) + 1e-5
-        read_attention = T.nnet.relu(1.0 - T.abs_(2.0 * (r_p / scale - offset) / length - 1.0))
+        read_attention = T.nnet.relu(1.0 - T.abs_(2.0*(r_p/scale - offset)/length - 1.0))
         # Reading position information
         # Read from ref
         l = read_attention.shape[1]
