@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV5 import DeepReluTransReadWrite as TranslationModel
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV2 import DeepReluTransReadWrite as TranslationModel
 import sys
 import time
 import json
@@ -15,7 +15,7 @@ batch_size = 25
 sample_groups = 10
 iters = 60000
 pre_trained = False
-restore_date = "2017_08_21_11_05_10/"
+restore_date = "2017_08_21_10_46_14/"
 restore_params = "final_model_params.save"
 training_data_file = "BPE/train50.tok.bpe.32000.txt"
 show_address = False
