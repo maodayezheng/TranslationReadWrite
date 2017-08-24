@@ -7,15 +7,16 @@ import theano
 
 with open("SentenceData/BPE/news2013.tok.bpe.32000.txt", "r") as dev:
      validation_data = json.loads(dev.read())
-     validation_data = sorted(validation_data, key=lambda d: len(d[0]))
+     validation_data = sorted(validation_data, key=lambda d: len(d[1]))
 
 groups = []
 l = 10
 g = []
 for v in validation_data:
-    if len(v[0]) > l:
+    if len(v[1]) > l:
         print(len(g))
-        groups.append(g)
+        if len(g) != 0:
+            groups.append(g)
         g =[]
         l += 1
     elif l > 50:

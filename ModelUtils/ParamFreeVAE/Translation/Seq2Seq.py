@@ -47,7 +47,6 @@ class Seq2Seq(object):
 
         # Init output layer
         self.encode_out_mlp = self.mlp(self.hid_size*2, self.hid_size, activation=tanh)
-        self.decode_init_mlp = self.mlp(self.hid_size*2, self.hid_size*2, activation=tanh)
         self.decode_out_mlp = self.mlp(self.hid_size*2, self.hid_size, activation=tanh)
         self.score_mlp = self.mlp(self.hid_size*2 + self.embedding_dim, self.output_score_dim)
 
@@ -99,7 +98,6 @@ class Seq2Seq(object):
         # Decoding RNN
         decode_init = T.concatenate([h_e_1[-1], h_e_2[-1]], axis=-1)
         encode_info = get_output(self.encode_out_mlp, decode_init)
-        decode_init = get_output(self.decode_init_mlp, decode_init)
         target_input = target[:, :-1]
         n, l = target_input.shape
         target_input = target_input.reshape((n*l, ))
@@ -107,8 +105,7 @@ class Seq2Seq(object):
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
         ([h_d_1, h_d_2, o], update) = theano.scan(self.target_decode_step,
-                                                  outputs_info=[decode_init[:, :self.hid_size],
-                                                                decode_init[:, self.hid_size:], None],
+                                                  outputs_info=[h_init, h_init, None],
                                                   sequences=[target_input_embedding],
                                                   non_sequences=[encode_info])
 
@@ -314,7 +311,6 @@ class Seq2Seq(object):
             gru_de_gate_2_param = lasagne.layers.get_all_params(self.gru_de_gate_2)
             gru_de_candi_2_param = lasagne.layers.get_all_params(self.gru_de_candidate_2)
 
-            decode_init_param = lasagne.layers.get_all_params(self.decode_init_mlp)
             out_param = lasagne.layers.get_all_params(self.encode_out_mlp)
             score_param = lasagne.layers.get_all_params(self.score_mlp)
             decode_out_param = lasagne.layers.get_all_params(self.decode_out_mlp)
@@ -324,8 +320,7 @@ class Seq2Seq(object):
                    gru_en_gate_2_param + gru_en_candi_2_param + \
                    gru_de_gate_1_param + gru_de_candi_1_param + \
                    gru_de_gate_2_param + gru_de_candi_2_param + \
-                   out_param + score_param + decode_init_param + \
-                   decode_out_param
+                   out_param + score_param + decode_out_param
 
     def get_param_values(self):
             input_embedding_param = lasagne.layers.get_all_param_values(self.input_embedding)
@@ -343,14 +338,12 @@ class Seq2Seq(object):
 
             encode_out_param = lasagne.layers.get_all_param_values(self.encode_out_mlp)
             score_param = lasagne.layers.get_all_param_values(self.score_mlp)
-            decode_init_param = lasagne.layers.get_all_param_values(self.decode_init_mlp)
             decode_output_param = lasagne.layers.get_all_param_values(self.decode_out_mlp)
 
             return [input_embedding_param, target_input_embedding_param, target_output_embedding_param,
                     gru_en_gate_1_param, gru_en_candi_1_param, gru_en_gate_2_param,
                     gru_en_candi_2_param, gru_de_gate_1_param, gru_de_candi_1_param,
-                    gru_de_gate_2_param, gru_de_candi_2_param, encode_out_param, score_param, decode_output_param,
-                    decode_init_param]
+                    gru_de_gate_2_param, gru_de_candi_2_param, encode_out_param, score_param, decode_output_param]
 
     def set_param_values(self, params):
             lasagne.layers.set_all_param_values(self.input_embedding, params[0])
@@ -367,5 +360,4 @@ class Seq2Seq(object):
             lasagne.layers.set_all_param_values(self.encode_out_mlp, params[11])
             lasagne.layers.set_all_param_values(self.score_mlp, params[12])
             lasagne.layers.set_all_param_values(self.decode_out_mlp, params[13])
-            lasagne.layers.set_all_param_values(self.decode_init_mlp, params[14])
 

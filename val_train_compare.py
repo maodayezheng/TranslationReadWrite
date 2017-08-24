@@ -15,7 +15,6 @@ io4lv2_loss = np.load(folder + "io4lv2_validation_loss.npy")
 io4lv2_att_loss = np.load(folder + "io4lv2_att_validation_loss.npy")
 
 #plt.plot(-io_loss, label='io', zorder=1)
-plt.plot(-io4l_loss, label='io4l', zorder=2)
 plt.plot(-seq2seq_loss, label='seq2seq', zorder=3)
 #plt.plot(-vanilla_loss, label='vanilla', zorder=4)
 plt.plot(-seq2seq_att_loss, label='seq2seq_att', zorder=5)
