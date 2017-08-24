@@ -140,10 +140,7 @@ class DeepReluTransReadWrite(object):
                                                                             read_attention_weight, read_attention_bias],
                                                              sequences=[T.arange(l)])
         # Create attention mask
-        attention_mask = disconnected_grad(T.sum(addresses, axis=-1))
-        attention_mask = attention_mask.dimshuffle((1, 0))
-        attention_mask = T.cast(T.gt(attention_mask, 0.0), "float32")
-        attention_mask *= encode_mask
+        attention_mask = encode_mask
 
         # Decoding RNN
         l, n, d = c.shape
