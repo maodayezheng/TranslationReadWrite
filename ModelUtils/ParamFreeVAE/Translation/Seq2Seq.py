@@ -193,19 +193,22 @@ class Seq2Seq(object):
         score = T.dot(h, embeddings.T)
         return h, score
 
-    def greedy_decode_step(self, target_embedding, h1, d1):
-        h1 = self.target_decode_step(target_embedding, h1, d1)
-        h, score = self.score_eval_step(h1, d1, self.target_output_embedding.W)
+    def greedy_decode_step(self, target_embedding, h1, h2, d1):
+        h1, h2, o = self.target_decode_step(target_embedding, h1, h2, d1)
+        s_in = T.concatenate([o, target_embedding], axis=-1)
+        h, score = self.score_eval_step(s_in, d1, self.target_output_embedding.W)
         prediction = T.argmax(score, axis=-1)
         predict_embedding = get_output(self.target_input_embedding, prediction)
 
-        return predict_embedding, h1, prediction
+        return predict_embedding, h1, h2, prediction
 
     def decode_fn(self):
         source = T.imatrix('source')
         target = T.imatrix('target')
-        encode_mask = T.cast(T.gt(source, 1), "float32")[:, 1:]
-        source_input_embedding = get_output(self.input_embedding, source[:, 1:])
+        n = target.shape[0]
+        # Encoding mask
+        encode_mask = T.cast(T.neq(source, -1), "float32")
+        source_input_embedding = get_output(self.input_embedding, source)
         n, l = encode_mask.shape
         encode_mask = encode_mask.reshape((n, l, 1))
         encode_mask = encode_mask.dimshuffle((1, 0, 2))
@@ -213,34 +216,29 @@ class Seq2Seq(object):
 
         # Encoding RNN
         h_init = T.zeros((n, self.hid_size))
-        (h_e_1, update) = theano.scan(self.source_encode_step, outputs_info=[h_init, h_init],
-                                      sequences=[source_input_embedding, encode_mask])
+        ([h_e_1, h_e_2], update) = theano.scan(self.source_encode_step, outputs_info=[h_init, h_init],
+                                               sequences=[source_input_embedding, encode_mask])
 
         # Decoding RNN
-        decode_init = get_output(self.encode_out_mlp, h_e_1[-1])
+        decode_init = T.concatenate([h_e_1[-1], h_e_2[-1]], axis=-1)
+        encode_info = get_output(self.encode_out_mlp, decode_init)
+        decode_init = get_output(self.decode_init_mlp, decode_init)
         target_input = target[:, :-1]
         n, l = target_input.shape
         target_input = target_input.reshape((n * l,))
         target_input_embedding = get_output(self.target_input_embedding, target_input)
         target_input_embedding = target_input_embedding.reshape((n, l, self.embedding_dim))
         target_input_embedding = target_input_embedding.dimshuffle((1, 0, 2))
-        h_init = T.zeros((n, self.output_score_dim))
-        (h_t_2, update) = theano.scan(self.target_decode_step, outputs_info=[h_init],
-                                      sequences=[target_input_embedding],
-                                      non_sequences=[decode_init])
-
-        ([h, score], update) = theano.scan(self.score_eval_step, sequences=[h_t_2],
-                                           non_sequences=[self.target_output_embedding.W],
-                                           outputs_info=[None, None])
-
-        force_prediction = T.argmax(score, axis=-1)
-        init_embedding = target_input_embedding[-1]
-        ([e, h, greedy_p], update) = theano.scan(self.greedy_decode_step, non_sequences=[decode_init],
-                                                 outputs_info=[init_embedding, h_init, None],
-                                                 n_steps=31)
+        init_embedding = target_input_embedding[0]
+        ([e, h1, h2, prediction], update) = theano.scan(self.greedy_decode_step,
+                                                        outputs_info=[init_embedding,
+                                                                      decode_init[:, :self.hid_size],
+                                                                      decode_init[:, self.hid_size:], None],
+                                                        non_sequences=[encode_info],
+                                                        n_steps=50)
 
         return theano.function(inputs=[source, target],
-                               outputs=[force_prediction, greedy_p],
+                               outputs=[prediction],
                                allow_input_downcast=True)
 
     def optimiser(self, update, update_kwargs, draw_sample, saved_update=None):

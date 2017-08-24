@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersV2 import DeepReluTransReadWrite
+from ModelUtils.ParamFreeVAE.Translation.Seq2Seq import Seq2Seq as TranslationModel
 import pickle as cPickle
 import json
 import sys
@@ -9,15 +9,14 @@ np.set_printoptions(threshold=1000000)
 main_dir = sys.argv[0]
 out_dir = sys.argv[2]
 
-restore_date = ""
-restore_param = ""
-test_file = ""
+restore_param = "Translations/show/Param/seq2seq_final_model_params.save"
+test_file = "grouped_news2013.tok.bpe.32000.txt"
 check_prediction = False
 
 if __name__ == '__main__':
     print("Start testing translation experiment")
     test_data = None
-    model = DeepReluTransReadWrite()
+    model = TranslationModel()
 
     # Load vocabulary
     vocab = []
@@ -25,7 +24,7 @@ if __name__ == '__main__':
         for line in v:
             vocab.append(line.strip("\n"))
 
-    with open("code_outputs/"+restore_date + restore_param, "rb") as params:
+    with open(restore_param, "rb") as params:
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/BPE/" + test_file, "r") as dataset:
         test_data = json.loads(dataset.read())
@@ -37,8 +36,11 @@ if __name__ == '__main__':
     forc_sen = []
     gred_sen = []
     group_id = 10
+    test_data = np.array(test_data)
     for m in test_data:
-        l = max(len(m[-1, 0]), len(m[-1, 1]))
+        m = sorted(m, key=lambda d: max(len(d[0]), len(d[1])))
+        last_data = m[-1]
+        l = max(len(last_data[0]), len(last_data[1]))
         source = None
         target = None
         # Pad the input sequence
@@ -56,20 +58,22 @@ if __name__ == '__main__':
             if target is None:
                 target = t.reshape((1, t.shape[0]))
             else:
+                print(target.shape)
+                print(t.shape)
+                print(l)
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
         # Prediction
-        force_max, prediction = decode(source, target)
+        [prediction] = decode(source, target)
 
         # Map the index to string
-        with open("code_outputs/" + out_dir + "/source_" + str(group_id) + ".txt", "w") as sour, \
-             open("code_outputs/" + out_dir + "/reference_" + str(group_id) + ".txt", "w") as refe, \
-             open("code_outputs/" + out_dir + "/prediction_" + str(group_id) + ".txt", "w") as pred:
+        with open(out_dir + "/source_" + str(group_id) + ".txt", "w") as sour, \
+             open(out_dir + "/reference_" + str(group_id) + ".txt", "w") as refe, \
+             open(out_dir + "/prediction_" + str(group_id) + ".txt", "w") as pred:
 
             for n in range(len(m)):
                 s = source[n, 1:]
                 t = target[n, 1:]
-                f = force_max[:, n]
                 p = prediction[:, n]
 
                 sentence = ""
@@ -98,10 +102,4 @@ if __name__ == '__main__':
                     print(sentence)
                 pred.write(sentence + "\n")
 
-                if check_prediction:
-                    for t_idx in f:
-                        if t_idx == 1 or t_idx == -1:
-                            break
-                        sentence += (vocab[t_idx] + " ")
-                    print(sentence)
         group_id += 1

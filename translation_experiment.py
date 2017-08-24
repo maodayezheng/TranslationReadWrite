@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV4 import DeepReluTransReadWrite as TranslationModel
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersV2 import DeepReluTransReadWrite as TranslationModel
 import sys
 import time
 import json
@@ -14,11 +14,11 @@ out_dir = sys.argv[2]
 batch_size = 25
 sample_groups = 10
 iters = 60000
-pre_trained = False
-restore_date = ""
-restore_params = ""
+pre_trained = True
+restore_date = "2017_08_21_11_05_10/"
+restore_params = "final_model_params.save"
 training_data_file = "BPE/train50.tok.bpe.32000.txt"
-show_address = True
+show_address = False
 
 if __name__ == '__main__':
     print("Run the Four layers Read with scale")
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     model = TranslationModel()
     if pre_trained:
         with open("code_outputs/" + restore_date + restore_params, "rb") as params:
-            print("Params restored from 2017_08_12_21_35_35")
+            print("Params restored from " + restore_date)
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
     draw_sample = False
