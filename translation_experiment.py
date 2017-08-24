@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersV2 import DeepReluTransReadWrite as TranslationModel
+from ModelUtils.ParamFreeVAE.Translation.Seq2Seq import Seq2Seq as TranslationModel
 import sys
 import time
 import json
