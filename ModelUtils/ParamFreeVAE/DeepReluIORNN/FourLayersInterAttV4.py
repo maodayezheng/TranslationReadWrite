@@ -67,9 +67,6 @@ class DeepReluTransReadWrite(object):
         v = np.random.uniform(-0.05, 0.05, (3, )).astype(theano.config.floatX)
         self.attention_bias = theano.shared(name="attention_bias", value=v)
 
-        v = np.random.uniform(-1.0, 1.0, (self.key_dim, )).astype(theano.config.floatX)
-        self.key_init = theano.shared(name="key_init", value=v)
-
         v = np.random.uniform(-0.05, 0.05, (self.hid_size, self.output_score_dim)).astype(theano.config.floatX)
         self.attention_h_2 = theano.shared(value=v, name="attention_h_2")
 
@@ -133,7 +130,7 @@ class DeepReluTransReadWrite(object):
         decode_in_embedding = decode_in_embedding[:, :-1]
         decode_in_embedding = decode_in_embedding.dimshuffle((1, 0, 2))
 
-        key_init = T.tile(self.key_init.reshape((1, self.key_dim)), (n, 1))
+        key_init = T.zeros((n, self.key_dim))
         read_pos = T.arange(l, dtype="float32") + 1.0
         read_pos = read_pos.reshape((1, l)) / (T.sum(encode_mask, axis=-1).reshape((n, 1)) + 1.0)
 
@@ -485,7 +482,7 @@ class DeepReluTransReadWrite(object):
                gru_de_gate_4_param + gru_de_candi_4_param + \
                score_param + encoder_param + \
                encode_out_param + decode_init_param +\
-               decode_out_param + [self.attention_weight, self.attention_bias, self.key_init,
+               decode_out_param + [self.attention_weight, self.attention_bias,
                                    self.attention_h_2, self.attetion_v, self.attention_s]
 
     def get_param_values(self):
@@ -516,7 +513,7 @@ class DeepReluTransReadWrite(object):
                 score_param, decode_out_param,
                 encode_out_param, decode_init_param,
                 encoder_param,
-                self.attention_weight.get_value(), self.attention_bias.get_value(), self.key_init.get_value(),
+                self.attention_weight.get_value(), self.attention_bias.get_value(),
                 self.attention_s.get_value(), self.attention_h_2.get_value(), self.attetion_v.get_value()]
 
     def set_param_values(self, params):
