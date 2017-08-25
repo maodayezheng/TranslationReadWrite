@@ -14,7 +14,7 @@ test_file = "grouped_news2013.tok.bpe.32000.txt"
 check_prediction = False
 
 if __name__ == '__main__':
-    print("Start testing translation experiment")
+    print("Start testing Seq2Seq Attention")
     test_data = None
     model = TranslationModel()
 
@@ -28,14 +28,12 @@ if __name__ == '__main__':
         model.set_param_values(cPickle.load(params))
     with open("SentenceData/BPE/" + test_file, "r") as dataset:
         test_data = json.loads(dataset.read())
-    chosen = []
 
     decode = model.decode_fn()
     sour_sen = []
     refe_sen = []
     forc_sen = []
-    gred_sen = []
-    group_id = 10
+    pred_sen = []
     test_data = np.array(test_data)
     for m in test_data:
         m = sorted(m, key=lambda d: max(len(d[0]), len(d[1])))
@@ -64,9 +62,9 @@ if __name__ == '__main__':
         [prediction] = decode(source, target)
 
         # Map the index to string
-        with open(out_dir + "/source_" + str(group_id) + ".txt", "w") as sour, \
-             open(out_dir + "/reference_" + str(group_id) + ".txt", "w") as refe, \
-             open(out_dir + "/prediction_" + str(group_id) + ".txt", "w") as pred:
+        with open(out_dir + "/source_" + str(l) + ".txt", "w") as sour, \
+             open(out_dir + "/reference_" + str(l) + ".txt", "w") as refe, \
+             open(out_dir + "/prediction_" + str(l) + ".txt", "w") as pred:
 
             for n in range(len(m)):
                 s = source[n, 1:]
@@ -78,6 +76,7 @@ if __name__ == '__main__':
                     if s_idx == 1 or s_idx == -1:
                         break
                     sentence += (vocab[s_idx] + " ")
+                sour_sen.append(sentence)
                 if check_prediction:
                     print(sentence)
 
@@ -87,6 +86,7 @@ if __name__ == '__main__':
                     if t_idx == 1 or t_idx == -1:
                         break
                     sentence += (vocab[t_idx] + " ")
+                refe_sen.append(sentence)
                 if check_prediction:
                     print(sentence)
                 refe.write(sentence + "\n")
@@ -95,8 +95,16 @@ if __name__ == '__main__':
                     if idx == 1:
                         break
                     sentence += (vocab[idx] + " ")
+                pred_sen.append(sentence)
                 if check_prediction:
                     print(sentence)
                 pred.write(sentence + "\n")
-
-        group_id += 1
+    with open(out_dir + "/source.txt", "w") as sour:
+        for s in sour_sen:
+            sour.write(s + "\n")
+    with open(out_dir + "/reference.txt", "w") as refe:
+        for s in refe_sen:
+            refe.write(s + "\n")
+    with open(out_dir + "/prediction.txt", "w") as pred:
+        for s in pred_sen:
+            pred.write(s + "\n")
