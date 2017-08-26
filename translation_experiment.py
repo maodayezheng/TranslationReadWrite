@@ -21,7 +21,7 @@ training_data_file = "BPE/train50.tok.bpe.32000.txt"
 show_address = True
 
 if __name__ == '__main__':
-    print("Run the Four layers Read with scale version 5 ")
+    print("Run the Four layers Read with scale version 6 ")
     print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []
