@@ -127,7 +127,7 @@ class DeepReluTransReadWrite(object):
         source_embedding = T.concatenate([trap, source_embedding], axis=1)
         l = source_embedding.shape[1]
         trap_mask = T.zeros((n, 1))
-        encode_mask = T.concatenate([trap_mask, encode_mask], axis=1)
+        e_m = T.concatenate([trap_mask, encode_mask], axis=1)
 
         read_attention_weight = self.attention_weight
         read_attention_bias = self.attention_bias
@@ -147,11 +147,11 @@ class DeepReluTransReadWrite(object):
                                                                       non_sequences=[source_embedding, read_pos,
                                                                                      read_attention_weight,
                                                                                      read_attention_bias,
-                                                                                     encode_mask],
+                                                                                     e_m],
                                                                       sequences=[T.arange(l-1)])
         attention_mask = zero_grad(T.sum(addresses, axis=-1))
         attention_mask = attention_mask.dimshuffle((1, 0))
-        attention_mask = T.cast(T.gt(attention_mask, 0.0), "float32")
+        attention_mask = T.cast(T.gt(attention_mask, 0.0), "float32") * encode_mask
         # Decoding RNN
         l, n, d = c.shape
         attention_c1 = c.reshape((n * l, d))
