@@ -136,12 +136,14 @@ class DeepReluTransReadWrite(object):
         read_pos = T.arange(l, dtype="float32") + 1.0
         read_pos = read_pos.reshape((1, l)) * 0.85 / (T.sum(encode_mask, axis=-1).reshape((n, 1)) + 1.0)
         offset_init = T.zeros((n, ))
-        ([h1, h2, keys, c, addresses], update) = theano.scan(self.encoding_step, outputs_info=[h_init, h_init, key_init,
-                                                                                               offset_init, None, None],
-                                                             non_sequences=[source_embedding, read_pos,
-                                                                            read_attention_weight, read_attention_bias,
-                                                                            encode_mask],
-                                                             sequences=[T.arange(l)])
+        ([h1, h2, keys, offsets, c, addresses], update) = theano.scan(self.encoding_step,
+                                                                      outputs_info=[h_init, h_init, key_init,
+                                                                                    offset_init, None, None],
+                                                                      non_sequences=[source_embedding, read_pos,
+                                                                                     read_attention_weight,
+                                                                                     read_attention_bias,
+                                                                                     encode_mask],
+                                                                      sequences=[T.arange(l)])
         addresses = zero_grad(T.sum(addresses, axis=-1))
         addresses = addresses.dimshuffle((1, 0))
         attention_mask = T.cast(T.gt(addresses, 0.0), "float32")*encode_mask
