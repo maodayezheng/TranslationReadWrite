@@ -61,10 +61,10 @@ class DeepReluTransReadWrite(object):
         self.encoder = self.mlp(self.embedding_dim, self.hid_size, activation=tanh)
 
         # attention parameters
-        v = np.random.uniform(-0.05, 0.05, (self.key_dim, 2)).astype(theano.config.floatX)
+        v = np.random.uniform(-0.5, 0.05, (self.key_dim, 2)).astype(theano.config.floatX)
         self.attention_weight = theano.shared(name="attention_weight", value=v)
 
-        v = np.ones((2,)).astype(theano.config.floatX) * 0.05
+        v = np.ones((2,)).astype(theano.config.floatX) * -0.05
         self.attention_bias = theano.shared(name="attention_bias", value=v)
 
         v = np.random.uniform(-1.0, 1.0, (self.key_dim, )).astype(theano.config.floatX)
@@ -120,9 +120,6 @@ class DeepReluTransReadWrite(object):
         # Create decoding mask
         d_m = T.cast(T.gt(target, -1), "float32")
         decode_mask = d_m[:, 1:]
-        attention_mask = T.cast(T.neq(target, 1), "float32")
-        attention_mask *= d_m
-        attention_mask = attention_mask[:, :-1]
         # Init decoding states
         h_init = T.zeros((n, self.hid_size))
         source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
@@ -137,15 +134,17 @@ class DeepReluTransReadWrite(object):
 
         key_init = T.tile(self.key_init.reshape((1, self.key_dim)), (n, 1))
         read_pos = T.arange(l, dtype="float32") + 1.0
-        read_pos = read_pos.reshape((1, l)) / (T.sum(encode_mask, axis=-1).reshape((n, 1)) + 1.0)
-        time_steps = T.cast(d_m[:, :-1].dimshuffle((1, 0)), dtype="float32")
-
+        read_pos = read_pos.reshape((1, l)) * 0.85 / (T.sum(encode_mask, axis=-1).reshape((n, 1)) + 1.0)
+        offset_init = T.zeros((n, ))
         ([h1, h2, keys, c, addresses], update) = theano.scan(self.encoding_step, outputs_info=[h_init, h_init, key_init,
-                                                                                               None, None],
+                                                                                               offset_init, None, None],
                                                              non_sequences=[source_embedding, read_pos,
-                                                                            read_attention_weight, read_attention_bias],
-                                                             sequences=[time_steps])
-
+                                                                            read_attention_weight, read_attention_bias,
+                                                                            encode_mask],
+                                                             sequences=[T.arange(l)])
+        addresses = zero_grad(T.sum(addresses, axis=-1))
+        addresses = addresses.dimshuffle((1, 0))
+        attention_mask = T.cast(T.gt(addresses, 0.0), "float32")*encode_mask
         # Decoding RNN
         l, n, d = c.shape
         attention_c1 = c.reshape((n * l, d))
@@ -190,17 +189,16 @@ class DeepReluTransReadWrite(object):
         loss = -T.mean(T.sum(loss, axis=1))
         return loss, addresses
 
-    def encoding_step(self, ts, h1, h2, key, ref, r_p, r_a_w, r_a_b):
+    def encoding_step(self, ts, h1, h2, key, offset, ref, r_p, r_a_w, r_a_b, mask):
         n = h1.shape[0]
         # Compute the read and write attention
         address = T.nnet.sigmoid(T.dot(key, r_a_w) + r_a_b)
-        offset = 1.0 - address[:, 0]
         scale = address[:, 1]
         read_attention = T.nnet.relu(1.0 - T.abs_(2.0 * (r_p - offset.reshape((n, 1))) / (scale.reshape((n, 1)) + 1e-5) - 1.0))
         # Reading position information
         # Read from ref
         l = read_attention.shape[1]
-        pos = read_attention.reshape((n, l, 1))
+        pos = (read_attention * mask).reshape((n, l, 1))
         selection = pos * ref
         selection = T.sum(selection, axis=1)
 
@@ -227,7 +225,8 @@ class DeepReluTransReadWrite(object):
         o = get_output(self.encode_out_mlp, T.concatenate([h1, h2], axis=-1))
         key = o[:, :self.key_dim]
         c = o[:, self.key_dim:]
-        return h1, h2, key, c, read_attention
+        offset = address[:, 0]
+        return h1, h2, key, offset, c, read_attention
 
     def decoding_step(self, embedding, h1, h2, o, s_embedding, a_c1, a_c2, mask):
         s = T.dot(o, self.attention_s)
@@ -241,7 +240,7 @@ class DeepReluTransReadWrite(object):
         max_clip = zero_grad(T.max(attention_score, axis=-1))
         attention_score = T.exp(attention_score - max_clip.reshape((n, 1)))
         attention_score = attention_score * mask
-        denorm = T.sum(attention_score, axis=-1)
+        denorm = T.sum(attention_score, axis=-1) + 1e-5
         attention_score = attention_score / denorm.reshape((n, 1))
         attention_content = T.sum(attention_score.reshape((n, l, 1)) * a_c1, axis=1)
 
