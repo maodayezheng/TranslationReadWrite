@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV2 import DeepReluTransReadWrite as TranslationModel
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV3 import DeepReluTransReadWrite as TranslationModel
 import sys
 import time
 import json
