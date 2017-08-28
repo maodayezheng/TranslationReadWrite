@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Following problems are observed from version 3:
-
 In this version:
 1. The read attention is constrained, the model can not pick same position as previous time step
 2. The learining rate is gradually reduced
 3. Changed the way of computing output score
-
 """
 
 import theano.tensor as T
@@ -105,7 +103,6 @@ class DeepReluTransReadWrite(object):
         """
         Return a symbolic variable, representing the ELBO, for the given minibatch.
         :param num_samples: The number of samples to use to evaluate the ELBO.
-
         :return elbo: The symbolic variable representing the ELBO.
         """
         n = source.shape[0]
@@ -312,11 +309,7 @@ class DeepReluTransReadWrite(object):
         max_idx = T.divmod(max_idx, self.target_vocab_size)
         return idx, max_idx
     """
-
-
         The following functions are for decoding the prediction
-
-
     """
 
     def decode_fn(self):
@@ -389,9 +382,7 @@ class DeepReluTransReadWrite(object):
     def elbo_fn(self):
         """
         Return the compiled Theano function which evaluates the evidence lower bound (ELBO).
-
         :param num_samples: The number of samples to use to evaluate the ELBO.
-
         :return elbo_fn: A compiled Theano function, which will take as input the batch of sequences, and the vector of
         sequence lengths and return the ELBO.
         """
@@ -407,12 +398,10 @@ class DeepReluTransReadWrite(object):
         """
         Return the compiled Theano function which both evaluates the evidence lower bound (ELBO), and updates the model
         parameters to increase the ELBO.
-
         :param num_samples: The number of samples to use to evaluate the ELBO.
         :param update: The function from lasagne.updates to use to update the model parameters.
         :param update_kwargs: The kwargs to pass to update.
         :param saved_update: If the model was pre-trained, then pass the saved updates to continue training.
-
         :return optimiser: A compiled Theano function, which will take as input the batch of sequences, and the vector
         of sequence lengths and return the ELBO, and update the model parameters.
         :return updates: Return the updates used so far, so that training can be continued later.

@@ -219,7 +219,6 @@ class Seq2Seq(object):
         # Decoding RNN
         decode_init = T.concatenate([h_e_1[-1], h_e_2[-1]], axis=-1)
         encode_info = get_output(self.encode_out_mlp, decode_init)
-        decode_init = get_output(self.decode_init_mlp, decode_init)
         target_input = target[:, :-1]
         n, l = target_input.shape
         target_input = target_input.reshape((n * l,))
@@ -229,8 +228,8 @@ class Seq2Seq(object):
         init_embedding = target_input_embedding[0]
         ([e, h1, h2, prediction], update) = theano.scan(self.greedy_decode_step,
                                                         outputs_info=[init_embedding,
-                                                                      decode_init[:, :self.hid_size],
-                                                                      decode_init[:, self.hid_size:], None],
+                                                                      h_init,
+                                                                      h_init, None],
                                                         non_sequences=[encode_info],
                                                         n_steps=50)
 

@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV3 import DeepReluTransReadWrite as TranslationModel
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV7 import DeepReluTransReadWrite as TranslationModel
 import sys
 import time
 import json
@@ -21,7 +21,7 @@ training_data_file = "BPE/train50.tok.bpe.32000.txt"
 show_address = True
 
 if __name__ == '__main__':
-    print("Run the Four layers Read with scale version 6 ")
+    print("Run the Four layers Read with scale version 7")
     print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []
