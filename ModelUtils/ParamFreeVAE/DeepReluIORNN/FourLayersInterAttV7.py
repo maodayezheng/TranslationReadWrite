@@ -193,7 +193,7 @@ class DeepReluTransReadWrite(object):
         address = T.nnet.sigmoid(T.dot(key, r_a_w) + r_a_b)
         offset = address[:, 0]
         scale = address[:, 1]
-        read_attention = T.exp(1.0 - T.abs_(2.0 * (r_p - offset.reshape((n, 1))) / (scale.reshape((n, 1)) + 1e-5) - 1.0))
+        read_attention = T.nnet.relu(1.0 - T.abs_(2.0 * (r_p - offset.reshape((n, 1))) / (scale.reshape((n, 1)) + 1e-5) - 1.0))
         # Reading position information
         # Read from ref
         read_attention *= mask
