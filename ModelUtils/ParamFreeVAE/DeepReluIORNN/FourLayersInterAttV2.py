@@ -140,7 +140,8 @@ class DeepReluTransReadWrite(object):
         ([h1, h2, keys, c, addresses], update) = theano.scan(self.encoding_step, outputs_info=[h_init, h_init, key_init,
                                                                                                None, None],
                                                              non_sequences=[source_embedding, read_pos,
-                                                                            read_attention_weight, read_attention_bias],
+                                                                            read_attention_weight, read_attention_bias,
+                                                                            encode_mask],
                                                              sequences=[time_steps])
 
         # Decoding RNN
@@ -187,7 +188,7 @@ class DeepReluTransReadWrite(object):
         loss = -T.mean(T.sum(loss, axis=1))
         return loss, addresses
 
-    def encoding_step(self, ts, h1, h2, key, ref, r_p, r_a_w, r_a_b):
+    def encoding_step(self, ts, h1, h2, key, ref, r_p, r_a_w, r_a_b, mask):
         n = h1.shape[0]
         # Compute the read and write attention
         address = T.nnet.sigmoid(T.dot(key, r_a_w) + r_a_b)
@@ -196,6 +197,7 @@ class DeepReluTransReadWrite(object):
         read_attention = T.nnet.relu(1.0 - T.abs_(2.0 * (r_p - offset.reshape((n, 1))) / (scale.reshape((n, 1)) + 1e-5) - 1.0))
         # Reading position information
         # Read from ref
+        read_attention *= mask
         l = read_attention.shape[1]
         pos = read_attention.reshape((n, l, 1))
         selection = pos * ref
@@ -350,7 +352,8 @@ class DeepReluTransReadWrite(object):
         ([h1, h2, keys, c, addresses], update) = theano.scan(self.encoding_step, outputs_info=[h_init, h_init, key_init,
                                                                                                None, None],
                                                              non_sequences=[source_embedding, read_pos,
-                                                                            read_attention_weight, read_attention_bias],
+                                                                            read_attention_weight, read_attention_bias,
+                                                                            encode_mask],
                                                              sequences=[time_steps])
 
         # Decoding RNN

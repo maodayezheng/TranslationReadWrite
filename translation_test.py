@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.Seq2Seq import Seq2Seq as TranslationModel
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV2 import DeepReluTransReadWrite as TranslationModel
 import pickle as cPickle
 import json
 import sys
@@ -9,7 +9,7 @@ np.set_printoptions(threshold=1000000)
 main_dir = sys.argv[0]
 out_dir = sys.argv[2]
 
-restore_param = "Translations/show/Param/seq2seq_final_model_params.save"
+restore_param = "Translations/show/Param/io4lv2_att_final_model_params.save"
 test_file = "grouped_news2013.tok.bpe.32000.txt"
 check_prediction = False
 

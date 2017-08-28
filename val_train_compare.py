@@ -11,8 +11,10 @@ seq2seq_att_loss = np.concatenate([np.load(folder + "seq2seq_att_validation_loss
 ioe_loss = np.load(folder + "ioe_validation_loss.npy")
 ioe_att_loss = np.load(folder + "ioe_att_validation_loss.npy")
 iod_loss = np.load(folder + "iod_validation_loss.npy")
-io4lv2_loss = np.load(folder + "io4lv2_validation_loss.npy")
-io4lv2_att_loss = np.load(folder + "io4lv2_att_validation_loss.npy")
+io4lv2_loss = np.concatenate([np.load(folder + "io4lv2_validation_loss.npy"),
+                              np.load(folder + "io4lv2_validation_loss2.npy")])
+io4lv2_att_loss = np.concatenate([np.load(folder + "io4lv2_att_validation_loss.npy"),
+                                  np.load(folder + "io4lv2_att_validation_loss2.npy")])
 
 #plt.plot(-io_loss, label='io', zorder=1)
 plt.plot(-seq2seq_loss, label='seq2seq', zorder=3)
