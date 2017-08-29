@@ -18,8 +18,8 @@ en_total = 0
 en_occur = [0] * en_idx
 de_total = 0
 pair_count = 0
-with open("SentenceData/show_en.txt", "r", encoding="utf8") as en, \
-     open("SentenceData/show_de.txt", "r", encoding="utf8") as de:
+with open("SentenceData/wmt16_en_de/newstest2015.tok.bpe.32000.en", "r", encoding="utf8") as en, \
+     open("SentenceData/wmt16_en_de/newstest2015.tok.bpe.32000.de", "r", encoding="utf8") as de:
     for en_line in en:
         sentence = en_line.rstrip('\n')
         en_tokens = sentence.split(" ")
@@ -48,7 +48,7 @@ with open("SentenceData/show_en.txt", "r", encoding="utf8") as en, \
             data_pair.append([en_idx, de_idx])
 
 
-with open("SentenceData/show_idx.txt", "w") as dataset:
+with open("SentenceData/BPE/news2015.tok.bpe.32000.txt", "w") as dataset:
     d = json.dumps(data_pair)
     dataset.write(d)
 
