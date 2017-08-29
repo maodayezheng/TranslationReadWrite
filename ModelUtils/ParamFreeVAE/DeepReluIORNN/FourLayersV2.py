@@ -16,10 +16,6 @@ import lasagne
 from lasagne.nonlinearities import linear, sigmoid, tanh, softmax
 from theano.gradient import zero_grad, grad_clip
 import numpy as np
-import json
-import time
-import os
-import pickle as cPickle
 from theano.sandbox.rng_mrg import MRG_RandomStreams
 
 random = MRG_RandomStreams(seed=1234)
