@@ -139,7 +139,8 @@ class DeepReluTransReadWrite(object):
                                                                                                   source_embedding,
                                                                                                   read_pos,
                                                                                                   read_attention_weight,
-                                                                                                  read_attention_bias],
+                                                                                                  read_attention_bias,
+                                                                                                  encode_mask],
                                                                                    sequences=[decode_in_embedding])
 
         # Get sample embedding
@@ -165,7 +166,7 @@ class DeepReluTransReadWrite(object):
         loss = -T.mean(T.sum(loss, axis=1))
         return loss, addresses
 
-    def decoding_step(self, embedding, h1, h2, h3, h4, key, s_embedding, ref, r_p, r_a_w, r_a_b):
+    def decoding_step(self, embedding, h1, h2, h3, h4, key, s_embedding, ref, r_p, r_a_w, r_a_b, mask):
         n = h1.shape[0]
         # Compute the read and write attention
         address = T.nnet.sigmoid(T.dot(key, r_a_w) + r_a_b)
@@ -174,6 +175,7 @@ class DeepReluTransReadWrite(object):
         read_attention = T.nnet.relu(1.0 - T.abs_(2.0*(r_p - offset.reshape((n, 1)))/(scale.reshape((n, 1)) + 1e-5) - 1.0))
         # Reading position information
         # Read from ref
+        read_attention *= mask
         l = read_attention.shape[1]
         pos = read_attention.reshape((n, l, 1))
         selection = pos * ref
@@ -230,13 +232,13 @@ class DeepReluTransReadWrite(object):
 
         return h1, h2, h3, h4, key, s, sample_score, read_attention
 
-    def greedy_decode(self, embedding, h1, h2, h3, h4, key, s_embedding, ref, r_p, r_a_w, r_a_b):
+    def greedy_decode(self, embedding, h1, h2, h3, h4, key, s_embedding, ref, r_p, r_a_w, r_a_b, mask):
         h1, h2, h3, h4, key, s, sample_score, read_attention \
-            = self.decoding_step(embedding, h1, h2, h3, h4, key, s_embedding, ref, r_p, r_a_w, r_a_b)
+            = self.decoding_step(embedding, h1, h2, h3, h4, key, s_embedding, ref, r_p, r_a_w, r_a_b, mask)
 
         prediction = T.argmax(sample_score, axis=-1)
         embedding = get_output(self.target_input_embedding, prediction)
-        return embedding, h1, h2, h3, h4, key, prediction
+        return embedding, h1, h2, h3, h4, key, prediction, read_attention
 
     def beam_search_forward(self, col, score, embedding, pre_hid_info, s_embedding):
         n = col.shape[0]
@@ -310,20 +312,21 @@ class DeepReluTransReadWrite(object):
         read_pos = T.arange(l, dtype="float32") + 1.0
         read_pos = read_pos.reshape((1, l)) / (T.sum(encode_mask, axis=-1).reshape((n, 1)) + 1.0)
         init_embedding = decode_in_embedding[0]
-        ([embedding, h1, h2, h3, h4, key, prediction], update) = theano.scan(self.greedy_decode,
+        ([embedding, h1, h2, h3, h4, key, prediction, read_attention], update) = theano.scan(self.greedy_decode,
                                                                              outputs_info=[init_embedding,
                                                                                            h_init, h_init,
                                                                                            h_init, h_init,
-                                                                                           key_init, None],
+                                                                                           key_init, None, None],
                                                                              non_sequences=[sample_embed,
                                                                                             source_embedding,
                                                                                             read_pos,
                                                                                             read_attention_weight,
-                                                                                            read_attention_bias],
+                                                                                            read_attention_bias,
+                                                                                            encode_mask],
                                                                              n_steps=50)
 
         return theano.function(inputs=[source, target],
-                               outputs=[prediction],
+                               outputs=[prediction, read_attention],
                                allow_input_downcast=True)
 
     def elbo_fn(self):

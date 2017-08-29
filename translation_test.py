@@ -1,20 +1,21 @@
-from ModelUtils.ParamFreeVAE.Translation.Seq2SeqAttention import Seq2SeqAttention as TranslationModel
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersV2 import DeepReluTransReadWrite as TranslationModel
 import pickle as cPickle
 import json
 import sys
 import numpy as np
+import os
 
 sys.setrecursionlimit(5000000)
 np.set_printoptions(threshold=1000000)
 main_dir = sys.argv[0]
 out_dir = sys.argv[2]
 
-restore_param = "Translations/show/Param/seq2seq_att_final_model_params.save"
-test_file = "grouped_news2014.tok.bpe.32000.txt"
+restore_param = "Translations/show/Param/io4lv2_final_model_params.save"
+test_file = "grouped_news2015.tok.bpe.32000.txt"
 check_prediction = False
 
 if __name__ == '__main__':
-    print("Start testing seq2seq attention ")
+    print("Start testing io version 4")
     test_data = None
     model = TranslationModel()
 
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     forc_sen = []
     pred_sen = []
     test_data = np.array(test_data)
-    for m in test_data:
+    for m in test_data[6:11]:
         m = sorted(m, key=lambda d: max(len(d[0]), len(d[1])))
         last_data = m[-1]
         l = max(len(last_data[0]), len(last_data[1]))
@@ -59,8 +60,8 @@ if __name__ == '__main__':
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
         # Prediction
-        [prediction] = decode(source, target)
-
+        [prediction, address] = decode(source, target)
+        np.save(out_dir +"/" + str(l) + '_address.npy', address)
         # Map the index to string
         with open(out_dir + "/source_" + str(l) + ".txt", "w") as sour, \
              open(out_dir + "/reference_" + str(l) + ".txt", "w") as refe, \

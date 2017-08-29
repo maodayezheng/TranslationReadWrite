@@ -4,7 +4,7 @@ import json
 import theano.tensor as T
 import theano
 
-with open("SentenceData/BPE/news2015.tok.bpe.32000.txt", "r") as news:
+with open("SentenceData/BPE/news2013.tok.bpe.32000.txt", "r") as news:
     data = json.loads(news.read())
 
 data = sorted(data, key=lambda d: max(len(d[0]), len(d[1])))
@@ -25,7 +25,7 @@ for d in data:
     if length > 50:
         break
 
-with open("SentenceData/BPE/grouped_news2015.tok.bpe.32000.txt", "w") as sep:
+with open("SentenceData/BPE/grouped_news2013.tok.bpe.32000.txt", "w") as sep:
     sep.write(json.dumps(grouped))
 
 
