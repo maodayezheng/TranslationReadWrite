@@ -276,7 +276,7 @@ class DeepReluTransReadWrite(object):
         h1, h2, o, s, sample_score, attention_score = self.decoding_step(embedding, h1, h2, o, s_embedding, a_c1, a_c2, mask)
         prediction = T.argmax(sample_score, axis=-1)
         embedding = get_output(self.target_input_embedding, prediction)
-        return embedding, h1, h2, o, prediction
+        return embedding, h1, h2, o, prediction, attention_score
 
     def beam_search_forward(self, col, score, embedding, pre_hid_info, s_embedding):
         n = col.shape[0]
@@ -368,18 +368,18 @@ class DeepReluTransReadWrite(object):
         decode_init = get_output(self.decode_init_mlp, T.concatenate([h1[-1], h2[-1]], axis=-1))
         o_init = get_output(self.decode_out_mlp, decode_init)
         init_embedding = decode_in_embedding[0]
-        ([embedding, h1, h2, o, prediction], update) = theano.scan(self.greedy_decode,
+        ([embedding, h1, h2, o, prediction, att_score], update) = theano.scan(self.greedy_decode,
                                                                    outputs_info=[init_embedding,
                                                                                  decode_init[:, :self.hid_size],
                                                                                  decode_init[:, self.hid_size:],
-                                                                                 o_init, None],
+                                                                                 o_init, None, None],
                                                                    non_sequences=[sample_embed.T,
                                                                                   attention_c1, attention_c2,
                                                                                   attention_mask],
                                                                    n_steps=50)
 
         return theano.function(inputs=[source, target],
-                               outputs=[prediction],
+                               outputs=[prediction, addresses, att_score],
                                allow_input_downcast=True)
 
     def elbo_fn(self):

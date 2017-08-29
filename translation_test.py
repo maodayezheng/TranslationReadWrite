@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersV2 import DeepReluTransReadWrite as TranslationModel
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV2 import DeepReluTransReadWrite as TranslationModel
 import pickle as cPickle
 import json
 import sys
@@ -10,7 +10,7 @@ np.set_printoptions(threshold=1000000)
 main_dir = sys.argv[0]
 out_dir = sys.argv[2]
 
-restore_param = "Translations/show/Param/io4lv2_final_model_params.save"
+restore_param = "Translations/show/Param/io4lv2_att_final_model_params.save"
 test_file = "grouped_news2015.tok.bpe.32000.txt"
 check_prediction = False
 
@@ -60,15 +60,16 @@ if __name__ == '__main__':
                 target = np.concatenate([target, t.reshape((1, t.shape[0]))])
 
         # Prediction
-        [prediction, address] = decode(source, target)
+        [prediction, address, att_score] = decode(source, target)
         np.save(out_dir +"/" + str(l) + '_address.npy', address)
+        np.save(out_dir + "/" + str(l) + '_attention.npy', att_score)
         # Map the index to string
         with open(out_dir + "/source_" + str(l) + ".txt", "w") as sour, \
              open(out_dir + "/reference_" + str(l) + ".txt", "w") as refe, \
              open(out_dir + "/prediction_" + str(l) + ".txt", "w") as pred:
 
             for n in range(len(m)):
-                s = source[n, 1:]
+                s = source[n]
                 t = target[n, 1:]
                 p = prediction[:, n]
 
