@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttFrac import DeepReluTransReadWrite as TranslationModel
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV2 import DeepReluTransReadWrite as TranslationModel
 import sys
 import time
 import json
@@ -13,15 +13,15 @@ main_dir = sys.argv[0]
 out_dir = sys.argv[2]
 batch_size = 25
 sample_groups = 10
-iters = 60000
-pre_trained = False
+iters = 20000
+pre_trained = True
 restore_date = "2017_08_24_19_22_29/"
 restore_params = "io4lv2_att_final_model_params.save"
 training_data_file = "BPE/train50.tok.bpe.32000.txt"
 show_address = False
 
 if __name__ == '__main__':
-    print("Run frac version 0.3")
+    print("Run Inter Att V2 ")
     print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []
