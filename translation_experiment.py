@@ -21,7 +21,7 @@ training_data_file = "BPE/train50.tok.bpe.32000.txt"
 show_address = False
 
 if __name__ == '__main__':
-    print("Run frac version 0.7")
+    print("Run frac version 0.3")
     print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []

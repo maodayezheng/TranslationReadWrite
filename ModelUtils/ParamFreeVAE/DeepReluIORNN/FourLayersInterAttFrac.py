@@ -130,7 +130,7 @@ class DeepReluTransReadWrite(object):
         decode_in_embedding = decode_in_embedding.dimshuffle((1, 0, 2))
 
         # create the time step
-        f = 0.5
+        f = 0.3
         max_t = T.ceil(l*f)
         time_steps = T.cast(T.arange(max_t), "float32")
 

@@ -5,7 +5,7 @@
 #$ -l gpu=1,gpu_titanxp=1
 #$ -S /bin/bash
 #$ -j y
-#$ -N Seq2SeqCompose
+#$ -N FourLayersInterAttFrac03
 
 source $SET_CUDA_DEVICE
 
