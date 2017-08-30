@@ -130,8 +130,9 @@ class DeepReluTransReadWrite(object):
         decode_in_embedding = decode_in_embedding.dimshuffle((1, 0, 2))
 
         # create the time step
-        f = 0.5
-        time_steps = T.cast(T.arange(l*f), "float32")
+        f = 0.7
+        max_t = T.ceil(l*f)
+        time_steps = T.cast(T.arange(max_t), "float32")
 
         key_init = T.tile(self.key_init.reshape((1, self.key_dim)), (n, 1))
         read_pos = T.arange(l, dtype="float32") + 1.0
@@ -145,9 +146,10 @@ class DeepReluTransReadWrite(object):
                                                              sequences=[time_steps])
 
         # Create Attention mask
-        true_times = T.sum(encode_mask, axis=-1)*f
+        t = addresses.shape[0]
+        true_times = T.ceil(T.sum(encode_mask, axis=-1)*f)
         true_times = T.cast(true_times.reshape((n, 1)), "float32")
-        attention_mask = T.cast(T.le(time_steps, true_times), "float32")
+        attention_mask = T.cast(T.le(time_steps.reshape((1, time_steps.shape[0])), true_times), "float32")
 
         # Decoding RNN
         l, n, d = c.shape

@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.Translation.Seq2SeqCompose import Seq2SeqCompse as TranslationModel
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttFrac import DeepReluTransReadWrite as TranslationModel
 import sys
 import time
 import json
@@ -21,7 +21,7 @@ training_data_file = "BPE/train50.tok.bpe.32000.txt"
 show_address = False
 
 if __name__ == '__main__':
-    print("Run the Four layers Read with scale version 7")
+    print("Run frac version 0.7")
     print("Params saved at " + out_dir)
     training_loss = []
     validation_loss = []
