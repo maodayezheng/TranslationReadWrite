@@ -15,8 +15,8 @@ batch_size = 25
 sample_groups = 10
 iters = 60000
 pre_trained = False
-restore_date = "2017_08_24_19_22_29/"
-restore_params = "io4lv2_att_final_model_params.save"
+restore_date = "2017_08_30_16_20_53/"
+restore_params = "final_model_params.save"
 training_data_file = "BPE/train50.tok.bpe.32000.txt"
 show_address = False
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     validation_loss = []
     model = TranslationModel()
     if pre_trained:
-        with open("Params/" + restore_params, "rb") as params:
+        with open("code_outputs/" + restore_date + restore_params, "rb") as params:
             print("Params restored from " + restore_date)
             model.set_param_values(cPickle.load(params))
     update_kwargs = {'learning_rate': 1e-4}
@@ -155,3 +155,4 @@ if __name__ == '__main__':
     with open(os.path.join(out_dir, 'final_model_params.save'), 'wb') as f:
         cPickle.dump(model.get_param_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
         f.close()
+    print("Finished training ")
