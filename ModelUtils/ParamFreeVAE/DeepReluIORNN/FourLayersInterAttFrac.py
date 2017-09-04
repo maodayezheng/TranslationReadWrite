@@ -336,9 +336,6 @@ class DeepReluTransReadWrite(object):
         # Create decoding mask
         d_m = T.cast(T.gt(target, -1), "float32")
         decode_mask = d_m[:, 1:]
-        attention_mask = T.cast(T.neq(target, 1), "float32")
-        attention_mask *= d_m
-        attention_mask = attention_mask[:, :-1]
         # Init decoding states
         h_init = T.zeros((n, self.hid_size))
         source_embedding = source_embedding * encode_mask.reshape((n, l, 1))
@@ -351,10 +348,14 @@ class DeepReluTransReadWrite(object):
         decode_in_embedding = decode_in_embedding[:, :-1]
         decode_in_embedding = decode_in_embedding.dimshuffle((1, 0, 2))
 
+        # create the time step
+        f = 0.3
+        max_t = T.ceil(l * f)
+        time_steps = T.cast(T.arange(max_t), "float32")
+
         key_init = T.tile(self.key_init.reshape((1, self.key_dim)), (n, 1))
         read_pos = T.arange(l, dtype="float32") + 1.0
         read_pos = read_pos.reshape((1, l)) / (T.sum(encode_mask, axis=-1).reshape((n, 1)) + 1.0)
-        time_steps = T.cast(d_m[:, :-1].dimshuffle((1, 0)), dtype="float32")
 
         ([h1, h2, keys, c, addresses], update) = theano.scan(self.encoding_step, outputs_info=[h_init, h_init, key_init,
                                                                                                None, None],
@@ -362,6 +363,12 @@ class DeepReluTransReadWrite(object):
                                                                             read_attention_weight, read_attention_bias,
                                                                             encode_mask],
                                                              sequences=[time_steps])
+
+        # Create Attention mask
+        t = addresses.shape[0]
+        true_times = T.ceil(T.sum(encode_mask, axis=-1) * f)
+        true_times = T.cast(true_times.reshape((n, 1)), "float32")
+        attention_mask = T.cast(T.le(time_steps.reshape((1, time_steps.shape[0])), true_times), "float32")
 
         # Decoding RNN
         l, n, d = c.shape

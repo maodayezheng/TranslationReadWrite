@@ -1,4 +1,4 @@
-from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttV2 import DeepReluTransReadWrite as TranslationModel
+from ModelUtils.ParamFreeVAE.DeepReluIORNN.FourLayersInterAttFrac import DeepReluTransReadWrite as TranslationModel
 import pickle as cPickle
 import json
 import sys
@@ -10,8 +10,8 @@ np.set_printoptions(threshold=1000000)
 main_dir = sys.argv[0]
 out_dir = sys.argv[2]
 
-restore_param = "Translations/show/Param/io4lv2_att_final_model_params.save"
-test_file = "grouped_news2015.tok.bpe.32000.txt"
+restore_param = "Translations/show/Param/frac03_final_model_params.save"
+test_file = "grouped_news2014.tok.bpe.32000.txt"
 check_prediction = False
 
 if __name__ == '__main__':
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     forc_sen = []
     pred_sen = []
     test_data = np.array(test_data)
-    for m in test_data[6:11]:
+    for m in test_data:
         m = sorted(m, key=lambda d: max(len(d[0]), len(d[1])))
         last_data = m[-1]
         l = max(len(last_data[0]), len(last_data[1]))
